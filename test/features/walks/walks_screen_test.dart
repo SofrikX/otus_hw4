@@ -7,7 +7,8 @@ import 'package:petconnect/features/walks/domain/walk.dart';
 import 'package:petconnect/features/walks/presentation/screens/walks_screen.dart';
 
 void main() {
-  testWidgets('WalksScreen allows user to join a walk', (tester) async {
+  testWidgets('WalksScreen shows walk list and allows user to join',
+      (tester) async {
     final walk = mockWalks.first.copyWith(isJoined: false, participantCount: 1);
 
     await tester.pumpWidget(
@@ -25,6 +26,9 @@ void main() {
       ),
     );
 
+    expect(find.text(walk.title), findsOneWidget);
+    expect(find.text(walk.place), findsOneWidget);
+    expect(find.text('1 участников'), findsOneWidget);
     expect(find.text('Присоединиться'), findsOneWidget);
 
     await tester.tap(find.byKey(Key('join-${walk.id}')));
@@ -32,5 +36,6 @@ void main() {
 
     expect(find.text('Вы участвуете'), findsOneWidget);
     expect(find.text('2 участников'), findsOneWidget);
+    expect(find.text('1 участников'), findsNothing);
   });
 }

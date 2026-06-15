@@ -352,3 +352,35 @@ UI-концепция: яркая социальная сеть.
 - `flutter config --list` показал, что `enable-web` явно не установлен, но Chrome уже доступен как web device; команда `flutter config --enable-web` оставлена в документации как шаг восстановления, если web-поддержка отключена.
 - В `development_report.md` добавлен кейс "Chrome не отображался как Flutter web device".
 - В `README.md` добавлены инструкции запуска, troubleshooting для Flutter Web и fallback `flutter run -d macos`.
+
+## Prompt 11 — проверка feature walks
+
+```markdown
+# Role
+Ты Flutter Developer и Test Engineer.
+
+# Task
+Проверь feature walks.
+
+# Context
+Прочитай:
+- docs/user_stories.md
+- lib/features/walks/
+- test/features/walks/
+
+# Requirements
+1. Список прогулок отображается.
+2. Кнопка присоединения работает.
+3. Счетчик участников обновляется.
+4. Есть тест позитивного сценария.
+
+# Format
+Файлы → изменения → тесты → результат.
+```
+
+Результат:
+
+- Codex проверил user story US-8 и реализацию `lib/features/walks/`.
+- Логика присоединения уже была реализована в `WalksController.joinWalk`: состояние прогулки меняется на joined, счетчик участников увеличивается.
+- Widget-test `test/features/walks/walks_screen_test.dart` усилен проверками отображения прогулки, начального счетчика, кнопки присоединения и обновленного счетчика после tap.
+- Targeted test `flutter test test/features/walks/walks_screen_test.dart` проходит.
