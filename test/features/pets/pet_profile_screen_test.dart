@@ -26,6 +26,13 @@ void main() {
     expect(find.text('Профиль питомца'), findsOneWidget);
     expect(find.text(pet.name), findsOneWidget);
     expect(find.text(pet.ownerName), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Профиль питомца'), findsNothing);
+    expect(find.text(mockPets[0].name), findsOneWidget);
   });
 
   testWidgets('PetProfileScreen shows not found state for unknown pet',

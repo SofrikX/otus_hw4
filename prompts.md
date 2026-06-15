@@ -406,3 +406,16 @@ UI-концепция: яркая социальная сеть.
 - Логика присоединения уже была реализована в `WalksController.joinWalk`: состояние прогулки меняется на joined, счетчик участников увеличивается.
 - Widget-test `test/features/walks/walks_screen_test.dart` усилен проверками отображения прогулки, начального счетчика, кнопки присоединения и обновленного счетчика после tap.
 - Targeted test `flutter test test/features/walks/walks_screen_test.dart` проходит.
+
+## Prompt 12 — исправление кнопки назад в профиле питомца
+
+```markdown
+Нашел баг, из карточки питомца нет кнопки выхода назад
+```
+
+Результат:
+
+- Причина: `PetsScreen` открывал профиль через `context.go('/pets/:id')`, поэтому маршрут заменял текущий экран и у `PetProfileScreen` не было back stack для автоматической кнопки назад.
+- Исправление: переход из карточки питомца переведен на `context.push('/pets/:id')`.
+- Тест `PetsScreen opens pet profile through go_router` расширен проверкой `BackButton` и возврата к списку питомцев.
+- Проверка: `dart format .`, `flutter analyze`, `flutter test`.

@@ -22,7 +22,7 @@ class PetsScreen extends ConsumerWidget {
           final pet = pets[index];
           return PetCard(
             pet: pet,
-            onTap: () => context.go('/pets/${pet.id}'),
+            onTap: () => context.push('/pets/${pet.id}'),
           );
         },
       ),
