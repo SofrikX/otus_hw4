@@ -98,6 +98,24 @@ class PostCard extends StatelessWidget {
                     Text('${post.commentsCount}'),
                   ],
                 ),
+                if (post.comments.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: post.comments.reversed.take(2).map((comment) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          comment,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                        ),
+                      );
+                    }).toList(growable: false),
+                  ),
+                ],
               ],
             ),
           ),
@@ -107,49 +125,75 @@ class PostCard extends StatelessWidget {
   }
 
   void _showCommentSheet(BuildContext context) {
-    final controller = TextEditingController();
-
-    showModalBottomSheet<void>(
+    showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            MediaQuery.of(context).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Комментарий к посту ${post.petName}',
-                style: Theme.of(context).textTheme.titleMedium,
+      builder: (context) => _CommentSheet(post: post),
+    ).then((comment) {
+      if (comment != null) {
+        onComment(comment);
+      }
+    });
+  }
+}
+
+class _CommentSheet extends StatefulWidget {
+  const _CommentSheet({required this.post});
+
+  final PetPost post;
+
+  @override
+  State<_CommentSheet> createState() => _CommentSheetState();
+}
+
+class _CommentSheetState extends State<_CommentSheet> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          8,
+          16,
+          MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Комментарий к посту ${widget.post.petName}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: Key('comment-input-${widget.post.id}'),
+              controller: _controller,
+              autofocus: true,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Напишите добрый комментарий',
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Напишите добрый комментарий',
-                ),
-              ),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () {
-                  onComment(controller.text);
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Отправить'),
-              ),
-            ],
-          ),
-        );
-      },
-    ).whenComplete(controller.dispose);
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              key: Key('send-comment-${widget.post.id}'),
+              onPressed: () => Navigator.of(context).pop(_controller.text),
+              child: const Text('Отправить'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

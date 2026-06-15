@@ -11,6 +11,7 @@ class PetPost {
     required this.likesCount,
     required this.commentsCount,
     required this.isLiked,
+    this.comments = const [],
   });
 
   final String id;
@@ -24,6 +25,7 @@ class PetPost {
   final int likesCount;
   final int commentsCount;
   final bool isLiked;
+  final List<String> comments;
 
   PetPost copyWith({
     String? id,
@@ -37,6 +39,7 @@ class PetPost {
     int? likesCount,
     int? commentsCount,
     bool? isLiked,
+    List<String>? comments,
   }) {
     return PetPost(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class PetPost {
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
       isLiked: isLiked ?? this.isLiked,
+      comments: comments ?? this.comments,
     );
   }
 
@@ -66,6 +70,8 @@ class PetPost {
       likesCount: json['likesCount'] as int,
       commentsCount: json['commentsCount'] as int,
       isLiked: json['isLiked'] as bool,
+      comments: (json['comments'] as List<dynamic>? ?? const <dynamic>[])
+          .cast<String>(),
     );
   }
 
@@ -82,6 +88,7 @@ class PetPost {
       'likesCount': likesCount,
       'commentsCount': commentsCount,
       'isLiked': isLiked,
+      'comments': comments,
     };
   }
 }

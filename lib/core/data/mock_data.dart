@@ -53,6 +53,10 @@ final mockPosts = <PetPost>[
     likesCount: 18,
     commentsCount: 4,
     isLiked: false,
+    comments: const [
+      'Какой молодец!',
+      'Бруно становится настоящим городским профи.',
+    ],
   ),
   PetPost(
     id: 'post-2',
@@ -66,6 +70,10 @@ final mockPosts = <PetPost>[
     likesCount: 31,
     commentsCount: 7,
     isLiked: true,
+    comments: const [
+      'Мия знает толк в уюте.',
+      'Подоконник явно ее трон.',
+    ],
   ),
   PetPost(
     id: 'post-3',
@@ -79,6 +87,9 @@ final mockPosts = <PetPost>[
     likesCount: 12,
     commentsCount: 2,
     isLiked: false,
+    comments: const [
+      'Мы можем присоединиться после 19:00.',
+    ],
   ),
 ];
 

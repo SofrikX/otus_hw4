@@ -9,11 +9,16 @@ final feedControllerProvider =
 });
 
 class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
-  FeedController({AsyncValue<List<PetPost>>? initialState})
-      : super(
+  FeedController({
+    AsyncValue<List<PetPost>>? initialState,
+    List<PetPost>? initialPosts,
+  })  : _posts = _resolveInitialPosts(initialState, initialPosts),
+        super(
           initialState ??
-              AsyncValue.data(List<PetPost>.unmodifiable(mockPosts)),
+              AsyncValue.data(_resolveInitialPosts(initialState, initialPosts)),
         );
+
+  List<PetPost> _posts;
 
   Future<void> refresh({bool shouldFail = false}) async {
     state = const AsyncValue.loading();
@@ -27,7 +32,7 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       return;
     }
 
-    state = AsyncValue.data(List<PetPost>.unmodifiable(mockPosts));
+    state = AsyncValue.data(_posts);
   }
 
   void toggleLike(String postId) {
@@ -50,7 +55,7 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       );
     }).toList(growable: false);
 
-    state = AsyncValue.data(updated);
+    _setPosts(updated);
   }
 
   void addComment(String postId, String text) {
@@ -69,9 +74,29 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
         return post;
       }
 
-      return post.copyWith(commentsCount: post.commentsCount + 1);
+      return post.copyWith(
+        commentsCount: post.commentsCount + 1,
+        comments: List<String>.unmodifiable([
+          ...post.comments,
+          trimmedText,
+        ]),
+      );
     }).toList(growable: false);
 
-    state = AsyncValue.data(updated);
+    _setPosts(updated);
+  }
+
+  static List<PetPost> _resolveInitialPosts(
+    AsyncValue<List<PetPost>>? initialState,
+    List<PetPost>? initialPosts,
+  ) {
+    return List<PetPost>.unmodifiable(
+      initialPosts ?? initialState?.asData?.value ?? mockPosts,
+    );
+  }
+
+  void _setPosts(List<PetPost> posts) {
+    _posts = List<PetPost>.unmodifiable(posts);
+    state = AsyncValue.data(_posts);
   }
 }
