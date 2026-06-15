@@ -136,12 +136,14 @@ flutter run -d macos
 
 ## Тесты
 
-В проекте есть widget-тесты для ключевых функций:
+В проекте есть автоматические тесты для ключевых функций:
 
 - `test/features/feed/post_card_test.dart`
 - `test/features/feed/feed_screen_test.dart`
+- `test/features/feed/feed_controller_test.dart`
 - `test/features/walks/walks_screen_test.dart`
 - `test/features/pets/pet_profile_screen_test.dart`
+- `test/features/chat/chat_screen_test.dart`
 
 Запуск:
 

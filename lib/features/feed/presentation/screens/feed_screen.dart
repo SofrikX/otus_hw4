@@ -27,14 +27,18 @@ class FeedScreen extends ConsumerWidget {
           onRefresh: controller.refresh,
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-            itemCount: posts.length + 1,
+            itemCount: posts.length + 2,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               if (index == 0) {
+                return const _FeedHeader();
+              }
+
+              if (index == 1) {
                 return const PetStoriesStrip();
               }
 
-              final post = posts[index - 1];
+              final post = posts[index - 2];
               return PostCard(
                 post: post,
                 onLike: () => controller.toggleLike(post.id),
@@ -54,6 +58,41 @@ class FeedScreen extends ConsumerWidget {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FeedHeader extends StatelessWidget {
+  const _FeedHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Привет!\nЧто нового у питомца?',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                  ),
+            ),
+          ),
+          IconButton.filledTonal(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Новых уведомлений пока нет.')),
+              );
+            },
+            icon: const Icon(Icons.notifications_none),
+            tooltip: 'Уведомления',
+          ),
+        ],
       ),
     );
   }

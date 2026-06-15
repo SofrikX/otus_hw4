@@ -293,6 +293,13 @@ UI-концепция: яркая социальная сеть.
 Проблема → причина → исправление → проверка.
 ```
 
+Результат:
+
+- Codex проверил проектные инструкции, `docs/ui_concepts/ui_description.md`, референс `concept_2_bright_social.png`, `HomeScreen`, `FeedScreen`, `PostCard` и тему приложения.
+- Отдельный пользовательский скриншот не был доступен в рабочем контексте, поэтому анализ выполнен по текущей реализации и сохраненному UI-референсу.
+- После подтверждения внесены точечные UI-правки: desktop-навигация переведена на `NavigationRail`, mobile оставлен с `NavigationBar`, desktop-действие создания поста перенесено из FAB в `AppBar`, в ленту добавлен приветственный header, фон темы сделан теплее, медиа-блок поста получил responsive-высоту с min/max ограничениями.
+- `development_report.md` обновлен кейсом UI/UX отладки.
+
 ## Prompt 09 — финальный рефакторинг
 
 ```markdown
@@ -321,6 +328,13 @@ UI-концепция: яркая социальная сеть.
 # Format
 Изменения → команды проверки → готовность к сдаче.
 ```
+
+Результат:
+
+- Codex прочитал `AGENTS.md`, `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`, `lib/`, `test/`, `README.md`, `development_report.md` и текущий diff рабочей ветки.
+- Выполнен точечный рефакторинг без изменения MVP scope и без Firebase: `HomeScreen` получил единый источник навигационных destination-данных для mobile/desktop, `PostCard` разделен на приватные виджеты header/media/actions/comments, `PetProfileScreen` разделен на summary/owner/interests блоки.
+- `README.md` и `development_report.md` обновлены под фактический финальный набор тестов и refactoring-кейс.
+- Проверка: `dart format .`, `flutter analyze`, `flutter test`.
 
 ## Prompt 10 — документирование кейса Flutter Web
 

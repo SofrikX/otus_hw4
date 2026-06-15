@@ -5,6 +5,8 @@ import '../../feed/presentation/screens/feed_screen.dart';
 import '../../pets/presentation/screens/pets_screen.dart';
 import '../../walks/presentation/screens/walks_screen.dart';
 
+const _wideLayoutBreakpoint = 900.0;
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -15,70 +17,79 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  static const _screens = [
-    FeedScreen(),
-    PetsScreen(),
-    WalksScreen(),
-    ChatScreen(),
-  ];
-
-  static const _titles = [
-    'PetConnect',
-    'Питомцы',
-    'Прогулки',
-    'Чаты',
-  ];
+  _HomeDestination get _selectedDestination =>
+      _homeDestinations[_selectedIndex];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
-        actions: [
-          IconButton(
-            onPressed: () => _showMockNotification(context),
-            icon: const Icon(Icons.notifications_none),
-            tooltip: 'Уведомления',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= _wideLayoutBreakpoint;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(_selectedDestination.title),
+            actions: _buildAppBarActions(context, isWide: isWide),
           ),
-        ],
-      ),
-      body: SafeArea(child: _screens[_selectedIndex]),
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _showCreatePostStub(context),
-              icon: const Icon(Icons.add_a_photo_outlined),
-              label: const Text('Пост'),
-            )
-          : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
-            label: 'Лента',
+          body: SafeArea(
+            child: isWide
+                ? _WideHomeLayout(
+                    selectedIndex: _selectedIndex,
+                    onDestinationSelected: _selectDestination,
+                    child: _selectedDestination.screen,
+                  )
+                : _selectedDestination.screen,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.pets_outlined),
-            selectedIcon: Icon(Icons.pets),
-            label: 'Питомцы',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Прогулки',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Чаты',
-          ),
-        ],
-      ),
+          floatingActionButton: !isWide && _selectedDestination.isFeed
+              ? FloatingActionButton(
+                  onPressed: () => _showCreatePostStub(context),
+                  tooltip: 'Новый пост',
+                  child: const Icon(Icons.add_a_photo_outlined),
+                )
+              : null,
+          bottomNavigationBar: isWide
+              ? null
+              : _BottomHomeNavigation(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: _selectDestination,
+                ),
+        );
+      },
     );
+  }
+
+  List<Widget> _buildAppBarActions(
+    BuildContext context, {
+    required bool isWide,
+  }) {
+    if (isWide && _selectedDestination.isFeed) {
+      return [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: FilledButton.icon(
+            onPressed: () => _showCreatePostStub(context),
+            icon: const Icon(Icons.add_a_photo_outlined),
+            label: const Text('Новый пост'),
+          ),
+        ),
+      ];
+    }
+
+    if (!_selectedDestination.isFeed) {
+      return [
+        IconButton(
+          onPressed: () => _showMockNotification(context),
+          icon: const Icon(Icons.notifications_none),
+          tooltip: 'Уведомления',
+        ),
+      ];
+    }
+
+    return const [];
+  }
+
+  void _selectDestination(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   void _showCreatePostStub(BuildContext context) {
@@ -93,6 +104,123 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showMockNotification(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Новых уведомлений пока нет.')),
+    );
+  }
+}
+
+class _HomeDestination {
+  const _HomeDestination({
+    required this.title,
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.screen,
+    this.isFeed = false,
+  });
+
+  final String title;
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final Widget screen;
+  final bool isFeed;
+
+  NavigationDestination toNavigationDestination() {
+    return NavigationDestination(
+      icon: Icon(icon),
+      selectedIcon: Icon(selectedIcon),
+      label: label,
+    );
+  }
+
+  NavigationRailDestination toNavigationRailDestination() {
+    return NavigationRailDestination(
+      icon: Icon(icon),
+      selectedIcon: Icon(selectedIcon),
+      label: Text(label),
+    );
+  }
+}
+
+const _homeDestinations = [
+  _HomeDestination(
+    title: 'PetConnect',
+    label: 'Лента',
+    icon: Icons.dynamic_feed_outlined,
+    selectedIcon: Icons.dynamic_feed,
+    screen: FeedScreen(),
+    isFeed: true,
+  ),
+  _HomeDestination(
+    title: 'Питомцы',
+    label: 'Питомцы',
+    icon: Icons.pets_outlined,
+    selectedIcon: Icons.pets,
+    screen: PetsScreen(),
+  ),
+  _HomeDestination(
+    title: 'Прогулки',
+    label: 'Прогулки',
+    icon: Icons.map_outlined,
+    selectedIcon: Icons.map,
+    screen: WalksScreen(),
+  ),
+  _HomeDestination(
+    title: 'Чаты',
+    label: 'Чаты',
+    icon: Icons.chat_bubble_outline,
+    selectedIcon: Icons.chat_bubble,
+    screen: ChatScreen(),
+  ),
+];
+
+class _WideHomeLayout extends StatelessWidget {
+  const _WideHomeLayout({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.child,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        NavigationRail(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onDestinationSelected,
+          labelType: NavigationRailLabelType.all,
+          destinations: _homeDestinations
+              .map((destination) => destination.toNavigationRailDestination())
+              .toList(growable: false),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _BottomHomeNavigation extends StatelessWidget {
+  const _BottomHomeNavigation({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onDestinationSelected,
+      destinations: _homeDestinations
+          .map((destination) => destination.toNavigationDestination())
+          .toList(growable: false),
     );
   }
 }

@@ -68,6 +68,8 @@ void main() {
 
     expect(find.text('${post.likesCount}'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(Key('like-${post.id}')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(Key('like-${post.id}')));
     await tester.pump();
 
@@ -80,6 +82,8 @@ void main() {
 
     await tester.pumpWidget(_buildFeed());
 
+    await tester.ensureVisible(find.byKey(Key('comment-${post.id}')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(Key('comment-${post.id}')));
     await tester.pumpAndSettle();
     await tester.enterText(

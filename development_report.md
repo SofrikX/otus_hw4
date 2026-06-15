@@ -347,6 +347,51 @@ flutter test
 
 В тест добавлены явные проверки отображения прогулки, начального счетчика и исчезновения старого счетчика после присоединения.
 
+### Кейс UI/UX отладки: адаптивность bright social интерфейса
+
+Задача: проверить экран PetConnect как Flutter UI/UX Debugger в контексте выбранной концепции "яркая социальная сеть" и исправить найденные проблемы верстки после подтверждения.
+
+Что проверено:
+
+- `docs/ui_concepts/ui_description.md` — выбранная UI-концепция;
+- `docs/ui_concepts/concept_2_bright_social.dart` и `.png` — визуальный референс;
+- `lib/features/home/presentation/home_screen.dart` — общая оболочка приложения и навигация;
+- `lib/features/feed/presentation/screens/feed_screen.dart` — структура ленты;
+- `lib/features/feed/presentation/widgets/post_card.dart` — карточка поста;
+- `lib/app/theme.dart` — базовая Material 3 тема.
+
+Проблема → причина → исправление → проверка:
+
+| Проблема | Причина | Исправление | Проверка |
+|---|---|---|---|
+| Desktop выглядел как растянутая mobile-версия | `HomeScreen` всегда использовал нижний `NavigationBar` | Для ширины от 900 px добавлен `NavigationRail`, на mobile оставлен `NavigationBar` | `flutter analyze`, `flutter test`, ручная проверка через `flutter run -d chrome` |
+| FAB на desktop был оторван от центральной ленты | `FloatingActionButton` позиционировался относительно всего `Scaffold` | На desktop действие создания поста перенесено в `AppBar` как `FilledButton.icon`, FAB оставлен только для mobile | Проверка desktop/mobile ширин |
+| Лента слабее соответствовала bright social референсу | Экран начинался сразу с stories, а тема была слишком нейтральной | Добавлен приветственный feed header, фон сделан теплым, карточки оставлены белыми | Визуальное сравнение с `concept_2_bright_social.png` |
+| Медиа в постах могло выглядеть непропорционально | Использовалась фиксированная высота `220` | Блок изображения получил responsive-высоту с ограничениями `220..300` и округленный контейнер | Widget-тесты и ручная проверка адаптивности |
+
+Роль Codex в этом кейсе — анализ layout-проблем, предложение минимальных UI-правок, внесение изменений только в presentation/theme слой и документирование результата.
+
+### Кейс финального рефакторинга перед сдачей
+
+Задача: пройти проект как Senior Flutter Architect перед сдачей, улучшить читаемость кода без расширения MVP scope и без подключения Firebase.
+
+Что проверено:
+
+- `AGENTS.md` и `docs/documents_index.md` — обязательные правила и маршрутизация документации;
+- `docs/current_homework_scope.md` и `docs/ai_agent_rules.md` — границы MVP и правила кода;
+- `lib/` — структура приложения, features, shared widgets и mock-данные;
+- `test/` — фактическое покрытие feed, pets, walks и chat;
+- `README.md` и `development_report.md` — готовность документации к сдаче.
+
+Изменения:
+
+- `HomeScreen` получил единый список навигационных destination-данных, из которого строятся и mobile `NavigationBar`, и desktop `NavigationRail`;
+- `PostCard` разделен на небольшие приватные виджеты: header, media, actions и recent comments;
+- `PetProfileScreen` разделен на отдельные блоки summary, owner и interests;
+- `README.md` обновлен по фактическому списку автоматических тестов.
+
+Результат: поведение приложения и scope MVP не изменены, Firebase не подключался, читаемость presentation-слоя улучшена.
+
 ## 8. Команды проверки
 
 ```bash
@@ -371,9 +416,9 @@ flutter test
 Результаты:
 
 - `flutter pub get` — зависимости установлены, 33 пакета подключены, Firebase-зависимости не добавлены.
-- `dart format .` — форматирование выполнено, изменено 10 Dart-файлов.
+- `dart format .` — финальное форматирование выполнено, `Formatted 37 files (0 changed)`.
 - `flutter analyze` — `No issues found!`.
-- `flutter test` — 11 тестов пройдены, `All tests passed!`.
+- `flutter test` — 15 тестов пройдены, `All tests passed!`.
 - Ранее `flutter run -d chrome` не запускался: `flutter devices` показывал только `macOS`.
 - После ручной установки Google Chrome команда `flutter devices` показывает `Chrome (web)` и `macOS`, значит проблема была в окружении, а не в коде приложения.
 
