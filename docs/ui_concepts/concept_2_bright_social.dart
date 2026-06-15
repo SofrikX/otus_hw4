@@ -36,7 +36,9 @@ class BrightSocialConceptScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
                   ),
                 ),
-                IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+                IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.notifications_none)),
               ],
             ),
             const SizedBox(height: 20),
@@ -46,7 +48,8 @@ class BrightSocialConceptScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemCount: stories.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 14),
-                itemBuilder: (context, index) => StoryItem(name: stories[index], isAdd: index == 0),
+                itemBuilder: (context, index) =>
+                    StoryItem(name: stories[index], isAdd: index == 0),
               ),
             ),
             const SizedBox(height: 24),
@@ -85,7 +88,8 @@ class StoryItem extends StatelessWidget {
           height: 68,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(colors: [Color(0xFFFF7A59), Color(0xFFFFC371)]),
+            gradient:
+                LinearGradient(colors: [Color(0xFFFF7A59), Color(0xFFFFC371)]),
           ),
           child: Icon(isAdd ? Icons.add : Icons.pets, color: Colors.white),
         ),
@@ -113,7 +117,8 @@ class BrightPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28)),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(28)),
       child: Column(
         children: [
           ListTile(
@@ -121,7 +126,8 @@ class BrightPostCard extends StatelessWidget {
               backgroundColor: Color(0xFFFFE0D6),
               child: Icon(Icons.pets, color: Color(0xFFFF7A59)),
             ),
-            title: Text(petName, style: const TextStyle(fontWeight: FontWeight.w800)),
+            title: Text(petName,
+                style: const TextStyle(fontWeight: FontWeight.w800)),
             subtitle: const Text('2 минуты назад'),
           ),
           Container(
@@ -131,7 +137,8 @@ class BrightPostCard extends StatelessWidget {
               color: const Color(0xFFFFE9E0),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Center(child: Icon(Icons.photo_camera_outlined, size: 72)),
+            child: const Center(
+                child: Icon(Icons.photo_camera_outlined, size: 72)),
           ),
           Padding(
             padding: const EdgeInsets.all(16),

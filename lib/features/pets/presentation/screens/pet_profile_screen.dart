@@ -41,7 +41,8 @@ class PetProfileScreen extends ConsumerWidget {
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                             const SizedBox(height: 8),
-                            Text('${pet.animalType} • ${pet.breed} • ${pet.age} г.'),
+                            Text(
+                                '${pet.animalType} • ${pet.breed} • ${pet.age} г.'),
                             const SizedBox(height: 16),
                             Text(
                               pet.description,
@@ -64,11 +65,14 @@ class PetProfileScreen extends ConsumerWidget {
                       child: ListTile(
                         leading: const Icon(Icons.favorite_outline),
                         title: const Text('Интересы'),
-                        subtitle: const Text('Прогулки, игры и общение с другими питомцами'),
+                        subtitle: const Text(
+                            'Прогулки, игры и общение с другими питомцами'),
                         trailing: FilledButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Заявка на знакомство отправлена')),
+                              const SnackBar(
+                                  content:
+                                      Text('Заявка на знакомство отправлена')),
                             );
                           },
                           child: const Text('Познакомиться'),

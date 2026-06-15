@@ -16,7 +16,8 @@ class ChatScreen extends ConsumerWidget {
     if (chats.isEmpty) {
       return const EmptyState(
         title: 'Чатов пока нет',
-        message: 'Начните знакомство с владельцем питомца из ленты или прогулки.',
+        message:
+            'Начните знакомство с владельцем питомца из ленты или прогулки.',
       );
     }
 

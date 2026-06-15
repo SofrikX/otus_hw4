@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:petconnect/features/pets/presentation/screens/pet_profile_screen.dart';
 
 void main() {
-  testWidgets('PetProfileScreen shows not found state for unknown pet', (tester) async {
+  testWidgets('PetProfileScreen shows not found state for unknown pet',
+      (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(

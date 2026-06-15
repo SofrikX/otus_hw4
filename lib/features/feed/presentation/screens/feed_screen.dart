@@ -19,7 +19,8 @@ class FeedScreen extends ConsumerWidget {
       value: postsValue,
       onRetry: controller.refresh,
       emptyTitle: 'В ленте пока пусто',
-      emptyMessage: 'Подпишитесь на владельцев питомцев или создайте первый пост.',
+      emptyMessage:
+          'Подпишитесь на владельцев питомцев или создайте первый пост.',
       isEmpty: (posts) => posts.isEmpty,
       dataBuilder: (posts) => ResponsiveCenter(
         child: RefreshIndicator(

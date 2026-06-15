@@ -74,6 +74,17 @@
 4. Обновления в development_report.md.
 ```
 
+Результат:
+
+- `flutter pub get` установил зависимости проекта без добавления Firebase.
+- `dart format .` выполнил механическое форматирование 10 Dart-файлов.
+- `flutter analyze` завершился без замечаний: `No issues found!`.
+- `flutter test` подтвердил прохождение 4 widget-тестов: `All tests passed!`.
+- На первом этапе `flutter run -d chrome` не запустился, потому что Flutter не видел устройство `chrome`; `flutter devices` показывал только `macOS`.
+- Позже проблема была исправлена вручную на уровне окружения: после установки Google Chrome Flutter начал видеть `Chrome (web)`.
+- Добавлен `.gitignore`, чтобы не включать в репозиторий `.dart_tool/`, `build/` и служебные Flutter-файлы.
+- `development_report.md` обновлен результатами локальной проверки.
+
 ## Prompt 02 — ревью архитектуры
 
 ```markdown
@@ -284,3 +295,42 @@ UI-концепция: яркая социальная сеть.
 # Format
 Изменения → команды проверки → готовность к сдаче.
 ```
+
+## Prompt 10 — документирование кейса Flutter Web
+
+```markdown
+# Role
+Ты Flutter Debugger, QA Engineer и Technical Writer.
+
+# Task
+Зафиксируй уже исправленную проблему запуска Flutter Web в проекте PetConnect и органично добавь ее в AI-agent workflow.
+
+# Context
+Ранее `flutter run -d chrome` не запускался, потому что `flutter devices` показывал только `macOS`, а Chrome не отображался как Flutter web device. Проблема была исправлена вручную на уровне окружения: после установки Google Chrome Flutter начал видеть устройство Chrome.
+
+# Requirements
+1. Не менять бизнес-логику Flutter-приложения.
+2. Не переписывать UI-компоненты.
+3. Проверить, что это проблема окружения, а не кода приложения.
+4. Добавить кейс в `development_report.md`.
+5. Добавить запись в `prompts.md`.
+6. При необходимости добавить troubleshooting в `README.md`.
+7. Честно указать, что исправление окружения было выполнено вручную.
+
+# Commands
+- flutter devices
+- flutter config --enable-web
+- flutter run -d chrome
+- flutter run -d macos
+
+# Format
+Что проверено → что изменено → diff → команды валидации.
+```
+
+Результат:
+
+- Codex прочитал обязательные документы проекта и не менял бизнес-логику Flutter-приложения.
+- `flutter devices` после ручной установки Google Chrome показывает `Chrome (web)` и `macOS`.
+- `flutter config --list` показал, что `enable-web` явно не установлен, но Chrome уже доступен как web device; команда `flutter config --enable-web` оставлена в документации как шаг восстановления, если web-поддержка отключена.
+- В `development_report.md` добавлен кейс "Chrome не отображался как Flutter web device".
+- В `README.md` добавлены инструкции запуска, troubleshooting для Flutter Web и fallback `flutter run -d macos`.

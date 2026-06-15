@@ -10,7 +10,8 @@ final walksControllerProvider =
 
 class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
   WalksController({AsyncValue<List<Walk>>? initialState})
-      : super(initialState ?? AsyncValue.data(List<Walk>.unmodifiable(mockWalks)));
+      : super(initialState ??
+            AsyncValue.data(List<Walk>.unmodifiable(mockWalks)));
 
   Future<void> refresh({bool shouldFail = false}) async {
     state = const AsyncValue.loading();

@@ -84,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showCreatePostStub(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Создание поста будет подключено к Firebase в следующей версии.'),
+        content: Text(
+            'Создание поста будет подключено к Firebase в следующей версии.'),
       ),
     );
   }

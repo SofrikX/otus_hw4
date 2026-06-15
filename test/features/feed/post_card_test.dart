@@ -4,7 +4,8 @@ import 'package:petconnect/core/data/mock_data.dart';
 import 'package:petconnect/features/feed/presentation/widgets/post_card.dart';
 
 void main() {
-  testWidgets('PostCard displays post data and handles like tap', (tester) async {
+  testWidgets('PostCard displays post data and handles like tap',
+      (tester) async {
     final post = mockPosts.first;
     var likeTapped = false;
 

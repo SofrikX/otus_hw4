@@ -47,7 +47,8 @@ final mockPosts = <PetPost>[
     authorName: 'Аня',
     petEmoji: '🐶',
     imageEmoji: '🌳',
-    text: 'Сегодня Бруно впервые спокойно прошел мимо самоката. Маленькая победа!',
+    text:
+        'Сегодня Бруно впервые спокойно прошел мимо самоката. Маленькая победа!',
     createdAt: DateTime.now().subtract(const Duration(minutes: 24)),
     likesCount: 18,
     commentsCount: 4,

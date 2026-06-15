@@ -11,7 +11,8 @@ final feedControllerProvider =
 class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   FeedController({AsyncValue<List<PetPost>>? initialState})
       : super(
-          initialState ?? AsyncValue.data(List<PetPost>.unmodifiable(mockPosts)),
+          initialState ??
+              AsyncValue.data(List<PetPost>.unmodifiable(mockPosts)),
         );
 
   Future<void> refresh({bool shouldFail = false}) async {

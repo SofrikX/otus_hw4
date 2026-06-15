@@ -103,9 +103,36 @@ flutter test
 
 ### 4. Запустить приложение
 
+Проверить доступные устройства Flutter:
+
+```bash
+flutter devices
+```
+
+Основной запуск для Flutter Web:
+
 ```bash
 flutter run -d chrome
 ```
+
+Если Chrome не отображается в `flutter devices`, проверьте, что Google Chrome установлен в системе, и при необходимости включите web-поддержку Flutter:
+
+```bash
+flutter config --enable-web
+flutter devices
+```
+
+Fallback для локальной desktop-проверки на macOS:
+
+```bash
+flutter run -d macos
+```
+
+### Troubleshooting: Flutter Web и Chrome
+
+В проекте был зафиксирован кейс окружения: `flutter run -d chrome` не запускался, потому что `flutter devices` показывал только `macOS`, а `Chrome (web)` отсутствовал. Причина была не в коде PetConnect, а в локальном окружении разработки: Google Chrome не был установлен или не определялся Flutter.
+
+Исправление было выполнено вручную на уровне окружения: после установки Google Chrome Flutter начал видеть устройство `Chrome (web)`. Codex использовался для анализа симптомов, проверки команд и документирования результата.
 
 ## Тесты
 
