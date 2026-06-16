@@ -475,3 +475,68 @@ Summary → Files changed → Removed weak fragments → Replaced prompts → Ke
 - Запись про проверку интерфейса без фактического пользовательского изображения заменена на реальные проверяемые кейсы: UI/UX отладку bright social интерфейса и мультимодальную проверку `docs/screenshots/petconnect_desktop.png` / `docs/screenshots/petconnect_mobile.png`.
 - Нумерация prompts приведена к последовательности Prompt 01-14.
 - Код приложения не менялся.
+
+## Prompt 15 — обновление документации под HW5 Firebase
+
+```markdown
+# Role
+Ты Technical Writer и AI Workflow Engineer.
+
+# Task
+Обнови проектные инструкции и документацию под ДЗ 5.
+
+# Context
+Проект переехал в новый репозиторий `otus_hw5`.
+Теперь цель проекта — интегрировать Flutter frontend PetConnect с Firebase backend.
+
+# Required reading
+Прочитай:
+- AGENTS.md
+- README.md
+- development_report.md
+- prompts.md
+- docs/documents_index.md
+- docs/ai_agent_rules.md
+- docs/ai_workflow.md
+- docs/current_homework_scope.md
+
+# Requirements
+1. Обнови `AGENTS.md` под HW5:
+   - основной AI-агент: OpenAI Codex;
+   - стек: Flutter + Firebase;
+   - backend: Firebase Auth, Firestore, Storage, Cloud Functions;
+   - обязательные проверки: flutter analyze, flutter test, npm test для functions, firebase emulators.
+2. Обнови `docs/current_homework_scope.md`:
+   - описать 9 шагов текущего ДЗ;
+   - заменить Supabase/PostgreSQL на Firebase-эквиваленты.
+3. Обнови `docs/ai_workflow.md`:
+   - добавить проектирование Firestore schema;
+   - генерацию Security Rules;
+   - генерацию Cloud Functions API;
+   - интеграцию frontend-backend;
+   - AI-анализ логов.
+4. Обнови `docs/documents_index.md`, чтобы было понятно, какие документы относятся к HW5.
+5. Добавь запись в `prompts.md` об этом prompt-е.
+6. Не меняй код приложения.
+
+# Done when
+- Документация больше не выглядит как HW4-only.
+- Везде основным агентом указан OpenAI Codex.
+- Firebase указан как backend-решение.
+- Supabase упоминается только как технология из оригинального задания, замененная на Firebase по причине согласованности с ТЗ PetConnect.
+
+# Output format
+1. Summary.
+2. Files changed.
+3. Firebase mapping from original homework.
+4. Diff.
+```
+
+Результат:
+
+- `AGENTS.md` обновлен под HW5: OpenAI Codex, Flutter + Firebase, Auth, Firestore, Storage, Cloud Functions, Security Rules, Emulator Suite и обязательные проверки.
+- `docs/current_homework_scope.md` переписан как scope ДЗ 5 с 9 шагами и таблицей замены Supabase/PostgreSQL на Firebase.
+- `docs/ai_workflow.md` дополнен этапами Firestore schema, Storage, Security Rules, Cloud Functions API, frontend-backend integration и AI-анализом логов.
+- `docs/documents_index.md` обновлен как навигатор по HW5-документации.
+- `docs/ai_agent_rules.md`, `README.md` и `development_report.md` обновлены, чтобы документация не оставалась HW4-only.
+- Код приложения не менялся.

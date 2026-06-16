@@ -1,16 +1,22 @@
-# AI Workflow — разработка PetConnect через OpenAI Codex
+# AI Workflow — PetConnect HW5 через OpenAI Codex
 
 ## Используемый AI-агент
 
 OpenAI Codex.
+
+Codex используется как Technical Writer, Flutter Architect, Firebase Backend Engineer, Test Engineer и AI Workflow Engineer.
 
 ## Основные файлы agent workflow
 
 | Файл | Назначение |
 |---|---|
 | `AGENTS.md` | Постоянные инструкции для Codex |
-| `docs/documents_index.md` | Навигация по документации |
+| `docs/documents_index.md` | Навигация по документации HW5 |
+| `docs/current_homework_scope.md` | Scope ДЗ 5 и Firebase mapping |
 | `docs/ai_agent_rules.md` | Расширенные правила разработки |
+| `docs/technical_specification.md` | Исходное ТЗ PetConnect с Firebase-архитектурой |
+| `docs/user_stories.md` | Пользовательские сценарии для frontend/backend операций |
+| `docs/error_handling.md` | Негативные сценарии и сообщения ошибок |
 | `docs/prompt_engineering_from_dz2.md` | Техники и шаблоны промптов из ДЗ 2 |
 | `prompts.md` | Журнал фактически используемых промптов |
 | `development_report.md` | Отчет о процессе разработки |
@@ -25,13 +31,17 @@ OpenAI Codex читает AGENTS.md
   ↓
 Codex выбирает документы через docs/documents_index.md
   ↓
-Codex анализирует задачу
+Codex анализирует HW5 scope и ТЗ PetConnect
   ↓
-Codex предлагает план
+Codex проектирует Firebase backend
   ↓
-Codex меняет файлы
+Codex предлагает план изменений
   ↓
-Запускаются проверки
+Codex меняет документацию, Firebase config, backend или Flutter layer
+  ↓
+Запускаются Flutter, Functions и emulator-проверки
+  ↓
+Codex анализирует логи и исправляет ошибки
   ↓
 Результат фиксируется в prompts.md и development_report.md
 ```
@@ -46,63 +56,113 @@ Codex читает:
 - `docs/documents_index.md`;
 - `docs/current_homework_scope.md`;
 - `docs/technical_specification.md`;
-- `docs/user_stories.md`.
+- `docs/user_stories.md`;
+- `docs/error_handling.md`.
 
-Результат: подтвержден scope MVP и стек.
+Результат: подтверждено, что HW5 использует Firebase вместо Supabase/PostgreSQL, потому что Firebase уже выбран в ТЗ PetConnect.
 
-### 2. Инициализация проекта
+### 2. Проектирование Firestore schema
 
-Codex проверяет:
+Codex проектирует:
 
-- `pubspec.yaml`;
-- структуру `lib/`;
-- структуру `test/`;
-- web-заготовку.
+- коллекции `users`, `pets`, `posts`, `comments`, `chats`, `messages`, `walks`;
+- связи между владельцами, питомцами, постами, чатами и прогулками;
+- поля документов и типы данных;
+- индексы для ленты, чатов и прогулок;
+- ограничения, которые должны быть проверены rules или Cloud Functions.
 
-Результат: проект готов к локальному запуску.
+Результат: схема Firestore согласована с user stories и frontend-моделями.
 
-### 3. Разработка экранов
+### 3. Проектирование Firebase Storage
 
-Codex работает по feature-модулям:
+Codex описывает:
 
-- feed;
-- pets;
-- walks;
-- chat.
+- пути для аватаров пользователей;
+- пути для фото питомцев;
+- пути для изображений постов;
+- ограничения по MIME type и размеру файла;
+- связь Storage paths с Firestore documents.
 
-Для каждого экрана проверяются:
+Результат: Storage используется только для пользовательских изображений, без секретов и внешних API.
 
-- базовая функциональность;
-- состояния loading/error/empty/success;
-- адаптивность;
-- тесты.
+### 4. Генерация Security Rules
 
-### 4. Отладка
+Codex готовит Firestore и Storage rules:
 
-Codex получает ошибки из терминала и исправляет их итеративно.
+- неавторизованные пользователи не получают доступ к приватным данным;
+- пользователь редактирует только свои `users/{uid}` и `pets`;
+- посты создаются авторизованным автором;
+- чаты и сообщения видны только участникам;
+- защищенные counters и join/like операции не изменяются напрямую клиентом;
+- Storage upload разрешен только владельцу соответствующего пути.
 
-Если ошибка связана с запуском Flutter Web, Codex сначала отделяет проблему окружения от проблемы кода:
+Результат: правила безопасности становятся частью backend-реализации, а не устным допущением.
 
-- проверяет список устройств через `flutter devices`;
-- при необходимости предлагает `flutter config --enable-web`;
-- для web-запуска использует `flutter run -d chrome`;
-- если Chrome недоступен, предлагает fallback `flutter run -d macos`;
-- честно фиксирует, если исправление выполнено вручную на уровне окружения.
+### 5. Генерация Cloud Functions API
 
-### 5. Мультимодальная проверка
+Codex проектирует и реализует минимум 3 backend/API операции, например:
 
-Студент передает Codex скриншоты desktop/mobile. Codex анализирует визуальные проблемы и предлагает исправления.
+- `postsToggleLike`;
+- `commentsCreate`;
+- `walksJoin`;
+- `messagesSend`;
+- `postsCreate`.
 
-### 6. Финальный рефакторинг
+Для операций, где важны counters, validation или права доступа, использовать Cloud Functions и Firestore transactions/batches.
 
-Codex проверяет архитектуру, тесты и документацию перед сдачей.
+### 6. Интеграция frontend-backend
 
-## Команды проверки
+Codex переводит frontend на repository layer:
+
+- domain содержит repository interfaces;
+- data содержит Firebase и mock implementations;
+- application содержит Riverpod providers/controllers;
+- presentation не знает о Firebase SDK;
+- mock data сохраняется для тестов и локального fallback.
+
+Результат: UI остается тестируемым, а backend можно подменять в ProviderScope.
+
+### 7. AI-анализ логов
+
+Codex анализирует:
+
+- ошибки `flutter analyze`;
+- ошибки `flutter test`;
+- ошибки TypeScript/ESLint/Jest в `functions`;
+- ошибки `firebase emulators:start`;
+- ошибки `firebase emulators:exec`;
+- ошибки Security Rules tests;
+- runtime-логи Cloud Functions emulator.
+
+Для каждой ошибки фиксируются симптом, причина, исправление и результат проверки.
+
+### 8. Локальная проверка
+
+Основные команды:
 
 ```bash
 flutter pub get
 dart format .
 flutter analyze
 flutter test
+npm test --prefix functions
+firebase emulators:exec "npm test --prefix functions"
+firebase emulators:start
 flutter run -d chrome
 ```
+
+Если production deploy Cloud Functions требует Firebase Blaze plan, локальный emulator-сценарий остается основным способом проверки ДЗ.
+
+### 9. Документирование результата
+
+Codex обновляет:
+
+- `prompts.md` — фактические prompts и результаты;
+- `development_report.md` — архитектура, проблемы, решения, проверки;
+- `README.md` — запуск Flutter и Firebase emulators;
+- `docs/current_homework_scope.md` — актуальные границы HW5;
+- `docs/documents_index.md` — активные документы HW5.
+
+## Правило про Supabase
+
+Supabase/PostgreSQL упоминаются только как исходные технологии из оригинального задания. Для PetConnect они заменены на Firebase, потому что это согласовано с техническим заданием проекта.
