@@ -28,6 +28,8 @@ class ApiFeedRepository implements FeedRepository {
   PetPost _mapPost(Map<String, dynamic> json) {
     return PetPost(
       id: json['id'] as String,
+      // The API can return lean Firestore records; UI-specific fields keep
+      // sensible defaults until profile/image enrichment is added.
       petId: json['petId'] as String? ?? '',
       petName: json['petName'] as String? ?? 'Питомец',
       authorName: json['authorName'] as String? ?? 'Владелец',

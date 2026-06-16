@@ -20,11 +20,9 @@ final feedRepositoryProvider = Provider<FeedRepository>((ref) {
 
 final feedControllerProvider =
     StateNotifierProvider<FeedController, AsyncValue<List<PetPost>>>((ref) {
-  final useFirebaseBackend =
-      ref.watch(backendConfigProvider).useFirebaseBackend;
   final controller = FeedController(
     repository: ref.watch(feedRepositoryProvider),
-    loadOnStart: useFirebaseBackend,
+    loadOnStart: ref.watch(backendConfigProvider).useFirebaseBackend,
   );
 
   return controller;
@@ -53,17 +51,8 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   List<PetPost> _posts;
   final FeedRepository _repository;
 
-  Future<void> refresh({bool shouldFail = false}) async {
+  Future<void> refresh() async {
     state = const AsyncValue.loading();
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-
-    if (shouldFail) {
-      state = AsyncValue.error(
-        Exception('Не удалось обновить ленту. Попробуйте позже.'),
-        StackTrace.current,
-      );
-      return;
-    }
 
     state = await AsyncValue.guard(() async {
       final posts = await _repository.fetchPosts();

@@ -280,3 +280,33 @@ flutter test
 ```
 
 Результат: analyzer без замечаний, Flutter tests прошли, включая `test/core/network/api_client_test.dart`.
+
+## 12. Feed screen backend integration
+
+Codex интегрировал экран ленты с repository layer и Cloud Functions HTTP API, сохранив mock fallback:
+
+- `FeedRepository` остается единым domain-контрактом для `fetchPosts`, `createPost` и `toggleLike`;
+- `ApiFeedRepository` использует `ApiClient` для `GET /posts`, `POST /posts` и `POST /posts/:postId/like`;
+- `MockFeedRepository` сохранен для локального fallback, тестов и режима `USE_FIREBASE_BACKEND=false`;
+- `feedRepositoryProvider` выбирает `ApiFeedRepository` только при `USE_FIREBASE_BACKEND=true`, иначе использует mock repository;
+- `FeedController.refresh()` теперь проверяет реальную ошибку repository/backend через `AsyncValue.guard`, без искусственного `shouldFail`;
+- `FeedScreen` продолжает использовать `AsyncContentView` и покрывает loading, error с retry, empty и success states;
+- `AsyncContentView` показывает `ApiException.message`, чтобы backend errors отображались дружелюбно, без технического `ApiException(...)`;
+- `toggleLike` сохраняет optimistic UI update и синхронизирует результат с backend через repository.
+
+Endpoint для комментариев в `docs/api_spec.md` и `functions/src/routes/posts.ts` пока не описан. Поэтому `addComment()` оставлен локальной mock/fallback-операцией на уровне `FeedController`; backend-реализация комментариев зафиксирована как next step после добавления `POST /posts/:postId/comments`.
+
+Проверка:
+
+```bash
+dart format lib/core/widgets/async_content_view.dart lib/features/feed/data/api_feed_repository.dart lib/features/feed/application/feed_controller.dart test/features/feed/feed_controller_test.dart test/features/feed/api_feed_repository_test.dart
+flutter test test/features/feed
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter test test/features/feed` — 16 feed-тестов прошли;
+- `flutter analyze` — `No issues found!`;
+- `flutter test` — 27 тестов прошли.

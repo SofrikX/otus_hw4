@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../network/api_error.dart';
 import 'empty_state.dart';
 import 'error_state.dart';
 
@@ -42,6 +43,10 @@ class AsyncContentView<T> extends StatelessWidget {
   }
 
   String _friendlyMessage(Object error) {
+    if (error is ApiException) {
+      return error.message;
+    }
+
     final message = error.toString().replaceFirst('Exception: ', '');
     if (message.trim().isEmpty) {
       return 'Проверьте подключение и попробуйте еще раз.';
