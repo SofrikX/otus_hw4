@@ -1,10 +1,10 @@
-# AI Workflow — PetConnect HW5 через OpenAI Codex
+# AI Workflow - PetConnect HW5 через OpenAI Codex
 
 ## Используемый AI-агент
 
 OpenAI Codex.
 
-Codex используется как Technical Writer, Flutter Architect, Firebase Backend Engineer, Test Engineer и AI Workflow Engineer.
+Codex используется как Technical Writer, Flutter Architect, Supabase Backend Architect, Test Engineer и AI Workflow Engineer.
 
 ## Основные файлы agent workflow
 
@@ -12,14 +12,15 @@ Codex используется как Technical Writer, Flutter Architect, Fireb
 |---|---|
 | `AGENTS.md` | Постоянные инструкции для Codex |
 | `docs/documents_index.md` | Навигация по документации HW5 |
-| `docs/current_homework_scope.md` | Scope ДЗ 5 и Firebase mapping |
+| `docs/current_homework_scope.md` | Scope ДЗ 5 и Supabase decision |
 | `docs/ai_agent_rules.md` | Расширенные правила разработки |
-| `docs/technical_specification.md` | Исходное ТЗ PetConnect с Firebase-архитектурой |
+| `docs/technical_specification.md` | Историческое ТЗ PetConnect, где backend был описан через Firebase |
 | `docs/user_stories.md` | Пользовательские сценарии для frontend/backend операций |
 | `docs/error_handling.md` | Негативные сценарии и сообщения ошибок |
 | `docs/prompt_engineering_from_dz2.md` | Техники и шаблоны промптов из ДЗ 2 |
 | `prompts.md` | Журнал фактически используемых промптов |
 | `development_report.md` | Отчет о процессе разработки |
+| `backend_documentation.md` | Архитектура Supabase backend |
 | `submission_checklist.md` | Чек-лист студента перед сдачей |
 
 ## Процесс
@@ -31,20 +32,34 @@ OpenAI Codex читает AGENTS.md
   ↓
 Codex выбирает документы через docs/documents_index.md
   ↓
-Codex анализирует HW5 scope и ТЗ PetConnect
+Codex анализирует HW5 scope, user stories и предыдущую Firebase-ветку
   ↓
-Codex проектирует Firebase backend
+Codex фиксирует Architecture Decision: Firebase to Supabase
   ↓
-Codex предлагает план изменений
+Codex проектирует Supabase backend: PostgreSQL, RLS, Storage, API
   ↓
-Codex меняет документацию, Firebase config, backend или Flutter layer
+Codex меняет документацию или repository layer без изменения UI
   ↓
-Запускаются Flutter, Functions и emulator-проверки
+Запускаются Flutter checks и Supabase validation checks, когда migrations добавлены
   ↓
-Codex анализирует логи и исправляет ошибки
+Codex анализирует ошибки и фиксирует решения
   ↓
 Результат фиксируется в prompts.md и development_report.md
 ```
+
+## Architecture Decision: Firebase to Supabase
+
+Первичная Firebase-ветка была логичной для прошлого ТЗ, но не стала финальным production-решением ДЗ 5. Причина - Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan.
+
+Supabase выбран как текущий backend, потому что:
+
+- он прямо предложен исходным заданием;
+- Free Tier подходит для учебного deployment;
+- PostgreSQL schema дает явную структуру данных;
+- RLS заменяет Firestore Rules;
+- PostgREST auto REST API заменяет Cloud Functions API для MVP;
+- Supabase Storage заменяет Firebase Storage;
+- Flutter SDK позволяет сохранить существующую архитектуру с repositories/controllers.
 
 ## Этапы работы
 
@@ -56,113 +71,110 @@ Codex читает:
 - `docs/documents_index.md`;
 - `docs/current_homework_scope.md`;
 - `docs/technical_specification.md`;
+- `docs/project_description.md`;
 - `docs/user_stories.md`;
 - `docs/error_handling.md`.
 
-Результат: подтверждено, что HW5 использует Firebase вместо Supabase/PostgreSQL, потому что Firebase уже выбран в ТЗ PetConnect.
+Результат: подтверждается, какие части старого Firebase ТЗ являются историей, а какие user stories остаются обязательными для Supabase backend.
 
-### 2. Проектирование Firestore schema
+### 2. PostgreSQL schema design
 
 Codex проектирует:
 
-- коллекции `users`, `pets`, `posts`, `comments`, `chats`, `messages`, `walks`;
-- связи между владельцами, питомцами, постами, чатами и прогулками;
-- поля документов и типы данных;
-- индексы для ленты, чатов и прогулок;
-- ограничения, которые должны быть проверены rules или Cloud Functions.
+- таблицы `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages`;
+- primary keys, foreign keys и unique constraints;
+- timestamps и soft delete поля;
+- связи между пользователями, питомцами, постами, прогулками и чатами;
+- индексы для ленты, питомцев пользователя, прогулок и чатов.
 
-Результат: схема Firestore согласована с user stories и frontend-моделями.
+### 3. Row Level Security
 
-### 3. Проектирование Firebase Storage
+Codex готовит RLS model:
+
+- пользователь обновляет только свой `profiles` row;
+- владелец управляет своими `pets`;
+- автор управляет своими `posts`;
+- пользователь управляет только своим row в `post_likes`;
+- пользователь присоединяет к прогулке только себя;
+- участники читают только свои `chats` и `messages`.
+
+### 4. Supabase Storage
 
 Codex описывает:
 
-- пути для аватаров пользователей;
-- пути для фото питомцев;
-- пути для изображений постов;
-- ограничения по MIME type и размеру файла;
-- связь Storage paths с Firestore documents.
+- buckets `avatars`, `pet-photos`, `post-images`;
+- policies чтения и записи;
+- связь Storage paths с владельцем файла;
+- запрет service role key в Flutter-клиенте и git.
 
-Результат: Storage используется только для пользовательских изображений, без секретов и внешних API.
+### 5. API operations
 
-### 4. Генерация Security Rules
+Codex проектирует минимум 3 backend/API операции через Supabase client или auto REST:
 
-Codex готовит Firestore и Storage rules:
+- создание питомца;
+- создание поста;
+- лайк/анлайк поста;
+- загрузка ленты;
+- загрузка прогулок;
+- присоединение к прогулке.
 
-- неавторизованные пользователи не получают доступ к приватным данным;
-- пользователь редактирует только свои `users/{uid}` и `pets`;
-- посты создаются авторизованным автором;
-- чаты и сообщения видны только участникам;
-- защищенные counters и join/like операции не изменяются напрямую клиентом;
-- Storage upload разрешен только владельцу соответствующего пути.
+Если для counters нужна атомарность, Codex предлагает PostgreSQL RPC/trigger как отдельное расширение, а не обязательный Cloud Functions слой.
 
-Результат: правила безопасности становятся частью backend-реализации, а не устным допущением.
+### 6. Frontend integration
 
-### 5. Генерация Cloud Functions API
-
-Codex проектирует и реализует минимум 3 backend/API операции, например:
-
-- `postsToggleLike`;
-- `commentsCreate`;
-- `walksJoin`;
-- `messagesSend`;
-- `postsCreate`.
-
-Для операций, где важны counters, validation или права доступа, использовать Cloud Functions и Firestore transactions/batches.
-
-### 6. Интеграция frontend-backend
-
-Codex переводит frontend на repository layer:
+Codex сохраняет текущий UI и бизнес-логику:
 
 - domain содержит repository interfaces;
-- data содержит Firebase и mock implementations;
+- data содержит Supabase и mock implementations;
 - application содержит Riverpod providers/controllers;
-- presentation не знает о Firebase SDK;
-- mock data сохраняется для тестов и локального fallback.
+- presentation не знает о Supabase SDK;
+- mock data сохраняется для тестов и fallback.
 
-Результат: UI остается тестируемым, а backend можно подменять в ProviderScope.
-
-### 7. AI-анализ логов
+### 7. AI-анализ ошибок
 
 Codex анализирует:
 
 - ошибки `flutter analyze`;
 - ошибки `flutter test`;
-- ошибки TypeScript/ESLint/Jest в `functions`;
-- ошибки `firebase emulators:start`;
-- ошибки `firebase emulators:exec`;
-- ошибки Security Rules tests;
-- runtime-логи Cloud Functions emulator.
+- ошибки Supabase SQL/RLS policies;
+- ошибки auth/session в Flutter;
+- ошибки permission denied из RLS;
+- несовпадение frontend DTO и SQL schema.
 
 Для каждой ошибки фиксируются симптом, причина, исправление и результат проверки.
 
-### 8. Локальная проверка
+### 8. Проверка
 
-Основные команды:
+Flutter:
 
 ```bash
 flutter pub get
 dart format .
 flutter analyze
 flutter test
-npm test --prefix functions
-firebase emulators:exec "npm test --prefix functions"
-firebase emulators:start
 flutter run -d chrome
 ```
 
-Если production deploy Cloud Functions требует Firebase Blaze plan, локальный emulator-сценарий остается основным способом проверки ДЗ.
+Supabase после добавления CLI/migrations:
+
+```bash
+supabase db lint
+supabase db reset
+```
+
+Если Supabase CLI еще не подключен, SQL/RLS проверяется через Supabase dashboard SQL editor и ручные сценарии.
 
 ### 9. Документирование результата
 
 Codex обновляет:
 
-- `prompts.md` — фактические prompts и результаты;
-- `development_report.md` — архитектура, проблемы, решения, проверки;
-- `README.md` — запуск Flutter и Firebase emulators;
-- `docs/current_homework_scope.md` — актуальные границы HW5;
-- `docs/documents_index.md` — активные документы HW5.
+- `prompts.md` - фактические prompts и результаты;
+- `development_report.md` - архитектура, проблемы, решения, проверки;
+- `README.md` - запуск Flutter и Supabase decision;
+- `backend_documentation.md` - PostgreSQL/RLS/Storage/API;
+- `docs/current_homework_scope.md` - актуальные границы HW5;
+- `docs/documents_index.md` - активные документы HW5.
 
-## Правило про Supabase
+## Правило про Firebase
 
-Supabase/PostgreSQL упоминаются только как исходные технологии из оригинального задания. Для PetConnect они заменены на Firebase, потому что это согласовано с техническим заданием проекта.
+Firebase больше не описывается как выбранный production backend для текущего ДЗ. Он сохраняется в документации как исследованный вариант и источник уже выполненного анализа, от которого отказались из-за ограничения Cloud Functions Blaze/pay-as-you-go.

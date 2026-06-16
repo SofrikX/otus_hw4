@@ -1,715 +1,366 @@
 # PetConnect Backend Documentation для ДЗ 5
 
-## 1. Название и цель
+## 1. Цель
 
-PetConnect - Flutter-приложение для владельцев домашних животных. Backend-часть ДЗ 5 реализует проверяемую локальную инфраструктуру для интеграции frontend MVP с Firebase.
+PetConnect - Flutter-приложение для владельцев домашних животных. Backend-часть ДЗ 5 описывает переход frontend MVP к Supabase Free Tier как текущему backend-решению для учебного production deployment.
 
-Цель документа - описать архитектуру backend, схему данных, модель безопасности, Cloud Functions API, локальный запуск через Firebase Emulator Suite, production deploy, тестирование и процесс разработки с OpenAI Codex.
+Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и план миграции. Supabase project еще не считается созданным, реальные URL и keys в репозиторий не добавляются.
 
-## 2. Почему Firebase вместо Supabase/PostgreSQL
+## 2. Architecture Decision: Firebase to Supabase
 
-Оригинальное задание допускает Supabase или self-hosted PostgreSQL. В PetConnect выбран Firebase, потому что Firebase уже зафиксирован в технической спецификации проекта и лучше соответствует текущей архитектуре Flutter MVP.
+Оригинальное задание допускает Supabase или self-hosted PostgreSQL. В предыдущих документах PetConnect backend был адаптирован под Firebase, потому что Firebase Auth, Firestore, Storage и Cloud Functions были указаны в технической спецификации из прошлого этапа.
 
-Соответствие требованиям ДЗ сохраняется через Firebase-эквиваленты:
+Firebase-ветка дала полезный результат:
 
-| Требование исходного ДЗ | Реализация PetConnect |
-|---|---|
-| Auth | Firebase Auth |
-| Database schema | Cloud Firestore collections, indexes, seed data |
-| SQL/RLS security | Firebase Security Rules |
-| Storage | Firebase Storage |
-| Backend API | Cloud Functions HTTPS API |
-| Local validation | Firebase Emulator Suite |
+- были описаны сущности users, pets, posts, comments, likes, walks, chats и messages;
+- был выделен repository layer во Flutter;
+- были спроектированы защищенные операции для лайков, создания постов и присоединения к прогулкам;
+- была проверена идея локального backend workflow через emulators.
 
-Такой выбор не меняет цель ДЗ: backend schema, API operations, security model, local validation и frontend integration остаются обязательными.
+На этапе подготовки production deployment обнаружено ограничение: Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan. Для учебного проекта это ухудшает воспроизводимость и противоречит цели бесплатной сдачи.
 
-## 3. Архитектура
+Поэтому текущий backend-стек ДЗ 5 переводится на Supabase Free Tier:
 
-### Flutter frontend
+- Supabase Auth;
+- PostgreSQL database;
+- Row Level Security;
+- Supabase Storage;
+- auto REST API через PostgREST;
+- Flutter SDK через `supabase_flutter`.
 
-Frontend построен на Flutter, Dart, Riverpod, go_router и Material 3. Структура feature-first сохраняет разделение:
+Это не откат, а осознанное архитектурное решение: Supabase соответствует исходному заданию, сохраняет бесплатный production backend и дает проверяемую SQL/RLS-модель.
 
-```text
-lib/app
-lib/core
-lib/features/auth
-lib/features/feed
-lib/features/pets
-lib/features/walks
-lib/features/chat
-lib/features/home
-```
+## 3. Firebase-to-Supabase Mapping
 
-UI не обращается к Firebase напрямую. Экраны работают через Riverpod controllers/providers, которые используют repository interfaces. Для локального fallback и тестов сохранены mock repositories.
+| Firebase-прототип | Supabase-решение | Что меняется |
+|---|---|---|
+| Firebase Auth | Supabase Auth | Источник `uid` переносится в `auth.users`, Flutter получает session через Supabase client |
+| Cloud Firestore | PostgreSQL | Документы и подколлекции становятся таблицами и связями |
+| Firestore Security Rules | Row Level Security | Доступ описывается SQL policies через `auth.uid()` |
+| Cloud Functions API | Supabase auto REST API / Supabase client | MVP operations идут через PostgREST и SDK; RPC добавляется только при необходимости транзакционной логики |
+| Firebase Storage | Supabase Storage | Buckets и policies заменяют Firebase Storage paths/rules |
+| Firebase Emulator Suite | Supabase project/local validation | Для локальной разработки можно добавить Supabase CLI; production-free backend держится на Free Tier |
 
-### Cloud Functions API
-
-Cloud Functions экспортирует HTTPS-функцию:
+## 4. Target Architecture
 
 ```text
-api
+Flutter UI
+  -> Riverpod controllers/providers
+  -> repository interfaces
+  -> Supabase or mock repositories
+  -> supabase_flutter
+  -> Supabase Auth / PostgREST / Storage
+  -> PostgreSQL tables protected by RLS
 ```
 
-Express-приложение находится в `functions/src/app.ts`, маршруты разделены по ресурсам:
+UI не должен обращаться к Supabase напрямую. Экраны работают через Riverpod controllers/providers, которые используют repository interfaces. Mock repositories сохраняются для тестов, local fallback и безопасной постепенной миграции.
 
-```text
-functions/src/routes/pets.ts
-functions/src/routes/posts.ts
-functions/src/routes/walks.ts
-```
+## 5. Target PostgreSQL Schema
 
-Репозитории Cloud Functions используют Firebase Admin SDK и Cloud Firestore:
+### profiles
 
-```text
-functions/src/repositories/petsRepository.ts
-functions/src/repositories/postsRepository.ts
-functions/src/repositories/walksRepository.ts
-```
+Публичный профиль пользователя, связанный с `auth.users.id`.
 
-### Firebase Auth
-
-Firebase Auth является источником идентичности пользователя. Protected endpoints принимают Firebase ID token в заголовке:
-
-```http
-Authorization: Bearer <firebase-id-token>
-```
-
-Backend проверяет токен через Firebase Admin SDK и использует `uid` как доверенный идентификатор пользователя.
-
-### Cloud Firestore
-
-Cloud Firestore хранит пользователей, питомцев, посты, комментарии, лайки, прогулки, чаты и сообщения. Защищенные счетчики обновляются через Cloud Functions или транзакции.
-
-### Firebase Storage
-
-Firebase Storage хранит изображения пользователей, питомцев и постов. Firestore хранит URL и metadata изображений.
-
-### Security Rules
-
-Firestore и Storage rules являются частью backend-реализации. Они ограничивают клиентский доступ по `request.auth.uid`, owner/author rules, участникам чатов, MIME type и размеру файлов.
-
-## 4. Firestore schema
-
-Основные коллекции:
-
-```text
-users/{uid}
-pets/{petId}
-posts/{postId}
-posts/{postId}/comments/{commentId}
-posts/{postId}/likes/{uid}
-walks/{walkId}
-chats/{chatId}
-chats/{chatId}/messages/{messageId}
-```
-
-### users
-
-Профиль владельца питомца, связанный с Firebase Auth `uid`.
-
-Ключевые поля: `id`, `displayName`, `email`, `avatarUrl`, `bio`, `city`, `createdAt`, `updatedAt`.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Совпадает с `auth.users.id` |
+| `display_name` | `text not null` | Имя пользователя |
+| `email` | `text` | Email для собственного профиля |
+| `avatar_url` | `text` | Ссылка на изображение |
+| `bio` | `text` | Описание |
+| `city` | `text` | Город |
+| `created_at` | `timestamptz` | Дата создания |
+| `updated_at` | `timestamptz` | Дата обновления |
 
 ### pets
 
 Профили питомцев.
 
-Ключевые поля: `id`, `ownerId`, `ownerName`, `name`, `animalType`, `breed`, `age`, `description`, `photoUrl`, `photoEmoji`, `createdAt`, `updatedAt`.
-
-`ownerId` связан с `users/{uid}`. Владелец управляет созданием, обновлением и удалением питомца.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор питомца |
+| `owner_id` | `uuid references profiles(id)` | Владелец |
+| `owner_name` | `text` | Денормализованное имя владельца для карточек |
+| `name` | `text not null` | Имя питомца |
+| `animal_type` | `text not null` | Вид животного |
+| `breed` | `text` | Порода |
+| `age` | `int` | Возраст |
+| `description` | `text` | Описание |
+| `photo_url` | `text` | Фото |
+| `photo_emoji` | `text` | Fallback-эмодзи |
+| `created_at` | `timestamptz` | Дата создания |
+| `updated_at` | `timestamptz` | Дата обновления |
 
 ### posts
 
 Публикации в социальной ленте.
 
-Ключевые поля: `id`, `authorId`, `authorName`, `petId`, `petName`, `petPhotoUrl`, `petEmoji`, `text`, `imageUrls`, `imageEmoji`, `likesCount`, `commentsCount`, `visibility`, `createdAt`, `updatedAt`, `deletedAt`.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор поста |
+| `author_id` | `uuid references profiles(id)` | Автор |
+| `author_name` | `text` | Имя автора для ленты |
+| `pet_id` | `uuid references pets(id)` | Питомец |
+| `pet_name` | `text` | Имя питомца для ленты |
+| `pet_photo_url` | `text` | Фото питомца |
+| `pet_emoji` | `text` | Fallback-эмодзи |
+| `text` | `text` | Текст поста |
+| `image_urls` | `text[]` | Изображения |
+| `image_emoji` | `text` | Fallback-изображение |
+| `likes_count` | `int default 0` | Счетчик лайков |
+| `comments_count` | `int default 0` | Счетчик комментариев |
+| `visibility` | `text default 'public'` | Видимость |
+| `created_at` | `timestamptz` | Дата создания |
+| `updated_at` | `timestamptz` | Дата обновления |
+| `deleted_at` | `timestamptz` | Soft delete |
 
-`likesCount` и `commentsCount` не должны изменяться клиентом напрямую.
+### post_likes
 
-### posts/{postId}/comments
+Уникальный лайк пользователя к посту.
 
-Комментарии к публикациям.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор лайка |
+| `post_id` | `uuid references posts(id)` | Пост |
+| `user_id` | `uuid references profiles(id)` | Пользователь |
+| `created_at` | `timestamptz` | Дата лайка |
 
-Ключевые поля: `id`, `postId`, `authorId`, `authorName`, `authorAvatarUrl`, `text`, `createdAt`, `updatedAt`, `deletedAt`.
+Unique: `(post_id, user_id)`.
 
-Текст комментария должен быть непустым и не длиннее 500 символов.
+### comments
 
-### posts/{postId}/likes
+Комментарии к постам.
 
-Техническая подколлекция для idempotent like/unlike.
-
-Document id равен `uid`, поля: `userId`, `postId`, `createdAt`. Это предотвращает повторный лайк одним пользователем.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор комментария |
+| `post_id` | `uuid references posts(id)` | Пост |
+| `author_id` | `uuid references profiles(id)` | Автор |
+| `author_name` | `text` | Имя автора |
+| `author_avatar_url` | `text` | Аватар автора |
+| `text` | `text not null` | Комментарий |
+| `created_at` | `timestamptz` | Дата создания |
+| `updated_at` | `timestamptz` | Дата обновления |
+| `deleted_at` | `timestamptz` | Soft delete |
 
 ### walks
 
-Прогулки и встречи владельцев питомцев.
+Прогулки и встречи владельцев.
 
-Ключевые поля: `id`, `creatorId`, `organizerName`, `title`, `place`, `geo`, `startsAt`, `description`, `participantIds`, `participantsCount`, `status`, `createdAt`, `updatedAt`.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор прогулки |
+| `creator_id` | `uuid references profiles(id)` | Организатор |
+| `organizer_name` | `text` | Имя организатора |
+| `title` | `text not null` | Название |
+| `place` | `text not null` | Место |
+| `latitude` | `double precision` | Широта |
+| `longitude` | `double precision` | Долгота |
+| `scheduled_at` | `timestamptz not null` | Дата и время |
+| `description` | `text` | Описание |
+| `participants_count` | `int default 0` | Счетчик участников |
+| `status` | `text default 'active'` | Статус |
+| `created_at` | `timestamptz` | Дата создания |
+| `updated_at` | `timestamptz` | Дата обновления |
 
-`participantIds` используется для вычисления `isJoined` во frontend.
+### walk_participants
 
-### chats
+Участники прогулок.
 
-Metadata диалогов.
+| Поле | Тип | Назначение |
+|---|---|---|
+| `id` | `uuid primary key` | Идентификатор участия |
+| `walk_id` | `uuid references walks(id)` | Прогулка |
+| `user_id` | `uuid references profiles(id)` | Участник |
+| `created_at` | `timestamptz` | Дата присоединения |
 
-Ключевые поля: `id`, `participantIds`, `participantNames`, `petNames`, `lastMessageText`, `lastMessageSenderId`, `lastMessageAt`, `unreadCounts`, `createdAt`, `updatedAt`.
+Unique: `(walk_id, user_id)`.
 
-### chats/{chatId}/messages
+### chats, chat_participants, messages
 
-Сообщения внутри чата.
+Чаты проектируются отдельными таблицами:
 
-Ключевые поля: `id`, `chatId`, `senderId`, `senderName`, `text`, `status`, `createdAt`, `updatedAt`.
+- `chats`: `id`, `last_message_text`, `last_message_sender_id`, `last_message_at`, `created_at`, `updated_at`;
+- `chat_participants`: `chat_id`, `user_id`, `display_name`, `pet_name`, `unread_count`;
+- `messages`: `id`, `chat_id`, `sender_id`, `sender_name`, `text`, `status`, `created_at`, `updated_at`.
 
-Читать и создавать сообщения могут только участники чата.
+RLS для чатов должна разрешать чтение и запись только участникам.
 
-### Индексы
+## 6. Security Model
 
-В `firestore.indexes.json` подготовлены composite indexes:
+Security model строится на Supabase Auth, PostgreSQL Row Level Security и Storage policies.
 
-| Сценарий | Index |
+Базовые правила:
+
+- `profiles`: пользователь создает и обновляет только свой профиль; публичные поля можно читать авторизованным пользователям;
+- `pets`: читать могут авторизованные пользователи, создавать/изменять/удалять может только `owner_id = auth.uid()`;
+- `posts`: читать публичные активные посты могут авторизованные пользователи, создавать и изменять может только автор;
+- `post_likes`: пользователь может создать или удалить только свой лайк, уникальность обеспечивается primary key;
+- `comments`: пользователь создает только свой комментарий; удалять может автор комментария или автор поста;
+- `walks`: читать активные прогулки могут авторизованные пользователи; создавать может авторизованный пользователь; изменять может организатор;
+- `walk_participants`: пользователь может присоединить только себя к активной прогулке;
+- `chats/messages`: доступ только участникам чата.
+
+Пример политики:
+
+```sql
+create policy "Users update own profile"
+on profiles
+for update
+using (id = auth.uid())
+with check (id = auth.uid());
+```
+
+## 7. API Operations
+
+Supabase автоматически предоставляет REST API через PostgREST. Flutter-приложение может выполнять операции через `supabase_flutter`, не добавляя отдельный Cloud Functions слой.
+
+Минимальные операции ДЗ:
+
+| Операция | Supabase implementation |
 |---|---|
-| Лента публичных постов | `posts: visibility ASC, createdAt DESC` |
-| Посты питомца | `posts: petId ASC, createdAt DESC` |
-| Посты автора | `posts: authorId ASC, createdAt DESC` |
-| Питомцы пользователя | `pets: ownerId ASC, createdAt DESC` |
-| Активные прогулки | `walks: status ASC, startsAt ASC` |
-| Прогулки пользователя | `walks: participantIds ARRAY_CONTAINS, startsAt ASC` |
-| Чаты пользователя | `chats: participantIds ARRAY_CONTAINS, lastMessageAt DESC` |
+| Создать профиль питомца | `insert` в `pets` с RLS `owner_id = auth.uid()` |
+| Создать пост | `insert` в `posts` с RLS `author_id = auth.uid()` |
+| Поставить/снять лайк | `insert/delete` в `post_likes`, счетчик обновлять через view/RPC/trigger при необходимости |
+| Получить ленту | `select` из `posts` с сортировкой `created_at desc` |
+| Получить прогулки | `select` из `walks` со статусом `active` |
+| Присоединиться к прогулке | `insert` в `walk_participants`, счетчик обновлять транзакционно при необходимости |
 
-## 5. Security model
+Если обычного REST/SDK flow недостаточно для атомарных counters, добавить PostgreSQL function/RPC, например `toggle_post_like(post_id uuid)` или `join_walk(walk_id uuid)`. Такие RPC должны быть отдельной migration и покрываться RLS/security review. В текущей документации не утверждается, что RPC уже создана.
 
-Security model строится на Firebase Auth, Firestore Security Rules, Storage Rules и backend validation в Cloud Functions.
+## 8. Storage
 
-### Firestore Rules
+Целевые buckets:
 
-Правила находятся в `firestore.rules`.
-
-Основные helpers:
-
-| Helper | Назначение |
+| Bucket | Назначение |
 |---|---|
-| `signedIn()` | Проверяет наличие `request.auth` |
-| `isOwner(ownerId)` | Проверяет совпадение `ownerId` и `request.auth.uid` |
-| `isAuthor(authorId)` | Проверяет совпадение `authorId` и `request.auth.uid` |
-| `isWalkJoin()` | Разрешает строго ограниченный join-сценарий прогулки |
-| `isChatParticipant()` | Проверяет участие пользователя в чате |
+| `avatars` | Аватары пользователей |
+| `pet-photos` | Фото питомцев |
+| `post-images` | Изображения постов |
 
-Основные правила:
+Storage policies:
 
-- неавторизованные пользователи не получают доступ к данным приложения через client SDK;
-- пользователь создает и обновляет только свой `users/{uid}`;
-- питомца может создать, изменить и удалить только владелец;
-- пост создает и изменяет только автор;
-- клиент не может напрямую менять `likesCount` и `commentsCount`;
-- лайк создается и удаляется только для собственного `uid`;
-- join прогулки разрешен только для активной прогулки и только с увеличением `participantsCount` на 1;
-- чаты и сообщения доступны только участникам.
+- читать изображения могут авторизованные пользователи;
+- загружать и удалять файл может владелец соответствующего пути;
+- MIME type должен быть изображением;
+- размер файла ограничивается настройками bucket/project;
+- service role key нельзя использовать во Flutter-клиенте и нельзя коммитить.
 
-### Storage Rules
+## 9. Supabase Project Setup
 
-Правила находятся в `storage.rules`.
+### Dashboard steps
 
-Разрешенные пути:
+1. Создать Supabase project на Free Tier.
+2. Открыть project после завершения provisioning.
+3. В Connect/API settings скопировать Project URL.
+4. Скопировать anon public key или publishable key для client-side операций.
+5. Не копировать service role key в Flutter, `.env.example`, README или screenshots.
+6. Открыть SQL Editor и применить migration, если CLI не используется.
+7. Проверить таблицы, RLS policies и Storage buckets.
+
+### CLI steps
+
+Если Supabase CLI настроен:
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+Локальная проверка:
+
+```bash
+supabase db lint
+supabase db reset
+```
+
+`supabase db push` применяет SQL migrations к linked project. `supabase db reset` используется для локальной базы и применяет `supabase/seed.sql`.
+
+## 10. Local Configuration
+
+Файл `.env.example` содержит только безопасные placeholders:
 
 ```text
-users/{userId}/{fileName}
-pets/{userId}/{petId}/{fileName}
-posts/{userId}/{postId}/{fileName}
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+USE_SUPABASE_BACKEND=true
 ```
 
-Ограничения:
+Реальные значения задаются локально через `.env` или через `--dart-define`.
 
-- чтение доступно авторизованным пользователям;
-- запись доступна только владельцу соответствующего `userId`;
-- файл должен иметь MIME type `image/*`;
-- размер файла должен быть меньше 10 MB;
-- все остальные пути закрыты.
-
-### Cloud Functions validation
-
-Cloud Functions выполняет серверную проверку операций, где важны права доступа, счетчики и транзакционность:
-
-- `POST /posts` проверяет `authorId == uid`;
-- `POST /pets` проверяет `ownerId == uid`;
-- `POST /posts/:postId/like` транзакционно создает или удаляет лайк и обновляет `likesCount`;
-- `POST /walks/:walkId/join` транзакционно добавляет пользователя в `participantIds` и обновляет `participantsCount`.
-
-## 6. API endpoints
-
-Base URL для локального emulator:
-
-```text
-http://127.0.0.1:5001/demo-petconnect/us-central1/api
-```
-
-Production URL формируется Firebase после deploy Cloud Functions.
-
-### GET /health
-
-Проверка доступности API.
-
-Ответ:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-### GET /pets
-
-Возвращает питомцев пользователя.
-
-Query parameters:
-
-| Name | Required | Description |
-|---|---|---|
-| `ownerId` | Да | Firebase Auth UID владельца |
-
-Auth на уровне HTTP middleware для этого read-only endpoint не требуется в MVP. Перед production-доступом публичность read endpoints должна быть подтверждена отдельно.
-
-### GET /pets/:petId
-
-Возвращает профиль питомца по document id.
-
-Ошибки:
-
-- `400 validation-error`, если `petId` пустой;
-- `404 not-found`, если питомец не найден.
-
-### POST /pets
-
-Создает профиль питомца.
-
-Auth: required.
-
-Валидация:
-
-- `ownerId` должен совпадать с Firebase Auth `uid`;
-- `ownerName`, `name`, `animalType` обязательны;
-- `name` не длиннее 50 символов;
-- `breed` не длиннее 80 символов;
-- `age` от 0 до 30;
-- `description` не длиннее 500 символов.
-
-### GET /posts
-
-Возвращает ленту постов, отсортированную по `createdAt desc`.
-
-Query parameters:
-
-| Name | Required | Description |
-|---|---|---|
-| `limit` | Нет | Целое число от 1 до 50, по умолчанию 20 |
-
-### POST /posts
-
-Создает пост.
-
-Auth: required.
-
-Валидация:
-
-- `authorId` должен совпадать с Firebase Auth `uid`;
-- `petId` обязателен;
-- `text` должен быть строкой не длиннее 1000 символов;
-- `imageUrls`, если передан, должен быть массивом строк.
-
-### POST /posts/:postId/like
-
-Переключает лайк текущего пользователя.
-
-Auth: required.
-
-Операция выполняется в Firestore transaction:
-
-- если лайка нет, создается `posts/{postId}/likes/{uid}` и `likesCount` увеличивается;
-- если лайк уже есть, документ лайка удаляется и `likesCount` уменьшается;
-- повторный вызов остается корректным для одного пользователя.
-
-### GET /walks
-
-Возвращает прогулки, отсортированные по `startsAt asc`.
-
-Query parameters:
-
-| Name | Required | Description |
-|---|---|---|
-| `limit` | Нет | Целое число от 1 до 50, по умолчанию 20 |
-
-### POST /walks/:walkId/join
-
-Добавляет текущего пользователя в прогулку.
-
-Auth: required.
-
-Операция выполняется в Firestore transaction:
-
-- прогулка должна существовать;
-- `status` должен быть `active`;
-- если пользователь уже участник, операция возвращает текущий joined-state;
-- если пользователь еще не участник, `participantIds` и `participantsCount` обновляются вместе.
-
-### Error model
-
-Все ошибки возвращаются в едином формате:
-
-```json
-{
-  "error": {
-    "code": "validation-error",
-    "message": "Human readable error message.",
-    "requestId": "1718520000000-abcd1234",
-    "details": [
-      {
-        "field": "petId",
-        "message": "Required string."
-      }
-    ]
-  }
-}
-```
-
-`details` добавляется для ошибок валидации и auth/access diagnostics, например
-`petId`, `ownerId`, `Authorization` или `body`. `requestId` возвращается во всех
-ошибках и попадает в Firebase Functions logs, чтобы QA мог связать ошибку в UI с
-конкретной записью backend-лога.
-
-Коды:
-
-| HTTP status | Code | Значение |
-|---|---|---|
-| 400 | `validation-error` | Некорректный запрос |
-| 401 | `unauthorized` | Нет Firebase ID token или token недействителен |
-| 403 | `forbidden` | Пользователь не может выполнить операцию |
-| 404 | `not-found` | Ресурс не найден |
-| 500 | `internal-error` | Неожиданная ошибка backend |
-
-## 7. Примеры запросов
-
-Перед protected запросами нужно получить Firebase ID token авторизованного пользователя и передать его в `Authorization`.
+Expected Flutter command:
 
 ```bash
-API_BASE_URL="http://127.0.0.1:5001/demo-petconnect/us-central1/api"
-FIREBASE_ID_TOKEN="<firebase-id-token>"
+flutter run -d chrome
+--dart-define=USE_SUPABASE_BACKEND=true
+--dart-define=SUPABASE_URL=
+--dart-define=SUPABASE_ANON_KEY=
 ```
 
-### Получить посты
-
-```bash
-curl -X GET "${API_BASE_URL}/posts?limit=20" \
-  -H "Accept: application/json"
-```
-
-### Создать пост
-
-```bash
-curl -X POST "${API_BASE_URL}/posts" \
-  -H "Authorization: Bearer ${FIREBASE_ID_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "authorId": "user-anya",
-    "authorName": "Аня",
-    "petId": "pet-bruno",
-    "petName": "Бруно",
-    "text": "Сегодня Бруно отлично погулял.",
-    "imageUrls": [
-      "https://storage.googleapis.com/petconnect/posts/user-anya/post-1/photo-1.jpg"
-    ]
-  }'
-```
-
-### Поставить или снять лайк
-
-```bash
-curl -X POST "${API_BASE_URL}/posts/post-1/like" \
-  -H "Authorization: Bearer ${FIREBASE_ID_TOKEN}" \
-  -H "Accept: application/json"
-```
-
-### Получить питомца
-
-```bash
-curl -X GET "${API_BASE_URL}/pets/pet-bruno" \
-  -H "Accept: application/json"
-```
-
-### Получить питомцев владельца
-
-```bash
-curl -X GET "${API_BASE_URL}/pets?ownerId=user-anya" \
-  -H "Accept: application/json"
-```
-
-### Создать питомца
-
-```bash
-curl -X POST "${API_BASE_URL}/pets" \
-  -H "Authorization: Bearer ${FIREBASE_ID_TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ownerId": "user-anya",
-    "ownerName": "Аня",
-    "name": "Бруно",
-    "animalType": "dog",
-    "breed": "Корги",
-    "age": 3,
-    "description": "Обожает мячики и прогулки.",
-    "photoEmoji": "dog"
-  }'
-```
-
-### Получить прогулки
-
-```bash
-curl -X GET "${API_BASE_URL}/walks?limit=20" \
-  -H "Accept: application/json"
-```
-
-### Присоединиться к прогулке
-
-```bash
-curl -X POST "${API_BASE_URL}/walks/walk-1/join" \
-  -H "Authorization: Bearer ${FIREBASE_ID_TOKEN}" \
-  -H "Accept: application/json"
-```
-
-### Пример ошибки без token
-
-```json
-{
-  "error": {
-    "code": "unauthorized",
-    "message": "Firebase ID token is required."
-  }
-}
-```
-
-## 8. Локальный запуск через Firebase Emulator Suite
-
-### Установить зависимости
-
-Flutter:
-
-```bash
-flutter pub get
-```
-
-Cloud Functions:
-
-```bash
-npm install --prefix functions
-```
-
-### Запустить emulators
-
-```bash
-firebase emulators:start --project demo-petconnect
-```
-
-Порты из `firebase.json`:
-
-| Service | Port |
-|---|---:|
-| Auth | 9099 |
-| Firestore | 8080 |
-| Functions | 5001 |
-| Storage | 9199 |
-| Emulator UI | 4000 |
-
-Emulator UI:
-
-```text
-http://127.0.0.1:4000
-```
-
-### Наполнить Firestore Emulator seed-данными
-
-В отдельном терминале:
-
-```bash
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
-```
-
-Seed создает пользователей, питомцев, посты, комментарии, лайки, прогулки, чат и сообщения. Скрипт не запускается без `FIRESTORE_EMULATOR_HOST`, чтобы не записать данные в production.
-
-### Запустить Flutter Web с backend
+Shell-friendly variant:
 
 ```bash
 flutter run -d chrome \
-  --dart-define=USE_FIREBASE_AUTH_EMULATOR=true \
-  --dart-define=USE_FIREBASE_BACKEND=true \
-  --dart-define=FIREBASE_PROJECT_ID=demo-petconnect \
-  --dart-define=API_BASE_URL=http://127.0.0.1:5001/demo-petconnect/us-central1/api
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_ANON_KEY=<your-public-client-key>
 ```
 
-Если `USE_FIREBASE_BACKEND=false`, feed, pets и walks используют mock repositories.
+## 11. Production Backend URL
 
-## 9. Production deploy
-
-Production deploy выполняется только после локальной проверки Flutter, Functions, Firestore Rules и Storage Rules.
-
-### Подготовить Firebase project
-
-```bash
-firebase login
-firebase projects:list
-cp .firebaserc.example .firebaserc
-```
-
-В `.firebaserc` нужно указать реальный Firebase project id.
-
-### Проверить активный project
-
-```bash
-firebase use
-```
-
-### Deploy rules и indexes
-
-```bash
-firebase deploy --only firestore:rules,firestore:indexes,storage
-```
-
-### Deploy Cloud Functions
-
-```bash
-firebase deploy --only functions
-```
-
-### Полный deploy Firebase backend
-
-```bash
-firebase deploy
-```
-
-Cloud Functions production deploy может потребовать Firebase Blaze plan. Для сдачи ДЗ основной проверяемый сценарий работает локально через Firebase Emulator Suite.
-
-## 10. Переменные окружения и защита секретов
-
-В репозитории допустимы только безопасные шаблоны:
+Production backend URL для PetConnect - это Supabase Project URL:
 
 ```text
-.env.example
-.firebaserc.example
+https://<project-ref>.supabase.co
 ```
 
-Пример `.env.example`:
+REST API доступен по:
 
 ```text
-FIREBASE_PROJECT_ID=your-firebase-project-id
-FIREBASE_REGION=us-central1
-API_BASE_URL=http://127.0.0.1:5001/your-firebase-project-id/us-central1
-USE_FIREBASE_BACKEND=false
+https://<project-ref>.supabase.co/rest/v1
 ```
 
-Для Flutter runtime используются `--dart-define`:
+В репозитории не указывается реальный `<project-ref>`. Проверяющий или владелец project подставляет свои значения локально.
 
-| Переменная | Назначение |
-|---|---|
-| `USE_FIREBASE_AUTH_EMULATOR` | Подключает Firebase Auth Emulator |
-| `USE_FIREBASE_BACKEND` | Включает API repositories вместо mock repositories |
-| `FIREBASE_PROJECT_ID` | Project id для Firebase initialization |
-| `API_BASE_URL` | Base URL Cloud Functions API |
-| `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID` | Production Firebase options при необходимости |
+## 12. Environment and Secrets
+
+В репозитории допустимы только placeholders:
+
+```text
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+USE_SUPABASE_BACKEND=true
+```
 
 Нельзя коммитить:
 
-- `serviceAccount.json`;
-- любые `*-service-account.json`;
 - реальные `.env`;
-- приватные токены;
-- Firebase Admin SDK credentials;
-- CI secrets;
-- debug logs с token values.
+- Supabase service role key;
+- JWT secrets;
+- production database password;
+- приватные токены CI.
 
-## 11. Обработка ошибок
+Anon key допустим для клиентских приложений по модели Supabase, но в учебном репозитории реальные значения все равно лучше не фиксировать.
 
-Backend использует класс `HttpError` и централизованный `errorHandler`.
+## 13. Frontend Integration Plan
 
-Обработанные ошибки возвращаются как JSON envelope с `error.code` и `error.message`. Необработанные исключения логируются как `Unhandled API error`, а клиент получает:
+Текущий Flutter UI и бизнес-логика на этом шаге не меняются.
 
-```json
-{
-  "error": {
-    "code": "internal-error",
-    "message": "Unexpected backend error."
-  }
-}
-```
+План технической миграции:
 
-Frontend `ApiClient` преобразует ответы backend в typed Dart exceptions:
+1. Добавить `supabase_flutter` в `pubspec.yaml`.
+2. Создать Supabase initializer в `lib/core`.
+3. Заменить Firebase auth repository на Supabase auth repository.
+4. Добавить Supabase implementations для feed, pets и walks repositories.
+5. Оставить mock implementations для tests/fallback.
+6. Перевести backend flag на `USE_SUPABASE_BACKEND`.
+7. Обновить API/client tests под Supabase repository behavior.
+8. Удалить Firebase dependencies и prototype files только после успешной миграции.
 
-- `ApiValidationException`;
-- `ApiUnauthorizedException`;
-- `ApiForbiddenException`;
-- `ApiNotFoundException`;
-- `ApiServerException`;
-- `ApiNetworkException`;
-- `ApiUnexpectedException`.
+## 14. Validation
 
-UI показывает короткие дружелюбные сообщения через `AsyncContentView` и сохраняет loading, error, empty и success states.
-Технический текст backend, validation details и `requestId` остаются в exception
-для диагностики, но пользователь видит локализованный `userMessage`.
-
-## 12. Логирование
-
-Cloud Functions использует `firebase-functions/logger`.
-
-Логируются:
-
-- входящие API-запросы: method и path;
-- успешная аутентификация: uid, method, path;
-- операции `GET /posts`, `POST /posts`, `POST /posts/:postId/like`;
-- операции `GET /pets`, `GET /pets/:petId`, `POST /pets`;
-- операции `GET /walks`, `POST /walks/:walkId/join`;
-- успешное создание поста и питомца;
-- успешное присоединение к прогулке;
-- ошибки проверки Firebase ID token;
-- обработанные `400 validation-error`, `401 unauthorized`, `403 forbidden`, `404 not-found` и `500 internal-error`;
-- validation details и `requestId` для rejected requests;
-- необработанные backend errors без передачи stack trace клиенту.
-
-В логи не должны попадать Firebase ID tokens, service account keys и приватные значения окружения.
-
-Пример Firebase Functions log для validation error:
-
-```json
-{
-  "severity": "WARNING",
-  "message": "API 400 request error",
-  "code": "validation-error",
-  "statusCode": 400,
-  "method": "POST",
-  "path": "/posts",
-  "requestId": "1718520000000-abcd1234",
-  "details": [
-    {
-      "field": "petId",
-      "message": "Required string."
-    }
-  ]
-}
-```
-
-Пример auth/access log:
-
-```json
-{
-  "severity": "WARNING",
-  "message": "API 401 auth/access error",
-  "code": "unauthorized",
-  "statusCode": 401,
-  "method": "POST",
-  "path": "/walks/walk-1/join",
-  "requestId": "1718520000000-auth1"
-}
-```
-
-## 13. Тестирование
-
-### Flutter validation
-
-Рекомендуемые команды после изменений Flutter-кода:
+Flutter:
 
 ```bash
 dart format .
@@ -717,160 +368,53 @@ flutter analyze
 flutter test
 ```
 
-Тесты покрывают auth controller, API client, feed, pets, walks, chat и repository mapping.
-
-### Functions validation
-
-Команды:
+Supabase after project setup:
 
 ```bash
-npm run lint --prefix functions
-npm test --prefix functions
+supabase db lint
+supabase db reset
 ```
 
-`npm test --prefix functions` выполняет TypeScript build и запускает `node --test lib/test/*.test.js`.
+Manual checks:
 
-Текущие backend endpoint tests покрывают:
+- registration/login through Supabase Auth;
+- create pet;
+- create post;
+- toggle like;
+- load feed;
+- load walks;
+- join walk;
+- verify denied access for foreign rows through RLS.
 
-- `GET /posts` success;
-- `POST /posts` unauthorized;
-- `POST /posts` validation error;
-- `POST /posts` malformed JSON validation error;
-- `POST /posts/:postId/like` success;
-- `GET /walks` success;
-- `POST /walks/:walkId/join` unauthorized.
-- unknown endpoint `404 not-found`;
-- unhandled repository error `500 internal-error`.
+## 15. Firebase Prototype History
 
-### Emulator validation
+Firebase не удаляется из истории разработки. Он остается корректно описанным исследованным вариантом:
 
-Для проверки backend в окружении Firebase Emulator Suite:
+- Firebase Auth был выбран в раннем ТЗ;
+- Firestore schema помогла выделить сущности и связи;
+- Cloud Functions API помог сформулировать операции feed/pets/walks;
+- Emulator Suite позволил локально проверить frontend-backend contract;
+- ограничение Blaze/pay-as-you-go для production Cloud Functions стало причиной архитектурного разворота.
 
-```bash
-firebase emulators:exec "npm test --prefix functions"
-```
+Итоговое решение: для текущего ДЗ production backend - Supabase Free Tier, а Firebase-прототип является частью AI-assisted exploration и не считается выбранным production backend.
 
-Для ручной проверки:
+## 16. Known Limitations
 
-```bash
-firebase emulators:start --project demo-petconnect
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
-```
+- Supabase project еще нужно создать.
+- SQL migrations и RLS policies подготовлены в `supabase/migrations/`, но их еще нужно применить к реальному project.
+- Flutter SDK migration на `supabase_flutter` еще не выполнена.
+- Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
+- Реальные Supabase URL и keys не должны появляться в документации или git history.
 
-После этого endpoints можно проверять curl-командами из раздела 7 и через Emulator UI.
-
-## 14. Интеграция Frontend-Backend
-
-Интеграция выполнена через repository layer и Riverpod providers.
-
-### Auth
-
-`FirebaseAuthRepository` реализует:
-
-- login по email/password;
-- registration по email/password;
-- logout;
-- stream auth state;
-- дружелюбные сообщения Firebase Auth errors.
-
-`go_router` защищает основные маршруты: неавторизованный пользователь направляется на `/login`.
-
-### API client
-
-`ApiClient`:
-
-- читает base URL из `BackendConfig`;
-- добавляет `Accept` и `Content-Type`;
-- получает Firebase ID token через `AuthTokenProvider`;
-- добавляет `Authorization: Bearer ...`, если пользователь авторизован;
-- декодирует `data` envelope;
-- преобразует error envelope в typed exceptions.
-
-### Feed
-
-`FeedRepository` имеет mock и API implementations. При `USE_FIREBASE_BACKEND=true` используется `ApiFeedRepository`, который вызывает:
-
-- `GET /posts`;
-- `POST /posts`;
-- `POST /posts/:postId/like`.
-
-Комментарии пока остаются локальной fallback-операцией, потому что endpoint `POST /posts/:postId/comments` не реализован в текущих Functions routes.
-
-### Pets
-
-`PetRepository` имеет mock и API implementations. API-вариант вызывает:
-
-- `GET /pets/:petId`;
-- `GET /pets?ownerId=...`;
-- `POST /pets` на backend-стороне.
-
-`PetProfileScreen` обрабатывает loading, backend error, not found и success.
-
-### Walks
-
-`WalksRepository` имеет mock и API implementations. API-вариант вызывает:
-
-- `GET /walks`;
-- `POST /walks/:walkId/join`.
-
-`WalksController` обновляет UI только после результата repository.
-
-## 15. AI-assisted development
+## 17. AI-assisted Development
 
 Основной AI-агент проекта - OpenAI Codex.
 
-### Проектирование БД через Codex
+Codex использовался для:
 
-Codex сопоставил техническую спецификацию, user stories, текущие Flutter domain-модели и scope HW5. На этой основе была спроектирована Firestore schema: коллекции, поля, связи, индексы, примеры документов, seed data и security notes.
-
-### Генерация API через Codex
-
-Codex спроектировал Cloud Functions HTTP API на Express:
-
-- выделил маршруты `pets`, `posts`, `walks`;
-- добавил middleware Firebase Auth verification;
-- добавил error envelope;
-- реализовал транзакционные операции like и join;
-- подготовил endpoint tests через `node:test`;
-- добавил curl-примеры для ручной проверки.
-
-### Анализ ошибок через Codex
-
-Codex использовался для анализа:
-
-- Flutter analyzer и widget/unit test failures;
-- backend TypeScript build errors;
-- API validation errors;
-- unauthorized/forbidden/not-found сценариев;
-- sandbox-ограничения при запуске локальных test sockets;
-- ошибок конфигурации Flutter Web и Firebase emulator workflow.
-
-### Работа с логами
-
-Codex опирался на логи Cloud Functions, Flutter test output, `flutter analyze`, `npm test --prefix functions`, Firebase Emulator Suite и git diff. По результатам анализа фиксировались причина, исправление и команда проверки в `prompts.md` и `development_report.md`.
-
-## 16. Известные ограничения MVP
-
-- Read-only endpoints `GET /posts`, `GET /pets`, `GET /pets/:petId`, `GET /walks` в HTTP middleware текущего MVP не требуют Firebase ID token. Firestore Admin SDK обходит Security Rules, поэтому перед production-доступом нужно утвердить публичность этих endpoints или добавить обязательную auth-проверку.
-- Backend endpoint для создания комментариев пока не реализован; комментарии в feed остаются локальным fallback-сценарием.
-- Backend endpoint для сообщений чата пока не реализован; Firestore schema и rules готовы для будущей интеграции.
-- Production deploy Cloud Functions может потребовать Firebase Blaze plan.
-- Полная проверка Firestore/Storage Security Rules через отдельные rules tests остается следующим усилением качества; текущая локальная проверка опирается на emulator workflow, endpoint tests и ручные сценарии.
-- Геопоиск прогулок по радиусу не реализован. Для него потребуется geohash-стратегия поверх Firestore.
-
-## 17. Чек-лист проверки
-
-- [ ] Установлены Flutter-зависимости: `flutter pub get`.
-- [ ] Установлены Functions-зависимости: `npm install --prefix functions`.
-- [ ] Flutter-код отформатирован: `dart format .`.
-- [ ] Flutter analyzer проходит: `flutter analyze`.
-- [ ] Flutter tests проходят: `flutter test`.
-- [ ] Functions TypeScript lint проходит: `npm run lint --prefix functions`.
-- [ ] Backend endpoint tests проходят: `npm test --prefix functions`.
-- [ ] Firebase Emulator Suite запускается: `firebase emulators:start --project demo-petconnect`.
-- [ ] Seed-данные загружаются в Firestore Emulator: `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions`.
-- [ ] Flutter Web запускается с Auth Emulator и Cloud Functions API.
-- [ ] Protected endpoints проверены с Firebase ID token.
-- [ ] Firestore rules и Storage rules присутствуют в репозитории.
-- [ ] В репозитории нет service account keys, реальных `.env`, приватных токенов и production credentials.
-- [ ] `README.md`, `prompts.md`, `development_report.md` и финальная backend-документация согласованы между собой.
+- анализа исходного задания и предыдущего Firebase ТЗ;
+- проектирования Firebase-прототипа;
+- выявления production deployment риска Cloud Functions Blaze plan;
+- выбора Supabase как бесплатного backend для текущего ДЗ;
+- документирования mapping Firebase -> Supabase;
+- фиксации remaining tasks без ложного утверждения о готовом Supabase deployment.

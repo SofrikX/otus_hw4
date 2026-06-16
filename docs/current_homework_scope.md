@@ -1,10 +1,12 @@
-# Scope текущего ДЗ — HW5 Backend и интеграция с Frontend
+# Scope текущего ДЗ - HW5 Backend и интеграция с Frontend
 
 ## Основа
 
-Текущее ДЗ выполняется в новом репозитории `otus_hw5` на основе Flutter frontend MVP PetConnect из предыдущего этапа.
+Текущее ДЗ выполняется на основе Flutter frontend MVP PetConnect из предыдущего этапа.
 
-Оригинальное задание предлагает Supabase или self-hosted PostgreSQL. Для PetConnect backend адаптируется на Firebase, потому что Firebase уже выбран в техническом задании проекта из ДЗ 3.
+Оригинальное задание предлагает Supabase или self-hosted PostgreSQL. В ранней технической спецификации PetConnect был указан Firebase, поэтому сначала была исследована Firebase-ветка: Auth, Firestore, Storage, Cloud Functions, Security Rules и Emulator Suite.
+
+На этапе production planning принято архитектурное решение перейти на Supabase Free Tier. Причина: Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan, а для учебного проекта нужен бесплатный и воспроизводимый backend deployment.
 
 ## AI-агент
 
@@ -12,7 +14,7 @@
 
 Основной файл правил для агента: `AGENTS.md`.
 
-## Стек
+## Актуальный стек HW5
 
 - Flutter
 - Dart
@@ -20,101 +22,112 @@
 - go_router
 - Material 3
 - feature-first + Clean Architecture principles
-- Firebase Auth
-- Cloud Firestore
-- Firebase Storage
-- Cloud Functions
-- Firebase Security Rules
-- Firebase Emulator Suite
+- Supabase Auth
+- PostgreSQL database
+- Row Level Security
+- Supabase Storage
+- Supabase auto REST API через PostgREST
+- `supabase_flutter`
 - flutter_test
 - mocktail
-- npm test для Cloud Functions и emulator-сценариев
+- mock repositories для тестов, fallback и постепенной миграции
 
-## Firebase mapping вместо Supabase/PostgreSQL
+## Architecture Decision: Firebase to Supabase
 
-| Оригинальное задание | PetConnect HW5 |
+Firebase остается в истории проекта как исследованный backend-вариант, основанный на предыдущем ТЗ. Он больше не является выбранным production backend для текущего ДЗ.
+
+Supabase выбран потому что:
+
+- исходное ДЗ прямо поддерживает Supabase;
+- Free Tier подходит для учебного production backend;
+- PostgreSQL schema и RLS легко проверять и документировать;
+- auto REST API снижает потребность в отдельном Cloud Functions/API deployment;
+- Flutter SDK позволяет сохранить repository layer без изменения UI.
+
+Supabase project еще не считается созданным. Реальные URL и keys не добавляются.
+
+## Firebase-to-Supabase Mapping
+
+| Firebase-прототип | Supabase HW5 |
 |---|---|
-| Supabase Auth | Firebase Auth |
-| Supabase Database / PostgreSQL tables | Cloud Firestore collections |
-| SQL schema and migrations | Firestore schema, indexes, seed data, rules |
-| Supabase Storage | Firebase Storage |
-| Edge Functions / backend API | Cloud Functions callable/HTTPS API |
-| Row Level Security | Firebase Security Rules |
-| Local Supabase stack | Firebase Emulator Suite |
-
-Supabase упоминается только как технология из оригинального текста задания. В реализации PetConnect используется Firebase для согласованности с ТЗ.
+| Firebase Auth | Supabase Auth |
+| Cloud Firestore | PostgreSQL tables |
+| Firestore Security Rules | Row Level Security |
+| Cloud Functions API | Supabase auto REST API / Supabase client |
+| Firebase Storage | Supabase Storage |
+| Firebase Emulator Suite | Supabase project/local validation |
 
 ## 9 шагов текущего ДЗ
 
 1. **Аудит frontend MVP и документации.**
    Проверить текущие функции PetConnect, структуру `lib/`, тесты, README, отчет и правила Codex.
 
-2. **Адаптация backend-стека.**
-   Зафиксировать замену Supabase/PostgreSQL на Firebase: Auth, Firestore, Storage, Cloud Functions, Security Rules, Emulator Suite.
+2. **Архитектурное решение Supabase вместо Firebase.**
+   Зафиксировать, что Firebase был исследованным вариантом, а Supabase выбран для бесплатного production backend.
 
-3. **Проектирование Firestore schema.**
-   Описать коллекции `users`, `pets`, `posts`, `comments`, `chats`, `messages`, `walks`, связи между документами, индексы и ограничения.
+3. **Проектирование PostgreSQL schema.**
+   Описать таблицы `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages`.
 
-4. **Проектирование Storage structure.**
-   Описать хранение фото питомцев и изображений постов, правила путей, ограничения типа файла и размера.
+4. **Проектирование Supabase Storage.**
+   Описать buckets для аватаров, фото питомцев и изображений постов, а также policies доступа.
 
-5. **Проектирование Cloud Functions API.**
-   Реализовать или подготовить минимум 3 backend/API операции, например `postsToggleLike`, `commentsCreate`, `walksJoin`, `messagesSend`, `postsCreate`.
+5. **Проектирование API operations.**
+   Использовать Supabase auto REST API / client для минимум 3 операций: создание поста, лайк, присоединение к прогулке, создание питомца или загрузка ленты.
 
-6. **Security Rules.**
-   Подготовить Firestore и Storage rules: доступ только авторизованным пользователям, владелец управляет своими питомцами, участники видят свои чаты, защищенные счетчики меняются через backend.
+6. **Row Level Security.**
+   Подготовить RLS policies: доступ по `auth.uid()`, владелец управляет своими питомцами, автор управляет своими постами, участники видят свои чаты, пользователь изменяет только свои likes/join rows.
 
 7. **Frontend integration.**
-   Заменить прямую зависимость от mock data на repository interfaces и Firebase/mock implementations. UI должен работать через Riverpod controllers/providers.
+   Сохранить UI и бизнес-логику. Перевод backend implementations выполнить через repository interfaces и Riverpod providers.
 
-8. **Локальная проверка через Emulator Suite.**
-   Настроить и описать запуск Firebase Auth/Firestore/Storage/Functions emulators. Production deploy Cloud Functions не является обязательным для локальной сдачи.
+8. **Validation.**
+   Проверять Flutter через `dart format .`, `flutter analyze`, `flutter test`. После добавления Supabase CLI/migrations проверять SQL/RLS через `supabase db lint` и `supabase db reset` или dashboard checks.
 
 9. **Документирование AI workflow и результатов.**
-   Обновить `prompts.md`, `development_report.md`, `README.md`, `docs/ai_workflow.md`, зафиксировать prompts, ошибки, логи, решения и выводы.
+   Обновить `prompts.md`, `development_report.md`, `README.md`, `backend_documentation.md`, `docs/ai_workflow.md`.
 
 ## Что входит в HW5 scope
 
-1. Firebase architecture для PetConnect.
-2. Firestore collections и индексы.
-3. Security Rules для Firestore и Storage.
-4. Cloud Functions API минимум для 3 операций.
-5. Firebase Emulator Suite как локальный backend.
+1. Supabase architecture для PetConnect.
+2. PostgreSQL schema для основных сущностей.
+3. RLS security model.
+4. Supabase Storage buckets/policies.
+5. Минимум 3 backend/API operations через Supabase client/auto REST.
 6. Repository layer для frontend integration.
 7. Сохранение существующих Flutter tests.
-8. Backend tests для functions/rules, если functions уже добавлены.
-9. Документация процесса через OpenAI Codex.
+8. Документация решения Firebase -> Supabase.
+9. История Firebase как исследованного варианта без выбора его production backend.
 
 ## Что не входит в обязательный scope
 
 - Платные сервисы.
 - Хранение секретов в репозитории.
-- Production deploy Cloud Functions без явного запроса.
 - Firebase Blaze plan как обязательное условие проверки.
-- Push-уведомления FCM, если они не нужны для минимальной HW5-интеграции.
+- Production deploy Firebase Cloud Functions.
+- Замена Flutter на другой frontend stack.
 - Полная переработка UI.
-- Замена Flutter или Firebase на другой стек.
+- Утверждение, что Supabase уже развернут, до фактического создания проекта.
 
 ## Обязательные артефакты сдачи
 
-- GitHub-репозиторий `otus_hw5`.
+- GitHub-репозиторий.
 - Код Flutter-приложения.
-- Firebase config/rules/functions files, когда backend-часть реализована.
-- `README.md` с запуском Flutter и Firebase Emulator Suite.
+- `README.md` с Supabase architecture decision и запуском Flutter.
+- `backend_documentation.md` с PostgreSQL/RLS/Storage/API описанием.
 - `development_report.md`.
 - `prompts.md`.
 - `AGENTS.md`.
-- Минимум 3 frontend/backend теста или существующие frontend tests плюс backend tests.
+- Минимум 3 frontend/backend теста или существующие frontend tests плюс план Supabase validation.
 - Инструкции по локальному запуску и проверке.
 
 ## Критерии готовности
 
 - В документации основным AI-агентом указан OpenAI Codex.
-- Firebase указан как backend-решение PetConnect.
-- Supabase/PostgreSQL упоминаются только как исходное предложение задания, замененное на Firebase.
-- Firestore schema и Security Rules описаны или реализованы.
-- Cloud Functions API содержит минимум 3 операции или подготовленный план их реализации.
-- Frontend получает данные через repository layer, а не напрямую из UI.
-- Локальный emulator-сценарий описан.
-- Команды проверки задокументированы.
+- Supabase указан как backend-решение PetConnect для текущего ДЗ.
+- Firebase сохранен как исследованный вариант, а не как production backend.
+- Явно объяснено ограничение Firebase Cloud Functions Blaze/pay-as-you-go.
+- Есть раздел `Architecture Decision: Firebase to Supabase`.
+- Есть mapping Firebase -> Supabase.
+- PostgreSQL schema и RLS model описаны.
+- Frontend должен получать данные через repository layer, а не напрямую из UI.
 - Существующие Flutter tests не удалены ради прохождения.

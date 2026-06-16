@@ -32,3 +32,7 @@ firebase-export-*/
 functions/node_modules/
 functions/lib/
 functions/.runtimeconfig.json
+
+# Supabase local development
+supabase/.branches/
+supabase/.temp/

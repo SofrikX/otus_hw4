@@ -1,396 +1,186 @@
-# API Spec — PetConnect Cloud Functions HTTP API
+# API Spec - PetConnect Supabase
 
-## Overview
+PetConnect использует Supabase auto REST API через PostgREST и Flutter SDK `supabase_flutter`. Отдельный Cloud Functions API больше не является текущим production backend.
 
-PetConnect HW5 uses Firebase Cloud Functions with an Express HTTP API. The API works with Cloud Firestore through Firebase Admin SDK and replaces the generic Supabase API requirement from the original homework.
-
-Exported function:
+Base URL берется из Supabase Project URL:
 
 ```text
-api
+SUPABASE_URL=https://your-project-ref.supabase.co
 ```
 
-Local emulator base URL:
+REST API base path:
 
 ```text
-http://127.0.0.1:5001/{FIREBASE_PROJECT_ID}/{FIREBASE_REGION}/api
+${SUPABASE_URL}/rest/v1
 ```
 
-Default region:
+Flutter-клиент должен использовать `SUPABASE_ANON_KEY` как public client key и пользовательскую Supabase Auth session. Service role key запрещен в клиенте.
 
-```text
-us-central1
+## Auth
+
+Email/password auth выполняется через Supabase Auth:
+
+- sign up;
+- sign in;
+- sign out;
+- session restore.
+
+После входа RLS policies используют `auth.uid()`.
+
+## Operations
+
+### Feed: get posts
+
+Supabase client:
+
+```dart
+await supabase
+    .from('posts')
+    .select()
+    .eq('visibility', 'public')
+    .isFilter('deleted_at', null)
+    .order('created_at', ascending: false)
+    .limit(20);
 ```
 
-## Authentication
-
-Protected endpoints require a Firebase ID token:
+REST shape:
 
 ```http
-Authorization: Bearer <firebase-id-token>
+GET /rest/v1/posts?visibility=eq.public&deleted_at=is.null&order=created_at.desc&limit=20
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <user-access-token>
 ```
 
-The backend verifies the token with Firebase Admin SDK and uses `uid` as the trusted user id.
+### Feed: create post
 
-## CORS
+Required:
 
-The API allows common local Flutter Web origins by default:
+- `author_id = auth.uid()`;
+- `pet_id`;
+- `text` up to 1000 chars;
+- optional `image_urls`.
 
-- `http://localhost:3000`
-- `http://localhost:5000`
-- `http://localhost:5173`
-- `http://localhost:8080`
-- `http://localhost:8081`
-- `http://127.0.0.1:3000`
-- `http://127.0.0.1:5000`
-- `http://127.0.0.1:5173`
-- `http://127.0.0.1:8080`
-- `http://127.0.0.1:8081`
+```dart
+await supabase.from('posts').insert({
+  'author_id': userId,
+  'pet_id': petId,
+  'text': text,
+  'image_urls': imageUrls,
+});
+```
 
-Production origins can be configured with comma-separated environment variable:
+RLS also verifies that the post belongs to the authenticated user.
+
+### Feed: like/unlike post
+
+Like:
+
+```dart
+await supabase.from('post_likes').insert({
+  'post_id': postId,
+  'user_id': userId,
+});
+```
+
+Unlike:
+
+```dart
+await supabase
+    .from('post_likes')
+    .delete()
+    .eq('post_id', postId)
+    .eq('user_id', userId);
+```
+
+The database trigger updates `posts.likes_count`.
+
+### Comments: create comment
+
+```dart
+await supabase.from('comments').insert({
+  'post_id': postId,
+  'author_id': userId,
+  'text': text,
+});
+```
+
+The database trigger updates `posts.comments_count`.
+
+### Pets: get owner pets
+
+```dart
+await supabase
+    .from('pets')
+    .select()
+    .eq('owner_id', ownerId)
+    .order('created_at', ascending: false);
+```
+
+### Pets: create pet
+
+```dart
+await supabase.from('pets').insert({
+  'owner_id': userId,
+  'name': name,
+  'animal_type': animalType,
+  'breed': breed,
+  'age': age,
+  'description': description,
+});
+```
+
+RLS requires `owner_id = auth.uid()`.
+
+### Walks: get active walks
+
+```dart
+await supabase
+    .from('walks')
+    .select()
+    .eq('status', 'active')
+    .order('scheduled_at', ascending: true)
+    .limit(20);
+```
+
+### Walks: join walk
+
+```dart
+await supabase.from('walk_participants').insert({
+  'walk_id': walkId,
+  'user_id': userId,
+});
+```
+
+RLS requires `user_id = auth.uid()` and an active walk. The database trigger updates `walks.participants_count`.
+
+### Storage: upload image
+
+Paths must start with the authenticated user id:
 
 ```text
-CORS_ORIGIN=https://petconnect.example.com,https://app.petconnect.example.com
+avatars/<user-id>/<file-name>
+pet-photos/<user-id>/<file-name>
+post-images/<user-id>/<file-name>
+```
+
+Example:
+
+```dart
+await supabase.storage
+    .from('post-images')
+    .upload('$userId/$fileName', file);
 ```
 
 ## Error Model
 
-All errors use one response shape:
-
-```json
-{
-  "error": {
-    "code": "validation-error",
-    "message": "Human readable error message.",
-    "requestId": "1718520000000-abcd1234",
-    "details": [
-      {
-        "field": "petId",
-        "message": "Required string."
-      }
-    ]
-  }
-}
-```
-
-`details` is optional and is used for validation/auth field diagnostics. `requestId`
-is included in every error response so frontend QA can match a user-visible failure
-with Firebase Functions logs. The client must rely on `error.code` for typed
-handling and should show a localized friendly message instead of raw backend text.
-
-Supported status/code pairs:
-
-| Status | Code | Meaning |
-|---|---|---|
-| `400` | `validation-error` | Invalid input |
-| `401` | `unauthorized` | Missing or invalid Firebase ID token |
-| `403` | `forbidden` | Authenticated user cannot perform the operation |
-| `404` | `not-found` | Resource not found |
-| `500` | `internal-error` | Unexpected backend error |
-
-## Endpoints
-
-### GET /health
-
-Returns API health status.
-
-Response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-### GET /pets/:petId
-
-Returns one pet profile by Firestore document id.
-
-Auth: not required by HTTP middleware for HW5 read-only MVP. Firestore Admin SDK bypasses Security Rules, so public exposure should be decided before production deploy.
-
-Response:
-
-```json
-{
-  "data": {
-    "id": "pet-1",
-    "ownerId": "user-1",
-    "ownerName": "Аня",
-    "name": "Бруно",
-    "animalType": "dog",
-    "breed": "Корги",
-    "age": 3,
-    "description": "Обожает мячики, людей и короткие пробежки в парке.",
-    "photoUrl": "https://storage.googleapis.com/petconnect/pets/user-1/pet-1.jpg",
-    "photoEmoji": "dog",
-    "createdAt": "2026-06-16T09:10:00.000Z",
-    "updatedAt": "2026-06-16T09:10:00.000Z"
-  }
-}
-```
-
-Errors:
-
-- `400 validation-error` if `petId` is empty;
-- `404 not-found` if the pet document does not exist.
-
-### GET /pets
-
-Returns pets for one owner sorted by `createdAt desc`.
-
-Auth: not required by HTTP middleware for HW5 read-only MVP.
-
-Query:
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `ownerId` | `string` | Yes | Firebase Auth UID of the pet owner |
-
-Response:
-
-```json
-{
-  "data": [
-    {
-      "id": "pet-1",
-      "ownerId": "user-1",
-      "ownerName": "Аня",
-      "name": "Бруно",
-      "animalType": "dog",
-      "breed": "Корги",
-      "age": 3
-    }
-  ]
-}
-```
-
-### POST /pets
-
-Creates a pet profile.
-
-Auth: required.
-
-Headers:
-
-```http
-Authorization: Bearer <firebase-id-token>
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "ownerId": "user-1",
-  "ownerName": "Аня",
-  "name": "Бруно",
-  "animalType": "dog",
-  "breed": "Корги",
-  "age": 3,
-  "description": "Обожает мячики, людей и короткие пробежки в парке.",
-  "photoUrl": "https://storage.googleapis.com/petconnect/pets/user-1/pet-1.jpg",
-  "photoEmoji": "dog"
-}
-```
-
-Validation:
-
-- `ownerId` must match Firebase Auth `uid`;
-- `ownerName`, `name` and `animalType` are required strings;
-- `name` must be 50 characters or fewer;
-- `breed` must be 80 characters or fewer;
-- `age`, if present, must be an integer from 0 to 30;
-- `description` must be 500 characters or fewer;
-- `photoUrl` and `photoEmoji` are optional.
-
-Response:
-
-```json
-{
-  "data": {
-    "id": "pet-1",
-    "ownerId": "user-1",
-    "ownerName": "Аня",
-    "name": "Бруно",
-    "animalType": "dog",
-    "breed": "Корги",
-    "age": 3
-  }
-}
-```
-
-### GET /posts
-
-Returns posts sorted by `createdAt desc`.
-
-Auth: not required by HTTP middleware. Firestore Admin SDK bypasses Security Rules, so public exposure should be decided at API gateway/deploy level. For HW5 this endpoint is intentionally read-only.
-
-Query:
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `limit` | `number` | No | Integer from 1 to 50. Default: 20 |
-
-Response:
-
-```json
-{
-  "data": [
-    {
-      "id": "post-1",
-      "authorId": "user-1",
-      "petId": "pet-1",
-      "text": "Сегодня Бруно отлично погулял.",
-      "likesCount": 18,
-      "commentsCount": 4,
-      "createdAt": "2026-06-16T09:30:00.000Z"
-    }
-  ]
-}
-```
-
-### POST /posts
-
-Creates a post.
-
-Auth: required.
-
-Headers:
-
-```http
-Authorization: Bearer <firebase-id-token>
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "authorId": "user-1",
-  "petId": "pet-1",
-  "text": "Сегодня Бруно отлично погулял.",
-  "imageUrls": [
-    "https://storage.googleapis.com/petconnect/posts/user-1/post-1/photo-1.jpg"
-  ],
-  "authorName": "Аня",
-  "petName": "Бруно"
-}
-```
-
-Validation:
-
-- `authorId` must match Firebase Auth `uid`;
-- `petId` is required;
-- `text` must be a string and 1000 characters or fewer;
-- `imageUrls`, if present, must be an array of strings.
-
-Response:
-
-```json
-{
-  "data": {
-    "id": "post-1",
-    "authorId": "user-1",
-    "petId": "pet-1",
-    "text": "Сегодня Бруно отлично погулял.",
-    "likesCount": 0,
-    "commentsCount": 0,
-    "visibility": "public"
-  }
-}
-```
-
-### POST /posts/:postId/like
-
-Toggles current user's like for a post.
-
-Auth: required.
-
-Response:
-
-```json
-{
-  "data": {
-    "postId": "post-1",
-    "isLiked": true,
-    "likesCount": 19
-  }
-}
-```
-
-### GET /walks
-
-Returns walks sorted by `startsAt asc`.
-
-Query:
-
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `limit` | `number` | No | Integer from 1 to 50. Default: 20 |
-
-Response:
-
-```json
-{
-  "data": [
-    {
-      "id": "walk-1",
-      "title": "Корги-встреча в парке",
-      "place": "Парк Горького",
-      "participantsCount": 6,
-      "status": "active"
-    }
-  ]
-}
-```
-
-### POST /walks/:walkId/join
-
-Adds current user to `participantIds` and increments `participantsCount`.
-
-Auth: required.
-
-Response:
-
-```json
-{
-  "data": {
-    "walkId": "walk-1",
-    "isJoined": true,
-    "participantsCount": 7
-  }
-}
-```
-
-## Logging
-
-The API logs:
-
-- incoming operations;
-- successful important events such as post creation, like toggle, walk join;
-- authentication failures;
-- handled `400`, `401`, `403`, `404` and `500` backend errors with `requestId`;
-- validation details for rejected requests;
-- unhandled backend errors without exposing stack traces to the client.
-
-Logs use Firebase Functions logger.
-
-## Manual Commands
-
-Install dependencies:
-
-```bash
-npm install --prefix functions
-```
-
-Build:
-
-```bash
-npm run build --prefix functions
-```
-
-Run local emulators:
-
-```bash
-npm run serve --prefix functions
-```
+Supabase/PostgREST errors should be mapped in repositories to friendly app errors:
+
+| Source | User-facing meaning |
+|---|---|
+| `401` | Нужно войти в аккаунт |
+| `403` or RLS denial | Недостаточно прав для операции |
+| Constraint violation | Проверьте заполненные поля |
+| Network failure | Проверьте интернет и повторите |
+| Unexpected error | Что-то пошло не так, попробуйте снова |
+
+UI should keep loading, error, empty and success states through Riverpod controllers.

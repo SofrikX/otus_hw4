@@ -1,0 +1,17 @@
+-- PetConnect Supabase seed placeholder.
+--
+-- Keep this file free of real user data, production emails, tokens, keys, and
+-- service role secrets. The initial schema references auth.users, so demo rows
+-- should be inserted only after corresponding demo users exist in Supabase Auth.
+--
+-- Recommended manual demo flow:
+-- 1. Create demo users through Supabase Auth in the dashboard or local Studio.
+-- 2. Copy their UUIDs from auth.users.
+-- 3. Insert matching rows into public.profiles, then pets/posts/walks.
+--
+-- Example shape, intentionally commented out:
+--
+-- insert into public.profiles (id, display_name, email, city)
+-- values
+--   ('00000000-0000-0000-0000-000000000001', 'Anya', 'anya@example.test', 'Moscow')
+-- on conflict (id) do nothing;

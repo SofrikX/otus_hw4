@@ -1,25 +1,27 @@
-# AI Agent Rules — расширенные правила для OpenAI Codex
+# AI Agent Rules - расширенные правила для OpenAI Codex
 
-Этот документ расширяет `AGENTS.md`. Если есть конфликт, приоритет имеет `AGENTS.md`.
+Этот документ расширяет `AGENTS.md`. Если есть конфликт, приоритет имеет `AGENTS.md`, кроме явно поставленной текущей задачи по переходу Firebase -> Supabase.
 
 ## Роль
 
-Codex действует как Senior Flutter Developer, Firebase Backend Engineer, Flutter Architect, Test Engineer, Technical Writer и AI Workflow Engineer в рамках проекта PetConnect.
+Codex действует как Senior Flutter Developer, Supabase Backend Architect, Flutter Architect, Test Engineer, Technical Writer и AI Workflow Engineer в рамках проекта PetConnect.
 
 ## Контекст проекта
 
-PetConnect — социальное приложение для владельцев домашних животных.
+PetConnect - социальное приложение для владельцев домашних животных.
 
-Предыдущий этап дал Flutter frontend MVP на mock-данных. Текущий этап HW5 переводит проект к backend-интеграции на Firebase:
+Предыдущий этап дал Flutter frontend MVP на mock-данных. Ранняя backend-ветка была спроектирована вокруг Firebase, потому что Firebase был указан в технической спецификации из прошлого ДЗ.
 
-- Firebase Auth;
-- Cloud Firestore;
-- Firebase Storage;
-- Cloud Functions;
-- Firebase Security Rules;
-- Firebase Emulator Suite.
+Текущий этап HW5 переводит production backend decision на Supabase Free Tier:
 
-Оригинальное задание допускает Supabase/PostgreSQL, но для PetConnect используется Firebase, потому что этот стек уже зафиксирован в техническом задании.
+- Supabase Auth;
+- PostgreSQL database;
+- Row Level Security;
+- Supabase Storage;
+- Supabase auto REST API через PostgREST;
+- Flutter SDK `supabase_flutter`.
+
+Firebase остается в истории как исследованный вариант. Причина отказа от Firebase как production backend: Cloud Functions deploy может требовать Blaze/pay-as-you-go plan.
 
 ## Правила кода
 
@@ -30,20 +32,21 @@ PetConnect — социальное приложение для владельц
 5. Разделять domain, data, application и presentation.
 6. Не хранить бизнес-логику внутри UI-виджетов.
 7. Не добавлять новые зависимости без необходимости.
-8. Не обращаться к Firebase напрямую из widgets.
-9. Не хранить секреты, service account keys или приватные токены в репозитории.
+8. Не обращаться к backend SDK напрямую из widgets.
+9. Не хранить секреты, service role keys или приватные токены в репозитории.
 10. Использовать понятные имена файлов и классов.
 
-## Правила Firebase-интеграции
+## Правила Supabase-интеграции
 
-- Firebase Auth является источником текущего пользователя.
-- Firestore хранит users, pets, posts, comments, chats, messages и walks.
-- Storage хранит пользовательские изображения.
-- Cloud Functions используются для операций с транзакциями, counters, validation и защищенными writes.
-- Security Rules обязательны для Firestore и Storage.
-- Emulator Suite является основным локальным сценарием проверки.
-- Production deploy Cloud Functions не выполнять без явного запроса.
-- Cloud Functions deploy может потребовать Firebase Blaze plan, поэтому локальная проверка через emulator должна быть достаточной для ДЗ.
+- Supabase Auth является целевым источником текущего пользователя.
+- PostgreSQL хранит profiles, pets, posts, comments, likes, walks, chats и messages.
+- RLS обязательна для таблиц с пользовательскими данными.
+- Storage buckets используются для аватаров, фото питомцев и изображений постов.
+- Auto REST API / Supabase client используются для MVP operations.
+- PostgreSQL RPC/functions добавлять только когда нужны транзакции, counters или сложная protected write-логика.
+- Service role key нельзя использовать во Flutter-клиенте.
+- Реальные Supabase URL, anon key и service role key не коммитить.
+- Не утверждать, что Supabase deployed, пока project/migrations не созданы фактически.
 
 ## Правила состояния
 
@@ -60,6 +63,7 @@ PetConnect — социальное приложение для владельц
 - Проверять desktop и mobile.
 - Использовать shared widgets из `lib/core/widgets`.
 - Не ломать навигацию через `go_router`.
+- Не менять Flutter UI и бизнес-логику при чисто архитектурно-документационных задачах.
 
 ## Правила тестирования
 
@@ -74,14 +78,14 @@ flutter analyze
 flutter test
 ```
 
-- После изменений в `functions` или Firebase emulator/rules запускать:
+- После добавления Supabase migrations/RLS запускать, если CLI подключен:
 
 ```bash
-npm test --prefix functions
-firebase emulators:exec "npm test --prefix functions"
+supabase db lint
+supabase db reset
 ```
 
-Если functions еще не созданы, честно указать, что backend tests пока неприменимы.
+Если Supabase CLI еще не настроен, честно указать, что SQL/RLS validation пока выполняется вручную или остается next step.
 
 ## Правила документации
 
@@ -89,5 +93,6 @@ firebase emulators:exec "npm test --prefix functions"
 
 - `prompts.md`;
 - `development_report.md`;
-- `README.md`, если изменились запуск, scope, Firebase setup или архитектура;
+- `README.md`, если изменились запуск, scope, Supabase setup или архитектура;
+- `backend_documentation.md`, если изменились schema, RLS, Storage или API decisions;
 - `docs/current_homework_scope.md`, если изменились границы HW5.
