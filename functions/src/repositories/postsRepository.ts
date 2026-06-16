@@ -23,6 +23,10 @@ function asIso(value: unknown): unknown {
   return value;
 }
 
+function serializeRecord(data: FirebaseFirestore.DocumentData | undefined) {
+  return asIso(data ?? {}) as Record<string, unknown>;
+}
+
 function parseLimit(rawLimit: unknown, fallback = 20, max = 50): number {
   if (rawLimit === undefined) {
     return fallback;
@@ -93,7 +97,7 @@ export async function listPosts(rawLimit: unknown) {
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...asIso(doc.data())
+    ...serializeRecord(doc.data())
   }));
 }
 
@@ -128,7 +132,7 @@ export async function createPost(input: CreatePostInput, uid: string) {
 
   return {
     id: docRef.id,
-    ...asIso(created.data() ?? post)
+    ...serializeRecord(created.data() ?? post)
   };
 }
 
