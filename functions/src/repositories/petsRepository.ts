@@ -33,7 +33,9 @@ function requireString(
   maxLength: number
 ): string {
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new HttpError(400, "validation-error", `${fieldName} is required.`);
+    throw new HttpError(400, "validation-error", `${fieldName} is required.`, [
+      { field: fieldName, message: "Required string." }
+    ]);
   }
 
   const trimmed = value.trim();
@@ -41,7 +43,8 @@ function requireString(
     throw new HttpError(
       400,
       "validation-error",
-      `${fieldName} must be ${maxLength} characters or fewer.`
+      `${fieldName} must be ${maxLength} characters or fewer.`,
+      [{ field: fieldName, message: `Maximum length is ${maxLength} characters.` }]
     );
   }
 
@@ -58,7 +61,9 @@ function optionalString(
   }
 
   if (typeof value !== "string") {
-    throw new HttpError(400, "validation-error", `${fieldName} must be a string.`);
+    throw new HttpError(400, "validation-error", `${fieldName} must be a string.`, [
+      { field: fieldName, message: "Expected a string." }
+    ]);
   }
 
   const trimmed = value.trim();
@@ -66,7 +71,8 @@ function optionalString(
     throw new HttpError(
       400,
       "validation-error",
-      `${fieldName} must be ${maxLength} characters or fewer.`
+      `${fieldName} must be ${maxLength} characters or fewer.`,
+      [{ field: fieldName, message: `Maximum length is ${maxLength} characters.` }]
     );
   }
 
@@ -83,7 +89,8 @@ function optionalAge(value: unknown): number | null {
     throw new HttpError(
       400,
       "validation-error",
-      "age must be an integer between 0 and 30."
+      "age must be an integer between 0 and 30.",
+      [{ field: "age", message: "Expected an integer from 0 to 30." }]
     );
   }
 
@@ -92,21 +99,26 @@ function optionalAge(value: unknown): number | null {
 
 function validateCreatePetInput(input: CreatePetInput, uid: string) {
   if (!input || typeof input !== "object") {
-    throw new HttpError(400, "validation-error", "Request body is required.");
+    throw new HttpError(400, "validation-error", "Request body is required.", [
+      { field: "body", message: "Expected a JSON object." }
+    ]);
   }
 
   if (input.ownerId !== uid) {
     throw new HttpError(
       403,
       "forbidden",
-      "ownerId must match the authenticated user."
+      "ownerId must match the authenticated user.",
+      [{ field: "ownerId", message: "Must match Firebase Auth uid." }]
     );
   }
 }
 
 export async function getPetById(petId: string) {
   if (!petId) {
-    throw new HttpError(400, "validation-error", "petId is required.");
+    throw new HttpError(400, "validation-error", "petId is required.", [
+      { field: "petId", message: "Required path parameter." }
+    ]);
   }
 
   const snapshot = await petsCollection().doc(petId).get();
@@ -124,7 +136,9 @@ export async function getPetById(petId: string) {
 
 export async function listPetsByOwner(ownerId: unknown) {
   if (typeof ownerId !== "string" || ownerId.trim().length === 0) {
-    throw new HttpError(400, "validation-error", "ownerId is required.");
+    throw new HttpError(400, "validation-error", "ownerId is required.", [
+      { field: "ownerId", message: "Required query parameter." }
+    ]);
   }
 
   const normalizedOwnerId = ownerId.trim();

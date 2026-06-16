@@ -58,6 +58,59 @@ void main() {
     );
   });
 
+  test('400 response preserves validation details and friendly message',
+      () async {
+    final client = ApiClient(
+      baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
+      httpClient: MockClient((_) async {
+        return http.Response(
+          '{"error":{"code":"validation-error","message":"petId is required.","requestId":"req-123","details":[{"field":"petId","message":"Required string."}]}}',
+          400,
+        );
+      }),
+      authTokenProvider: const _FakeAuthTokenProvider('token-123'),
+    );
+
+    expect(
+      () => client.createPost({'authorId': 'user-1'}),
+      throwsA(
+        isA<ApiValidationException>()
+            .having((error) => error.statusCode, 'statusCode', 400)
+            .having((error) => error.code, 'code', 'validation-error')
+            .having((error) => error.message, 'message', 'petId is required.')
+            .having((error) => error.userMessage, 'userMessage',
+                'Проверьте данные и попробуйте еще раз.')
+            .having((error) => error.requestId, 'requestId', 'req-123')
+            .having(
+                (error) => error.details.single.field, 'detail field', 'petId')
+            .having((error) => error.details.single.message, 'detail message',
+                'Required string.'),
+      ),
+    );
+  });
+
+  test('malformed backend error still becomes typed unexpected exception',
+      () async {
+    final client = ApiClient(
+      baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
+      httpClient: MockClient((_) async {
+        return http.Response('not json', 502);
+      }),
+      authTokenProvider: const _FakeAuthTokenProvider('token-123'),
+    );
+
+    expect(
+      () => client.getPosts(),
+      throwsA(
+        isA<ApiServerException>()
+            .having((error) => error.statusCode, 'statusCode', 502)
+            .having((error) => error.code, 'code', 'http-502')
+            .having((error) => error.userMessage, 'userMessage',
+                'Request failed with status 502.'),
+      ),
+    );
+  });
+
   test('403 response throws ApiForbiddenException', () async {
     final client = ApiClient(
       baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),

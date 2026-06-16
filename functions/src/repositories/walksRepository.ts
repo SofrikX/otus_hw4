@@ -49,7 +49,8 @@ function parseLimit(rawLimit: unknown, fallback = 20, max = 50): number {
     throw new HttpError(
       400,
       "validation-error",
-      `limit must be an integer between 1 and ${max}.`
+      `limit must be an integer between 1 and ${max}.`,
+      [{ field: "limit", message: `Expected an integer from 1 to ${max}.` }]
     );
   }
 
@@ -73,7 +74,9 @@ export async function listWalks(rawLimit: unknown) {
 
 export async function joinWalk(walkId: string, uid: string) {
   if (!walkId) {
-    throw new HttpError(400, "validation-error", "walkId is required.");
+    throw new HttpError(400, "validation-error", "walkId is required.", [
+      { field: "walkId", message: "Required path parameter." }
+    ]);
   }
 
   const walkRef = walksCollection().doc(walkId);

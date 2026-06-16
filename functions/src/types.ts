@@ -12,14 +12,22 @@ export interface ApiErrorBody {
   error: {
     code: ErrorCode;
     message: string;
+    details?: ValidationErrorDetail[];
+    requestId?: string;
   };
+}
+
+export interface ValidationErrorDetail {
+  field: string;
+  message: string;
 }
 
 export class HttpError extends Error {
   constructor(
     public readonly statusCode: number,
     public readonly code: ErrorCode,
-    message: string
+    message: string,
+    public readonly details?: ValidationErrorDetail[]
   ) {
     super(message);
     this.name = "HttpError";

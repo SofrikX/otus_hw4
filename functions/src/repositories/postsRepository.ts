@@ -37,7 +37,8 @@ function parseLimit(rawLimit: unknown, fallback = 20, max = 50): number {
     throw new HttpError(
       400,
       "validation-error",
-      `limit must be an integer between 1 and ${max}.`
+      `limit must be an integer between 1 and ${max}.`,
+      [{ field: "limit", message: `Expected an integer from 1 to ${max}.` }]
     );
   }
 
@@ -46,30 +47,38 @@ function parseLimit(rawLimit: unknown, fallback = 20, max = 50): number {
 
 function validateCreatePostInput(input: CreatePostInput, uid: string) {
   if (!input || typeof input !== "object") {
-    throw new HttpError(400, "validation-error", "Request body is required.");
+    throw new HttpError(400, "validation-error", "Request body is required.", [
+      { field: "body", message: "Expected a JSON object." }
+    ]);
   }
 
   if (input.authorId !== uid) {
     throw new HttpError(
       403,
       "forbidden",
-      "authorId must match the authenticated user."
+      "authorId must match the authenticated user.",
+      [{ field: "authorId", message: "Must match Firebase Auth uid." }]
     );
   }
 
   if (!input.petId || typeof input.petId !== "string") {
-    throw new HttpError(400, "validation-error", "petId is required.");
+    throw new HttpError(400, "validation-error", "petId is required.", [
+      { field: "petId", message: "Required string." }
+    ]);
   }
 
   if (input.text !== undefined && typeof input.text !== "string") {
-    throw new HttpError(400, "validation-error", "text must be a string.");
+    throw new HttpError(400, "validation-error", "text must be a string.", [
+      { field: "text", message: "Expected a string." }
+    ]);
   }
 
   if ((input.text ?? "").length > 1000) {
     throw new HttpError(
       400,
       "validation-error",
-      "text must be 1000 characters or fewer."
+      "text must be 1000 characters or fewer.",
+      [{ field: "text", message: "Maximum length is 1000 characters." }]
     );
   }
 
@@ -81,7 +90,8 @@ function validateCreatePostInput(input: CreatePostInput, uid: string) {
     throw new HttpError(
       400,
       "validation-error",
-      "imageUrls must be an array of strings."
+      "imageUrls must be an array of strings.",
+      [{ field: "imageUrls", message: "Expected an array of URL strings." }]
     );
   }
 }
@@ -138,7 +148,9 @@ export async function createPost(input: CreatePostInput, uid: string) {
 
 export async function togglePostLike(postId: string, uid: string) {
   if (!postId) {
-    throw new HttpError(400, "validation-error", "postId is required.");
+    throw new HttpError(400, "validation-error", "postId is required.", [
+      { field: "postId", message: "Required path parameter." }
+    ]);
   }
 
   const db = getFirestore();

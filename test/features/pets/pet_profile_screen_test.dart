@@ -89,7 +89,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Не удалось загрузить данные'), findsOneWidget);
-    expect(find.text('Firestore временно недоступен.'), findsOneWidget);
+    expect(find.text('Сервер временно недоступен. Попробуйте позже.'),
+        findsOneWidget);
     expect(find.text('Повторить'), findsOneWidget);
   });
 }

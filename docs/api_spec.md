@@ -61,10 +61,22 @@ All errors use one response shape:
 {
   "error": {
     "code": "validation-error",
-    "message": "Human readable error message."
+    "message": "Human readable error message.",
+    "requestId": "1718520000000-abcd1234",
+    "details": [
+      {
+        "field": "petId",
+        "message": "Required string."
+      }
+    ]
   }
 }
 ```
+
+`details` is optional and is used for validation/auth field diagnostics. `requestId`
+is included in every error response so frontend QA can match a user-visible failure
+with Firebase Functions logs. The client must rely on `error.code` for typed
+handling and should show a localized friendly message instead of raw backend text.
 
 Supported status/code pairs:
 
@@ -357,7 +369,9 @@ The API logs:
 - incoming operations;
 - successful important events such as post creation, like toggle, walk join;
 - authentication failures;
-- handled and unhandled backend errors.
+- handled `400`, `401`, `403`, `404` and `500` backend errors with `requestId`;
+- validation details for rejected requests;
+- unhandled backend errors without exposing stack traces to the client.
 
 Logs use Firebase Functions logger.
 

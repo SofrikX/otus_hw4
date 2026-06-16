@@ -214,12 +214,40 @@ test("POST /posts returns validation error for invalid body", async () => {
     });
 
     assert.equal(result.status, 400);
-    assert.deepEqual(result.body, {
-      error: {
-        code: "validation-error",
-        message: "petId is required."
+    assert.equal(result.body.error.code, "validation-error");
+    assert.equal(result.body.error.message, "petId is required.");
+    assert.deepEqual(result.body.error.details, [
+      {
+        field: "petId",
+        message: "Required string."
       }
+    ]);
+    assert.equal(typeof result.body.error.requestId, "string");
+  } finally {
+    await api.close();
+  }
+});
+
+test("POST /posts returns validation error for malformed JSON", async () => {
+  const api = await startApi({ postsRepository });
+  try {
+    const result = await requestJson(api.socketPath, "/posts", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer test-token"
+      },
+      body: "{invalid-json"
     });
+
+    assert.equal(result.status, 400);
+    assert.equal(result.body.error.code, "validation-error");
+    assert.equal(result.body.error.message, "Request body must be valid JSON.");
+    assert.deepEqual(result.body.error.details, [
+      {
+        field: "body",
+        message: "Invalid JSON syntax."
+      }
+    ]);
   } finally {
     await api.close();
   }
@@ -282,6 +310,42 @@ test("POST /walks/:walkId/join without Authorization returns unauthorized", asyn
 
     assert.equal(result.status, 401);
     assert.equal(result.body.error.code, "unauthorized");
+    assert.equal(typeof result.body.error.requestId, "string");
+  } finally {
+    await api.close();
+  }
+});
+
+test("unknown endpoint returns not found error envelope", async () => {
+  const api = await startApi();
+  try {
+    const result = await requestJson(api.socketPath, "/missing");
+
+    assert.equal(result.status, 404);
+    assert.equal(result.body.error.code, "not-found");
+    assert.equal(result.body.error.message, "Endpoint not found.");
+    assert.equal(typeof result.body.error.requestId, "string");
+  } finally {
+    await api.close();
+  }
+});
+
+test("unhandled repository error returns internal error envelope", async () => {
+  const api = await startApi({
+    postsRepository: {
+      ...postsRepository,
+      async listPosts() {
+        throw new Error("Firestore exploded");
+      }
+    }
+  });
+  try {
+    const result = await requestJson(api.socketPath, "/posts?limit=2");
+
+    assert.equal(result.status, 500);
+    assert.deepEqual(result.body.error.code, "internal-error");
+    assert.deepEqual(result.body.error.message, "Unexpected backend error.");
+    assert.equal(typeof result.body.error.requestId, "string");
   } finally {
     await api.close();
   }

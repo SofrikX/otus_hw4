@@ -357,10 +357,22 @@ Auth: required.
 {
   "error": {
     "code": "validation-error",
-    "message": "Human readable error message."
+    "message": "Human readable error message.",
+    "requestId": "1718520000000-abcd1234",
+    "details": [
+      {
+        "field": "petId",
+        "message": "Required string."
+      }
+    ]
   }
 }
 ```
+
+`details` добавляется для ошибок валидации и auth/access diagnostics, например
+`petId`, `ownerId`, `Authorization` или `body`. `requestId` возвращается во всех
+ошибках и попадает в Firebase Functions logs, чтобы QA мог связать ошибку в UI с
+конкретной записью backend-лога.
 
 Коды:
 
@@ -636,6 +648,8 @@ Frontend `ApiClient` преобразует ответы backend в typed Dart e
 - `ApiUnexpectedException`.
 
 UI показывает короткие дружелюбные сообщения через `AsyncContentView` и сохраняет loading, error, empty и success states.
+Технический текст backend, validation details и `requestId` остаются в exception
+для диагностики, но пользователь видит локализованный `userMessage`.
 
 ## 12. Логирование
 
@@ -651,10 +665,45 @@ Cloud Functions использует `firebase-functions/logger`.
 - успешное создание поста и питомца;
 - успешное присоединение к прогулке;
 - ошибки проверки Firebase ID token;
-- обработанные `HttpError`;
-- необработанные backend errors.
+- обработанные `400 validation-error`, `401 unauthorized`, `403 forbidden`, `404 not-found` и `500 internal-error`;
+- validation details и `requestId` для rejected requests;
+- необработанные backend errors без передачи stack trace клиенту.
 
 В логи не должны попадать Firebase ID tokens, service account keys и приватные значения окружения.
+
+Пример Firebase Functions log для validation error:
+
+```json
+{
+  "severity": "WARNING",
+  "message": "API 400 request error",
+  "code": "validation-error",
+  "statusCode": 400,
+  "method": "POST",
+  "path": "/posts",
+  "requestId": "1718520000000-abcd1234",
+  "details": [
+    {
+      "field": "petId",
+      "message": "Required string."
+    }
+  ]
+}
+```
+
+Пример auth/access log:
+
+```json
+{
+  "severity": "WARNING",
+  "message": "API 401 auth/access error",
+  "code": "unauthorized",
+  "statusCode": 401,
+  "method": "POST",
+  "path": "/walks/walk-1/join",
+  "requestId": "1718520000000-auth1"
+}
+```
 
 ## 13. Тестирование
 
@@ -686,9 +735,12 @@ npm test --prefix functions
 - `GET /posts` success;
 - `POST /posts` unauthorized;
 - `POST /posts` validation error;
+- `POST /posts` malformed JSON validation error;
 - `POST /posts/:postId/like` success;
 - `GET /walks` success;
 - `POST /walks/:walkId/join` unauthorized.
+- unknown endpoint `404 not-found`;
+- unhandled repository error `500 internal-error`.
 
 ### Emulator validation
 

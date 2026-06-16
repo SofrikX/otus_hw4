@@ -185,24 +185,48 @@ class ApiClient {
 
     switch (response.statusCode) {
       case 400:
-        return ApiValidationException(message: message, code: error.code);
+        return ApiValidationException(
+          message: message,
+          code: error.code,
+          details: error.details,
+          requestId: error.requestId,
+        );
       case 401:
-        return ApiUnauthorizedException(message: message, code: error.code);
+        return ApiUnauthorizedException(
+          message: message,
+          code: error.code,
+          details: error.details,
+          requestId: error.requestId,
+        );
       case 403:
-        return ApiForbiddenException(message: message, code: error.code);
+        return ApiForbiddenException(
+          message: message,
+          code: error.code,
+          details: error.details,
+          requestId: error.requestId,
+        );
       case 404:
-        return ApiNotFoundException(message: message, code: error.code);
+        return ApiNotFoundException(
+          message: message,
+          code: error.code,
+          details: error.details,
+          requestId: error.requestId,
+        );
       case >= 500:
         return ApiServerException(
           message: message,
           statusCode: response.statusCode,
           code: error.code,
+          details: error.details,
+          requestId: error.requestId,
         );
       default:
         return ApiUnexpectedException(
           statusCode: response.statusCode,
           code: error.code,
           message: message,
+          details: error.details,
+          requestId: error.requestId,
         );
     }
   }
@@ -214,7 +238,9 @@ class ApiClient {
       if (error is Map<String, dynamic>) {
         return _ApiErrorPayload(
           code: error['code'] as String? ?? 'unknown-error',
+          details: _readDetails(error['details']),
           message: error['message'] as String? ?? 'Request failed.',
+          requestId: error['requestId'] as String?,
         );
       }
     } on FormatException {
@@ -227,6 +253,22 @@ class ApiClient {
       code: 'http-${response.statusCode}',
       message: 'Request failed with status ${response.statusCode}.',
     );
+  }
+
+  List<ApiValidationDetail> _readDetails(Object? details) {
+    if (details is! List) {
+      return const [];
+    }
+
+    return details
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (detail) => ApiValidationDetail(
+            field: detail['field'] as String? ?? 'unknown',
+            message: detail['message'] as String? ?? 'Invalid value.',
+          ),
+        )
+        .toList(growable: false);
   }
 
   Map<String, String>? _limitQuery(int? limit) {
@@ -242,8 +284,12 @@ class _ApiErrorPayload {
   const _ApiErrorPayload({
     required this.code,
     required this.message,
+    this.details = const [],
+    this.requestId,
   });
 
   final String code;
   final String message;
+  final List<ApiValidationDetail> details;
+  final String? requestId;
 }

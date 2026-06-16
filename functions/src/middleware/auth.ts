@@ -19,7 +19,9 @@ export function createRequireAuth(
       const match = header.match(/^Bearer (.+)$/i);
 
       if (!match) {
-        throw new HttpError(401, "unauthorized", "Firebase ID token is required.");
+        throw new HttpError(401, "unauthorized", "Firebase ID token is required.", [
+          { field: "Authorization", message: "Expected Bearer token." }
+        ]);
       }
 
       req.user = await verifyIdToken(match[1]);

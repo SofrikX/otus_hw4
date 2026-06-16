@@ -44,7 +44,7 @@ class AsyncContentView<T> extends StatelessWidget {
 
   String _friendlyMessage(Object error) {
     if (error is ApiException) {
-      return error.message;
+      return error.userMessage;
     }
 
     final message = error.toString().replaceFirst('Exception: ', '');

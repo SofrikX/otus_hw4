@@ -291,7 +291,7 @@ Codex интегрировал экран ленты с repository layer и Clou
 - `feedRepositoryProvider` выбирает `ApiFeedRepository` только при `USE_FIREBASE_BACKEND=true`, иначе использует mock repository;
 - `FeedController.refresh()` теперь проверяет реальную ошибку repository/backend через `AsyncValue.guard`, без искусственного `shouldFail`;
 - `FeedScreen` продолжает использовать `AsyncContentView` и покрывает loading, error с retry, empty и success states;
-- `AsyncContentView` показывает `ApiException.message`, чтобы backend errors отображались дружелюбно, без технического `ApiException(...)`;
+- `AsyncContentView` показывает локализованный `ApiException.userMessage`, чтобы backend errors отображались дружелюбно, без технического `ApiException(...)`;
 - `toggleLike` сохраняет optimistic UI update и синхронизирует результат с backend через repository.
 
 Endpoint для комментариев в `docs/api_spec.md` и `functions/src/routes/posts.ts` пока не описан. Поэтому `addComment()` оставлен локальной mock/fallback-операцией на уровне `FeedController`; backend-реализация комментариев зафиксирована как next step после добавления `POST /posts/:postId/comments`.
@@ -431,3 +431,53 @@ README обновлен как основной входной документ 
 - AI-assisted development через OpenAI Codex, `AGENTS.md`, `prompts.md`, `development_report.md` и `backend_documentation.md`.
 
 Код приложения, Cloud Functions и Firebase rules в рамках этой README-задачи не менялись.
+
+## 18. Error handling, logging и AI-анализ ошибок
+
+Codex выполнил отдельный QA-pass по обработке ошибок frontend/backend.
+
+Что усилено:
+
+- backend `HttpError` остался единым источником error envelope, но получил `details` для validation diagnostics и `requestId` для связи UI-ошибки с Firebase Functions logs;
+- `errorHandler` централизованно возвращает `400 validation-error`, `401 unauthorized`, `403 forbidden`, `404 not-found` и `500 internal-error`;
+- malformed JSON теперь обрабатывается как `400 validation-error`, а не как неожиданный `500`;
+- Cloud Functions logger пишет структурированные записи для 400/401/403/404/500 с `method`, `path`, `statusCode`, `code`, `requestId` и validation details;
+- Flutter `ApiClient` сохраняет typed exceptions, raw backend message, validation details и `requestId`;
+- UI через `AsyncContentView` показывает короткие русские `userMessage`, сохраняя retry actions и loading/error/empty/success states.
+
+Пример Firebase Functions log для AI-assisted debugging:
+
+```json
+{
+  "severity": "WARNING",
+  "message": "API 400 request error",
+  "code": "validation-error",
+  "statusCode": 400,
+  "method": "POST",
+  "path": "/posts",
+  "requestId": "1718520000000-abcd1234",
+  "details": [
+    {
+      "field": "petId",
+      "message": "Required string."
+    }
+  ]
+}
+```
+
+Как использовался AI-анализ:
+
+1. Codex сопоставил требования ДЗ с фактическими `functions/src/`, `lib/core/network/`, `feed`, `walks`, `pets` и документацией.
+2. По паттернам ошибок определены gaps: одинаковый `warn` для всех `HttpError`, отсутствие validation details/request correlation, показ raw backend messages пользователю, отсутствие теста malformed JSON и `500` envelope.
+3. После правок Codex проверил логику через backend endpoint tests и Flutter tests для API client / error-state UI.
+
+Проверка:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+npm test --prefix functions
+```
+
+Результаты проверки фиксируются в выводе Codex по этой задаче.
