@@ -779,3 +779,118 @@ Backend использует Firebase Auth и Cloud Firestore.
 - Для прогулок добавлен join-сценарий участника: добавление своего UID и увеличение `participantsCount` на 1.
 - Создан `docs/firebase_security.md` с объяснением замены Supabase RLS на Firebase Security Rules, списком разрешенных и запрещенных операций.
 - Flutter-код не менялся.
+
+## Prompt 19 — Cloud Functions HTTP API
+
+```markdown
+# Role
+Ты Backend Developer, Firebase Cloud Functions Engineer.
+
+# Task
+Создай Cloud Functions HTTP API для PetConnect.
+
+# Context
+Оригинальное ДЗ требует API endpoints и минимум 3 CRUD операции.
+В проекте используется Firebase вместо Supabase.
+API должен работать с Firestore через Firebase Admin SDK.
+
+# Requirements
+Создай структуру:
+
+- functions/package.json
+- functions/tsconfig.json
+- functions/src/index.ts
+- functions/src/app.ts
+- functions/src/middleware/auth.ts
+- functions/src/middleware/errorHandler.ts
+- functions/src/repositories/postsRepository.ts
+- functions/src/repositories/walksRepository.ts
+- functions/src/routes/posts.ts
+- functions/src/routes/walks.ts
+- functions/src/types.ts
+
+# API endpoints
+Реализуй минимум:
+
+1. GET /posts
+   - возвращает список постов;
+   - поддерживает limit;
+   - сортировка по createdAt desc.
+
+2. POST /posts
+   - требует Firebase ID token;
+   - создает пост;
+   - валидирует text, petId, authorId.
+
+3. POST /posts/:postId/like
+   - требует Firebase ID token;
+   - toggle like;
+   - возвращает новое количество лайков.
+
+4. GET /walks
+   - возвращает список прогулок.
+
+5. POST /walks/:walkId/join
+   - требует Firebase ID token;
+   - добавляет текущего пользователя в participants.
+
+# Error handling
+Добавь единый формат ошибок:
+
+{
+  "error": {
+    "code": "validation-error",
+    "message": "..."
+  }
+}
+
+Нужны статусы:
+- 400 validation error
+- 401 unauthorized
+- 403 forbidden
+- 404 not found
+- 500 internal error
+
+# Logging
+Используй functions logger для:
+- входящих операций;
+- ошибок;
+- важных backend-событий.
+
+# CORS
+Настрой CORS для локального Flutter Web и production origin через env/config.
+
+# Testing
+Добавь базовые npm scripts:
+- build
+- lint
+- test
+- serve
+
+# Documentation
+Создай или обнови:
+- docs/api_spec.md
+
+# Restrictions
+1. Не добавляй реальные секреты.
+2. Не меняй Flutter-код на этом шаге.
+3. Не подключай Supabase.
+
+# Output format
+1. Summary.
+2. Endpoints created.
+3. Error model.
+4. Files changed.
+5. Commands to run.
+6. Diff.
+```
+
+Результат:
+
+- Создан TypeScript/Express backend в `functions/` с экспортом Cloud Function `api`.
+- Добавлены middleware Firebase ID token auth и единый error handler.
+- Добавлены repositories для `posts` и `walks`, работающие через Firebase Admin SDK и Firestore transactions.
+- Реализованы endpoints `GET /posts`, `POST /posts`, `POST /posts/:postId/like`, `GET /walks`, `POST /walks/:walkId/join`.
+- Настроен CORS для локальных Flutter Web origins и production origins через `CORS_ORIGIN`.
+- Создан `docs/api_spec.md` с описанием endpoints, auth, CORS, error model и команд запуска.
+- Flutter-код не менялся, Supabase не подключался.

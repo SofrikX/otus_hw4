@@ -212,6 +212,7 @@ firebase emulators:start
 Документация обновлена под HW5:
 
 - `AGENTS.md` описывает OpenAI Codex, Flutter + Firebase стек и обязательные проверки;
+- `docs/api_spec.md` описывает Cloud Functions HTTP API, endpoints, CORS, auth и error model;
 - `docs/current_homework_scope.md` содержит 9 шагов ДЗ 5 и Firebase mapping;
 - `docs/deployment.md` описывает Firebase CLI, emulator suite, production deploy, Blaze plan warning и правила некоммита секретов;
 - `docs/firebase_security.md` объясняет Firestore Security Rules как замену Supabase RLS и фиксирует разрешенные/запрещенные операции;
