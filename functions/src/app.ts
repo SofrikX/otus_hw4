@@ -1,11 +1,12 @@
 import cors from "cors";
 import express from "express";
+import type { RequestHandler } from "express";
 import * as logger from "firebase-functions/logger";
 
 import { errorHandler } from "./middleware/errorHandler";
-import { petsRouter } from "./routes/pets";
-import { postsRouter } from "./routes/posts";
-import { walksRouter } from "./routes/walks";
+import { createPetsRouter, PetsRepository } from "./routes/pets";
+import { createPostsRouter, PostsRepository } from "./routes/posts";
+import { createWalksRouter, WalksRepository } from "./routes/walks";
 import { HttpError } from "./types";
 
 const localOrigins = [
@@ -28,43 +29,65 @@ function configuredOrigins() {
     .filter(Boolean);
 }
 
-export const app = express();
+export interface AppDependencies {
+  authMiddleware?: RequestHandler;
+  petsRepository?: PetsRepository;
+  postsRepository?: PostsRepository;
+  walksRepository?: WalksRepository;
+}
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      const allowedOrigins = new Set([...localOrigins, ...configuredOrigins()]);
+export function createApp(dependencies: AppDependencies = {}) {
+  const app = express();
 
-      if (!origin || allowedOrigins.has(origin)) {
-        callback(null, true);
-        return;
+  app.use(
+    cors({
+      origin(origin, callback) {
+        const allowedOrigins = new Set([...localOrigins, ...configuredOrigins()]);
+
+        if (!origin || allowedOrigins.has(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new HttpError(403, "forbidden", "CORS origin is not allowed."));
       }
+    })
+  );
 
-      callback(new HttpError(403, "forbidden", "CORS origin is not allowed."));
-    }
-  })
-);
+  app.use(express.json({ limit: "1mb" }));
 
-app.use(express.json({ limit: "1mb" }));
-
-app.use((req, _res, next) => {
-  logger.info("Incoming API request", {
-    method: req.method,
-    path: req.path
+  app.use((req, _res, next) => {
+    logger.info("Incoming API request", {
+      method: req.method,
+      path: req.path
+    });
+    next();
   });
-  next();
-});
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
 
-app.use("/posts", postsRouter);
-app.use("/pets", petsRouter);
-app.use("/walks", walksRouter);
+  app.use(
+    "/posts",
+    createPostsRouter(dependencies.postsRepository, dependencies.authMiddleware)
+  );
+  app.use(
+    "/pets",
+    createPetsRouter(dependencies.petsRepository, dependencies.authMiddleware)
+  );
+  app.use(
+    "/walks",
+    createWalksRouter(dependencies.walksRepository, dependencies.authMiddleware)
+  );
 
-app.use((_req, _res, next) => {
-  next(new HttpError(404, "not-found", "Endpoint not found."));
-});
+  app.use((_req, _res, next) => {
+    next(new HttpError(404, "not-found", "Endpoint not found."));
+  });
 
-app.use(errorHandler);
+  app.use(errorHandler);
+
+  return app;
+}
+
+export const app = createApp();

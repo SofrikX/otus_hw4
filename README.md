@@ -208,6 +208,27 @@ firebase emulators:exec "npm test --prefix functions"
 
 Cloud Functions deploy в production может потребовать Firebase Blaze plan. Для ДЗ основной проверяемый сценарий должен работать локально через emulators.
 
+### Cloud Functions API examples
+
+HTTP endpoints и curl-примеры для ручной проверки описаны в `docs/api_examples.md`.
+
+Минимальная локальная проверка API:
+
+```bash
+API_BASE_URL="http://127.0.0.1:5001/demo-petconnect/us-central1/api"
+curl -X GET "${API_BASE_URL}/posts?limit=20" -H "Accept: application/json"
+curl -X GET "${API_BASE_URL}/walks?limit=20" -H "Accept: application/json"
+```
+
+Для protected endpoints используйте Firebase ID token:
+
+```bash
+FIREBASE_ID_TOKEN="<firebase-id-token>"
+curl -X POST "${API_BASE_URL}/posts/post-1/like" \
+  -H "Authorization: Bearer ${FIREBASE_ID_TOKEN}" \
+  -H "Accept: application/json"
+```
+
 ### Seed-данные для Firestore Emulator
 
 После запуска emulators можно наполнить локальный Firestore тестовыми данными:
@@ -240,6 +261,25 @@ flutter test
 ```
 
 Для HW5 нужно сохранить эти тесты и добавить backend/emulator tests, когда появятся Cloud Functions и Security Rules.
+
+Backend tests для Cloud Functions находятся в `functions/src/test/api.test.ts`.
+
+Покрытые API scenarios:
+
+- `GET /posts` success;
+- `POST /posts` unauthorized;
+- `POST /posts` validation error;
+- `POST /posts/:postId/like` success;
+- `GET /walks` success;
+- `POST /walks/:walkId/join` unauthorized.
+
+Запуск backend-проверок:
+
+```bash
+npm run build --prefix functions
+npm run lint --prefix functions
+npm test --prefix functions
+```
 
 ## Использование OpenAI Codex
 

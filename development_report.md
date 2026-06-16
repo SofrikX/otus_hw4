@@ -362,3 +362,51 @@ npm test --prefix functions
 ```
 
 Результат фиксируется в выводе Codex по задаче интеграции питомцев.
+
+## 15. Cloud Functions API endpoint tests
+
+Codex добавил backend endpoint tests для Express API внутри Cloud Functions:
+
+- `GET /posts` success;
+- `POST /posts` unauthorized;
+- `POST /posts` validation error;
+- `POST /posts/:postId/like` success;
+- `GET /walks` success;
+- `POST /walks/:walkId/join` unauthorized.
+
+Для тестирования выбран встроенный `node:test`, чтобы не добавлять лишние зависимости. Express app получил небольшую factory-обертку `createApp`, а routers/auth middleware получили dependency injection для fake repositories и fake authenticated user в тестах. Production export `api` продолжает использовать реальные Firebase Admin SDK repositories и Firebase Auth token verification.
+
+Добавлен `docs/api_examples.md` с curl-примерами для `GET /posts`, `POST /posts`, лайка поста, `GET /walks` и присоединения к прогулке. Для protected endpoints указан placeholder `Authorization: Bearer <firebase-id-token>`.
+
+Проверка:
+
+```bash
+npm run lint --prefix functions
+npm test --prefix functions
+```
+
+Результат: `lint` прошел, `npm test --prefix functions` прошел 6/6 endpoint tests. В Codex sandbox обычный запуск был заблокирован на `listen` для локальных test sockets, поэтому тест был повторен с разрешением на локальный запуск команды.
+
+## 16. Финальная backend-документация
+
+Codex подготовил финальный файл `backend_documentation.md` для сдачи ДЗ 5.
+
+Документ собран как единая backend-спецификация для преподавателя и включает:
+
+- цель backend-части PetConnect HW5;
+- объяснение выбора Firebase вместо Supabase/PostgreSQL;
+- архитектуру Flutter frontend, Cloud Functions API, Firebase Auth, Firestore, Storage и Security Rules;
+- Firestore schema и индексы;
+- security model на базе Firestore Rules, Storage Rules и backend validation;
+- описание API endpoints и curl-примеры;
+- локальный запуск через Firebase Emulator Suite и seed data;
+- production deploy и предупреждение про Firebase Blaze plan;
+- переменные окружения и защиту секретов;
+- error model, логирование и тестирование;
+- frontend-backend integration через repositories и Riverpod providers;
+- AI-assisted development через OpenAI Codex;
+- известные ограничения MVP и чек-лист проверки.
+
+Файл опирается на фактическую реализацию в `functions/src/`, `firebase.json`, `firestore.rules`, `storage.rules`, `docs/api_spec.md`, `docs/api_examples.md`, `docs/firestore_schema.md`, `docs/firebase_security.md`, `docs/deployment.md`, `docs/seed_data.md`, `docs/ai_workflow.md`, `prompts.md` и текущий отчет.
+
+Код приложения и backend-логика в рамках этой задачи не менялись.

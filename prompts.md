@@ -1224,3 +1224,105 @@ Cloud Functions API содержит:
 - Cloud Functions API расширен endpoints `GET /pets/:petId`, `GET /pets?ownerId=...` и `POST /pets`.
 - `POST /pets` защищен Firebase Auth и валидирует ownerId против uid.
 - Добавлены tests для pet profile success, not found, backend error и API mapping.
+
+## Prompt 26 — backend API endpoint tests и curl examples
+
+```markdown
+# Role
+Ты Backend QA Engineer.
+
+# Task
+Добавь тестирование API endpoints и примеры запросов для PetConnect backend.
+
+# Context
+ДЗ требует протестировать API endpoints, проверить ответы и обработку ошибок.
+
+# Required reading
+Прочитай:
+- functions/src/
+- docs/api_spec.md
+- docs/deployment.md
+- docs/seed_data.md
+
+# Requirements
+1. Добавь backend tests для Cloud Functions API:
+   - GET /posts success;
+   - POST /posts unauthorized;
+   - POST /posts validation error;
+   - POST /posts/:postId/like success;
+   - GET /walks success;
+   - POST /walks/:walkId/join unauthorized.
+2. Используй подходящий тестовый стек для TypeScript functions.
+3. Добавь `docs/api_examples.md`.
+4. В `docs/api_examples.md` добавь curl-примеры:
+   - GET /posts;
+   - POST /posts;
+   - like post;
+   - GET /walks;
+   - join walk.
+5. Для protected endpoints покажи Authorization Bearer token placeholder.
+6. Обнови npm scripts:
+   - test
+   - build
+   - lint, если возможно.
+7. Обнови:
+   - README.md;
+   - backend_documentation.md, если он уже есть;
+   - prompts.md.
+```
+
+Результат:
+
+- Codex прочитал `functions/src/`, `docs/api_spec.md`, `docs/deployment.md`, `docs/seed_data.md`, а также проектные инструкции `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`.
+- Добавлен `createApp` и factory-функции для routers/auth middleware, чтобы endpoint tests могли подставлять fake repositories и fake auth без обращения к production Firebase.
+- Добавлен `functions/src/test/api.test.ts` на встроенном `node:test`; покрыты 6 требуемых API scenarios.
+- `functions/package.json` теперь запускает `npm test` как `npm run build && node --test lib/test/*.test.js`; `build` и `lint` сохранены.
+- Добавлен `docs/api_examples.md` с curl-примерами и Bearer token placeholder для protected endpoints.
+- Обновлены `README.md`, `development_report.md` и `prompts.md`.
+- `backend_documentation.md` в репозитории отсутствовал, поэтому не обновлялся.
+- Проверки: `npm run lint --prefix functions` прошел; `npm test --prefix functions` прошел 6/6 tests после разрешения локального запуска, потому что sandbox блокировал `listen` для test sockets.
+
+## Prompt 27 — финальная backend-документация для ДЗ 5
+
+```markdown
+# Role
+Ты Technical Writer и Backend Architect.
+
+# Task
+Создай финальный файл `backend_documentation.md` для сдачи ДЗ 5.
+
+# Context
+Формат сдачи требует документацию:
+- описание архитектуры;
+- инструкции по развертыванию;
+- описание API endpoints;
+- примеры запросов;
+- описание процесса разработки с AI.
+
+# Required reading
+Прочитай:
+- README.md
+- docs/firestore_schema.md
+- docs/firebase_security.md
+- docs/api_spec.md
+- docs/api_examples.md
+- docs/deployment.md
+- docs/seed_data.md
+- docs/ai_workflow.md
+- prompts.md
+- development_report.md
+- firebase.json
+- firestore.rules
+- storage.rules
+- functions/
+
+# Requirements
+Создай `backend_documentation.md` со структурой из 17 разделов: цель, Firebase mapping, архитектура, Firestore schema, security model, API endpoints, примеры запросов, emulator workflow, production deploy, переменные окружения, ошибки, логирование, тестирование, frontend-backend integration, AI-assisted development, ограничения MVP и чек-лист.
+```
+
+Результат:
+
+- Создан `backend_documentation.md` как финальная документация для преподавателя по backend-части ДЗ 5.
+- Документ объединяет сведения из README, Firestore schema, Security Rules, API spec/examples, deployment guide, seed data, AI workflow, `firebase.json`, `firestore.rules`, `storage.rules` и исходников Cloud Functions.
+- Описаны реальные endpoints текущего Express API: `/health`, `/pets`, `/pets/:petId`, `/posts`, `/posts/:postId/like`, `/walks`, `/walks/:walkId/join`.
+- Зафиксированы локальный запуск через Firebase Emulator Suite, production deploy, защита секретов, error model, logging, тестирование, frontend-backend integration и известные ограничения MVP.
