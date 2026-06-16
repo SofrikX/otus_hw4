@@ -22,6 +22,7 @@
 | `prompts.md` | HW5 + ДЗ 2 | Проверяющий, студент, Codex | Журнал промптов и результатов | После каждой AI-задачи |
 | `submission_checklist.md` | HW5 | Студент | Финальная проверка сдачи | Перед GitHub-публикацией |
 | `docs/current_homework_scope.md` | HW5 | Codex, студент | 9 шагов ДЗ 5, Firebase mapping, критерии готовности | Перед изменениями scope, backend или интеграции |
+| `docs/firestore_schema.md` | HW5 | Codex, студент | Схема Cloud Firestore, поля, связи, примеры документов и индексы | При проектировании backend, repositories, rules и Cloud Functions |
 | `docs/technical_specification.md` | ДЗ 3 | Codex, студент | Техническое задание PetConnect с Firebase-архитектурой | При изменении функций, backend schema и архитектуры |
 | `docs/project_description.md` | ДЗ 3 | Codex, студент | Идея продукта и бизнес-контекст | При продуктовых решениях |
 | `docs/user_stories.md` | ДЗ 3 | Codex, студент | User stories и пользовательские сценарии | При разработке API, экранов и тестов |
@@ -56,7 +57,8 @@
 - `docs/project_description.md`;
 - `docs/user_stories.md`;
 - `docs/error_handling.md`;
-- `docs/ai_agent_rules.md`.
+- `docs/ai_agent_rules.md`;
+- `docs/firestore_schema.md`.
 
 Когда появятся файлы Firebase, также читать:
 

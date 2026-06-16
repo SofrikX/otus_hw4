@@ -540,3 +540,71 @@ Summary → Files changed → Removed weak fragments → Replaced prompts → Ke
 - `docs/documents_index.md` обновлен как навигатор по HW5-документации.
 - `docs/ai_agent_rules.md`, `README.md` и `development_report.md` обновлены, чтобы документация не оставалась HW4-only.
 - Код приложения не менялся.
+
+## Prompt 16 — проектирование Firestore schema
+
+```markdown
+# Role
+Ты Firebase Data Architect и Backend Engineer.
+
+# Task
+Спроектируй структуру базы данных PetConnect для Cloud Firestore.
+
+# Context
+PetConnect — приложение для владельцев питомцев.
+Основные функции:
+- лента публикаций;
+- профили питомцев;
+- прогулки;
+- комментарии;
+- лайки;
+- базовые чаты.
+
+# Required reading
+Прочитай:
+- docs/technical_specification.md
+- docs/project_description.md
+- docs/user_stories.md
+- docs/current_homework_scope.md
+- lib/features/
+- README.md
+
+# Requirements
+1. Создай файл `docs/firestore_schema.md`.
+2. Опиши коллекции:
+   - users
+   - pets
+   - posts
+   - posts/{postId}/comments
+   - walks
+   - chats
+   - chats/{chatId}/messages
+3. Для каждой коллекции укажи:
+   - назначение;
+   - поля;
+   - типы данных;
+   - обязательность;
+   - связи;
+   - пример документа.
+4. Опиши, какие данные нужны для MVP HW5.
+5. Опиши индексы, которые могут понадобиться.
+6. Добавь раздел "AI-assisted database design", где указано, что схема спроектирована с помощью OpenAI Codex.
+7. Обнови `prompts.md`.
+8. Не меняй Flutter-код.
+
+# Output format
+1. Summary.
+2. Collections.
+3. Indexes.
+4. Files changed.
+5. Diff.
+```
+
+Результат:
+
+- Создан `docs/firestore_schema.md` со схемой Cloud Firestore для `users`, `pets`, `posts`, `posts/{postId}/comments`, `walks`, `chats`, `chats/{chatId}/messages`.
+- Дополнительно описана рекомендуемая техническая подколлекция `posts/{postId}/likes/{uid}` для корректной реализации лайков.
+- Для каждой коллекции указаны назначение, поля, типы, обязательность, связи и пример документа.
+- Добавлены разделы MVP HW5 Data, Indexes, Security Notes и AI-assisted database design.
+- `docs/documents_index.md` и `development_report.md` обновлены ссылкой на новый документ.
+- Flutter-код не менялся.
