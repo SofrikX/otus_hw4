@@ -45,6 +45,15 @@ class ApiNotFoundException extends ApiException {
   });
 }
 
+class ApiNetworkException extends ApiException {
+  const ApiNetworkException({
+    super.message =
+        'Не удалось подключиться к серверу. Проверьте интернет и попробуйте еще раз.',
+    super.statusCode = 0,
+    super.code = 'network-error',
+  });
+}
+
 class ApiServerException extends ApiException {
   const ApiServerException({
     required super.message,

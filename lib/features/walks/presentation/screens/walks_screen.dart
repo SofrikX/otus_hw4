@@ -35,8 +35,12 @@ class WalksScreen extends ConsumerWidget {
               final walk = walks[index - 1];
               return WalkCard(
                 walk: walk,
-                onJoin: () {
-                  controller.joinWalk(walk.id);
+                onJoin: () async {
+                  final joined = await controller.joinWalk(walk.id);
+                  if (!context.mounted || !joined) {
+                    return;
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Вы присоединились: ${walk.title}')),
                   );
@@ -70,7 +74,7 @@ class _WalksHeader extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'MVP использует mock-данные. Геолокация и карта будут подключены после Firebase-интеграции.',
+              'Выбирайте встречу поблизости, присоединяйтесь к участникам и следите за обновлениями.',
             ),
           ],
         ),

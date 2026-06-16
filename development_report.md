@@ -310,3 +310,28 @@ flutter test
 - `flutter test test/features/feed` — 16 feed-тестов прошли;
 - `flutter analyze` — `No issues found!`;
 - `flutter test` — 27 тестов прошли.
+
+## 13. Walks screen backend integration
+
+Codex интегрировал экран прогулок с Cloud Functions HTTP API и сохранил mock fallback:
+
+- `WalksRepository` используется как domain-контракт для `fetchWalks` и `joinWalk`;
+- `ApiWalksRepository` использует `ApiClient` для `GET /walks` и `POST /walks/:walkId/join`;
+- `MockWalksRepository` сохранен для тестов, локальной разработки и режима `USE_FIREBASE_BACKEND=false`;
+- `walksRepositoryProvider` выбирает `ApiWalksRepository` только при `USE_FIREBASE_BACKEND=true`, иначе использует mock repository;
+- `WalksController.refresh()` загружает прогулки через repository и отдает loading/error/empty/success состояния в `AsyncContentView`;
+- `WalksController.joinWalk()` теперь подтверждает участие только после ответа backend/mock repository, обновляет `isJoined` и `participantCount` из `WalkJoinResult`;
+- `WalksScreen` показывает snackbar успеха только после успешного join;
+- 401, 403, 404 и backend errors остаются typed exceptions из `ApiClient`, а network failure преобразуется в `ApiNetworkException` с дружелюбным сообщением для UI.
+
+Проверка:
+
+```bash
+dart format lib/core/network/api_client.dart lib/core/network/api_error.dart lib/features/walks/application/walks_controller.dart lib/features/walks/presentation/screens/walks_screen.dart lib/features/walks/presentation/widgets/walk_card.dart test/core/network/api_client_test.dart test/features/walks
+flutter test test/features/walks
+flutter test test/core/network/api_client_test.dart
+flutter analyze
+flutter test
+```
+
+Результат фиксируется в выводе Codex по задаче интеграции прогулок.

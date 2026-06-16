@@ -11,7 +11,7 @@ class WalkCard extends StatelessWidget {
   });
 
   final Walk walk;
-  final VoidCallback onJoin;
+  final Future<void> Function() onJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class WalkCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 key: Key('join-${walk.id}'),
-                onPressed: walk.isJoined ? null : onJoin,
+                onPressed: walk.isJoined ? null : () async => onJoin(),
                 icon: Icon(walk.isJoined ? Icons.check : Icons.add),
                 label: Text(walk.isJoined ? 'Вы участвуете' : 'Присоединиться'),
               ),

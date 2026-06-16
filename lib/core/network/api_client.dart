@@ -105,8 +105,13 @@ class ApiClient {
       request.body = jsonEncode(body);
     }
 
-    final streamedResponse = await _httpClient.send(request);
-    final response = await http.Response.fromStream(streamedResponse);
+    final http.Response response;
+    try {
+      final streamedResponse = await _httpClient.send(request);
+      response = await http.Response.fromStream(streamedResponse);
+    } on http.ClientException {
+      throw const ApiNetworkException();
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final decodedBody = _decodeBody(response.body);

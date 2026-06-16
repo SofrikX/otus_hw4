@@ -58,6 +58,60 @@ void main() {
     );
   });
 
+  test('403 response throws ApiForbiddenException', () async {
+    final client = ApiClient(
+      baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
+      httpClient: MockClient((_) async {
+        return http.Response(
+          '{"error":{"code":"forbidden","message":"You cannot join this walk."}}',
+          403,
+        );
+      }),
+      authTokenProvider: const _FakeAuthTokenProvider('token-123'),
+    );
+
+    expect(
+      () => client.joinWalk('walk-1'),
+      throwsA(
+        isA<ApiForbiddenException>()
+            .having((error) => error.statusCode, 'statusCode', 403)
+            .having((error) => error.code, 'code', 'forbidden')
+            .having(
+              (error) => error.message,
+              'message',
+              'You cannot join this walk.',
+            ),
+      ),
+    );
+  });
+
+  test('404 response throws ApiNotFoundException', () async {
+    final client = ApiClient(
+      baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
+      httpClient: MockClient((_) async {
+        return http.Response(
+          '{"error":{"code":"not-found","message":"Walk not found."}}',
+          404,
+        );
+      }),
+      authTokenProvider: const _FakeAuthTokenProvider('token-123'),
+    );
+
+    expect(
+      () => client.joinWalk('missing-walk'),
+      throwsA(
+        isA<ApiNotFoundException>()
+            .having((error) => error.statusCode, 'statusCode', 404)
+            .having((error) => error.code, 'code', 'not-found')
+            .having(
+              (error) => error.message,
+              'message',
+              'Walk not found.',
+            ),
+      ),
+    );
+  });
+
   test('500 response throws ApiServerException', () async {
     final client = ApiClient(
       baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
@@ -81,6 +135,25 @@ void main() {
               'message',
               'Unexpected backend error.',
             ),
+      ),
+    );
+  });
+
+  test('network failure throws ApiNetworkException', () async {
+    final client = ApiClient(
+      baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
+      httpClient: MockClient((request) {
+        throw http.ClientException('Connection refused', request.url);
+      }),
+      authTokenProvider: const _FakeAuthTokenProvider('token-123'),
+    );
+
+    expect(
+      () => client.getWalks(),
+      throwsA(
+        isA<ApiNetworkException>()
+            .having((error) => error.statusCode, 'statusCode', 0)
+            .having((error) => error.code, 'code', 'network-error'),
       ),
     );
   });

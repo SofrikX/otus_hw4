@@ -52,17 +52,8 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
     return List<Walk>.unmodifiable(initialState?.asData?.value ?? mockWalks);
   }
 
-  Future<void> refresh({bool shouldFail = false}) async {
+  Future<void> refresh() async {
     state = const AsyncValue.loading();
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-
-    if (shouldFail) {
-      state = AsyncValue.error(
-        Exception('Не удалось загрузить прогулки рядом.'),
-        StackTrace.current,
-      );
-      return;
-    }
 
     state = await AsyncValue.guard(() async {
       final walks = await _repository.fetchWalks();
@@ -70,49 +61,51 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
     });
   }
 
-  void joinWalk(String walkId) {
+  Future<bool> joinWalk(String walkId) async {
+    final walks = state.asData?.value;
+    if (walks == null) {
+      return false;
+    }
+
+    Walk? selectedWalk;
+    for (final walk in walks) {
+      if (walk.id == walkId) {
+        selectedWalk = walk;
+        break;
+      }
+    }
+
+    if (selectedWalk == null || selectedWalk.isJoined) {
+      return false;
+    }
+
+    try {
+      final result = await _repository.joinWalk(walkId);
+      _applyJoinResult(result);
+      return true;
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      return false;
+    }
+  }
+
+  void _applyJoinResult(WalkJoinResult result) {
     final walks = state.asData?.value;
     if (walks == null) {
       return;
     }
 
     final updated = walks.map((walk) {
-      if (walk.id != walkId || walk.isJoined) {
+      if (walk.id != result.walkId) {
         return walk;
       }
 
       return walk.copyWith(
-        isJoined: true,
-        participantCount: walk.participantCount + 1,
+        isJoined: result.isJoined,
+        participantCount: result.participantsCount,
       );
     }).toList(growable: false);
 
     state = AsyncValue.data(updated);
-    unawaited(_syncJoin(walkId));
-  }
-
-  Future<void> _syncJoin(String walkId) async {
-    try {
-      final result = await _repository.joinWalk(walkId);
-      final walks = state.asData?.value;
-      if (walks == null) {
-        return;
-      }
-
-      final updated = walks.map((walk) {
-        if (walk.id != result.walkId) {
-          return walk;
-        }
-
-        return walk.copyWith(
-          isJoined: result.isJoined,
-          participantCount: result.participantsCount,
-        );
-      }).toList(growable: false);
-
-      state = AsyncValue.data(updated);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
   }
 }
