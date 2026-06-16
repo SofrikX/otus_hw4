@@ -248,3 +248,35 @@ flutter test
 ```
 
 Результат: analyzer без замечаний, Flutter tests прошли.
+
+## 11. Cloud Functions HTTP API client
+
+Codex добавил frontend API client для постепенного перехода feed/walks с mock-данных на Cloud Functions HTTP API:
+
+- выбран `package:http`: для endpoints `GET /posts`, `POST /posts`, `POST /posts/:postId/like`, `GET /walks`, `POST /walks/:walkId/join` достаточно легкого клиента без interceptor-слоя `dio`, а `MockClient` удобно использовать в unit tests;
+- добавлен `BackendConfig`, который читает `API_BASE_URL` и `USE_FIREBASE_BACKEND` из `--dart-define`;
+- добавлен `AuthTokenProvider`, который берет Firebase ID token из `FirebaseAuth.currentUser`;
+- добавлен `ApiClient`, который отправляет JSON, добавляет `Authorization: Bearer ...` при наличии токена и преобразует error-envelope backend в typed exceptions;
+- добавлены `FeedRepository` и `WalksRepository` с mock/api реализациями;
+- `feedControllerProvider` и `walksControllerProvider` выбирают API repositories только при `USE_FIREBASE_BACKEND=true`; по умолчанию остаются mock repositories;
+- mock repositories не удалялись и продолжают использоваться существующими UI/tests.
+
+Локальный backend запуск:
+
+```bash
+flutter run -d chrome \
+  --dart-define=USE_FIREBASE_AUTH_EMULATOR=true \
+  --dart-define=USE_FIREBASE_BACKEND=true \
+  --dart-define=FIREBASE_PROJECT_ID=demo-petconnect \
+  --dart-define=API_BASE_URL=http://127.0.0.1:5001/demo-petconnect/us-central1/api
+```
+
+Проверка:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат: analyzer без замечаний, Flutter tests прошли, включая `test/core/network/api_client_test.dart`.

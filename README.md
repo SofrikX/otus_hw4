@@ -58,6 +58,13 @@ PetConnect — приложение для владельцев домашних
    - protected routing через `go_router`;
    - локальный режим Firebase Auth Emulator без production secrets.
 
+6. **Cloud Functions HTTP API client**
+   - `package:http` используется как легкий HTTP-клиент для текущих endpoints;
+   - base URL читается из `--dart-define=API_BASE_URL`;
+   - Firebase ID token добавляется как `Authorization: Bearer ...`, если пользователь авторизован;
+   - ошибки `400`, `401`, `403`, `404`, `500` превращаются в typed Dart exceptions;
+   - `USE_FIREBASE_BACKEND=false` оставляет feed и walks на mock repositories.
+
 ## Цель HW5
 
 HW5 должен подготовить и интегрировать backend:
@@ -165,6 +172,19 @@ flutter run -d chrome \
 В emulator-режиме приложение использует demo Firebase options. Реальные
 Firebase ключи и service account files в репозиторий не добавляются.
 
+Для локальной проверки Cloud Functions HTTP API через Emulator Suite:
+
+```bash
+firebase emulators:start --project demo-petconnect
+flutter run -d chrome \
+  --dart-define=USE_FIREBASE_AUTH_EMULATOR=true \
+  --dart-define=USE_FIREBASE_BACKEND=true \
+  --dart-define=FIREBASE_PROJECT_ID=demo-petconnect \
+  --dart-define=API_BASE_URL=http://127.0.0.1:5001/demo-petconnect/us-central1/api
+```
+
+Если `USE_FIREBASE_BACKEND` не задан или равен `false`, приложение использует mock repositories. Это fallback для локальной разработки без запущенных Cloud Functions.
+
 Fallback для локальной desktop-проверки на macOS:
 
 ```bash
@@ -211,6 +231,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
 - `test/features/walks/walks_screen_test.dart`
 - `test/features/pets/pet_profile_screen_test.dart`
 - `test/features/chat/chat_screen_test.dart`
+- `test/core/network/api_client_test.dart`
 
 Запуск:
 

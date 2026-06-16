@@ -1004,3 +1004,54 @@ API должен работать с Firestore через Firebase Admin SDK.
 - В `HomeScreen` добавлен logout, mock-экраны feed/pets/walks/chat не переводились на Firebase и не сломались.
 - Добавлен `test/features/auth/auth_controller_test.dart` с двумя unit-тестами loading/success и error сценариев.
 - `dart format .`, `flutter analyze`, `flutter test` завершились успешно.
+
+## Prompt 22 — API client для Cloud Functions HTTP API
+
+```markdown
+# Role
+Ты Senior Flutter Developer и API Integration Engineer.
+
+# Task
+Создай API client для общения Flutter frontend с Firebase Cloud Functions HTTP API.
+
+# Context
+Cloud Functions API реализует:
+- GET /posts
+- POST /posts
+- POST /posts/:postId/like
+- GET /walks
+- POST /walks/:walkId/join
+
+Frontend должен постепенно перейти с mock-данных на backend-данные.
+
+# Required reading
+Прочитай:
+- docs/api_spec.md
+- functions/src/routes/
+- lib/features/feed/
+- lib/features/walks/
+- lib/core/
+- pubspec.yaml
+
+# Requirements
+1. Добавь HTTP-клиент.
+2. Создай backend config, api client, api error и auth token provider.
+3. Читай baseUrl из API_BASE_URL.
+4. Добавляй Authorization Bearer token для авторизованного пользователя.
+5. Обрабатывай 400, 401, 403, 404, 500 typed exceptions.
+6. Добавь fallback: USE_FIREBASE_BACKEND=false использует mock repositories.
+7. Не удаляй mock repositories.
+8. Обнови documentation.
+
+# Testing
+Добавь unit tests для успешного GET, 401 unauthorized и 500 server error.
+```
+
+Результат:
+
+- Добавлен `package:http` как direct dependency и выбран как легкий клиент для текущего REST-like API.
+- Созданы `lib/core/config/backend_config.dart`, `lib/core/network/api_client.dart`, `lib/core/network/api_error.dart`, `lib/core/network/auth_token_provider.dart`.
+- Добавлены Feed/Walks repository interfaces и mock/api реализации.
+- `FeedController` и `WalksController` переключаются на HTTP repositories при `USE_FIREBASE_BACKEND=true`, иначе используют mock repositories.
+- Добавлен `test/core/network/api_client_test.dart` для успешного GET, 401 и 500.
+- Проверка: `dart format .`, `flutter analyze`, `flutter test`.

@@ -1,24 +1,57 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/data/mock_data.dart';
+import '../../../core/network/api_client.dart';
+import '../data/api_feed_repository.dart';
+import '../data/mock_feed_repository.dart';
+import '../domain/feed_repository.dart';
 import '../domain/pet_post.dart';
+
+final feedRepositoryProvider = Provider<FeedRepository>((ref) {
+  final config = ref.watch(backendConfigProvider);
+  if (config.useFirebaseBackend) {
+    return ApiFeedRepository(ref.watch(apiClientProvider));
+  }
+
+  return MockFeedRepository();
+});
 
 final feedControllerProvider =
     StateNotifierProvider<FeedController, AsyncValue<List<PetPost>>>((ref) {
-  return FeedController();
+  final useFirebaseBackend =
+      ref.watch(backendConfigProvider).useFirebaseBackend;
+  final controller = FeedController(
+    repository: ref.watch(feedRepositoryProvider),
+    loadOnStart: useFirebaseBackend,
+  );
+
+  return controller;
 });
 
 class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   FeedController({
+    FeedRepository? repository,
     AsyncValue<List<PetPost>>? initialState,
     List<PetPost>? initialPosts,
+    bool loadOnStart = false,
   })  : _posts = _resolveInitialPosts(initialState, initialPosts),
+        _repository = repository ??
+            MockFeedRepository(
+              initialPosts: _resolveInitialPosts(initialState, initialPosts),
+            ),
         super(
           initialState ??
               AsyncValue.data(_resolveInitialPosts(initialState, initialPosts)),
-        );
+        ) {
+    if (loadOnStart) {
+      unawaited(refresh());
+    }
+  }
 
   List<PetPost> _posts;
+  final FeedRepository _repository;
 
   Future<void> refresh({bool shouldFail = false}) async {
     state = const AsyncValue.loading();
@@ -32,7 +65,11 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       return;
     }
 
-    state = AsyncValue.data(_posts);
+    state = await AsyncValue.guard(() async {
+      final posts = await _repository.fetchPosts();
+      _posts = List<PetPost>.unmodifiable(posts);
+      return _posts;
+    });
   }
 
   void toggleLike(String postId) {
@@ -41,7 +78,7 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       return;
     }
 
-    final updated = posts.map((post) {
+    final optimisticPosts = posts.map((post) {
       if (post.id != postId) {
         return post;
       }
@@ -55,7 +92,8 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       );
     }).toList(growable: false);
 
-    _setPosts(updated);
+    _setPosts(optimisticPosts);
+    unawaited(_syncLike(postId));
   }
 
   void addComment(String postId, String text) {
@@ -98,5 +136,30 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   void _setPosts(List<PetPost> posts) {
     _posts = List<PetPost>.unmodifiable(posts);
     state = AsyncValue.data(_posts);
+  }
+
+  Future<void> _syncLike(String postId) async {
+    try {
+      final result = await _repository.toggleLike(postId);
+      final posts = state.asData?.value;
+      if (posts == null) {
+        return;
+      }
+
+      _setPosts(
+        posts.map((post) {
+          if (post.id != result.postId) {
+            return post;
+          }
+
+          return post.copyWith(
+            isLiked: result.isLiked,
+            likesCount: result.likesCount,
+          );
+        }).toList(growable: false),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 }
