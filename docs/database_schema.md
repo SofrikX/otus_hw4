@@ -326,6 +326,6 @@ Additional useful indexes:
 
 ## Notes
 
-- RLS policies are included in the migration because Supabase security must be part of the database design.
+- RLS policies are defined in `supabase/migrations/002_rls_policies.sql`.
 - Storage buckets are also created in the migration for `avatars`, `pet-photos`, and `post-images`.
 - `supabase/seed.sql` intentionally contains no real users or production data.

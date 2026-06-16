@@ -1608,3 +1608,33 @@ PetConnect — приложение для владельцев питомцев
 - Добавлены constraints, foreign keys, required indexes, updated_at triggers, counter triggers и RLS policies.
 - `docs/database_schema.md` обновлен: таблицы, поля, связи, индексы, примеры данных и соответствие Flutter сущностям.
 - Flutter-код, `lib/`, `test/` и `pubspec.yaml` не менялись.
+
+## Prompt 34 — Supabase Row Level Security policies
+
+```markdown
+# Role
+Ты Supabase Security Engineer.
+
+# Task
+Настрой Row Level Security policies для PetConnect.
+
+# Context
+Оригинальное ДЗ требует безопасность и политики доступа. Для Supabase это реализуется через RLS.
+
+# Requirements
+1. Создать `supabase/migrations/002_rls_policies.sql`.
+2. Включить RLS для profiles, pets, posts, comments, post_likes, walks, walk_participants, chats, chat_participants, messages.
+3. Настроить read для authenticated users.
+4. Защитить writes по owner/author/self/chat participant.
+5. Не использовать небезопасные write policies вида `using (true)` / `with check (true)`.
+6. Обновить `docs/supabase_security.md`, `backend_documentation.md`, `prompts.md`.
+```
+
+Результат:
+
+- Создана migration `supabase/migrations/002_rls_policies.sql`.
+- Табличные RLS policies вынесены из `001_initial_schema.sql` в отдельную security migration.
+- Read-доступ открыт только роли `authenticated`, anon/public read не используется.
+- Write-доступ ограничен владельцем профиля/питомца, автором поста/комментария, self-like, self-join и участниками чата.
+- Прямое client-side создание чата не открыто; для этого нужна будущая безопасная RPC/серверная операция.
+- `docs/supabase_security.md` и `backend_documentation.md` обновлены описанием security model.
