@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "tsc --noEmit",
-    "test": "npm run build",
+    "test": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions,firestore,auth,storage",
     "seed": "node ../scripts/seed_firestore.js"
   },

@@ -55,3 +55,15 @@ export interface CreatePostInput {
   petEmoji?: string | null;
   imageEmoji?: string | null;
 }
+
+export interface CreatePetInput {
+  ownerId: string;
+  ownerName: string;
+  name: string;
+  animalType: string;
+  breed?: string | null;
+  age?: number | null;
+  description?: string | null;
+  photoUrl?: string | null;
+  photoEmoji?: string | null;
+}

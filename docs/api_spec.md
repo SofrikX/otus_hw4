@@ -90,6 +90,123 @@ Response:
 }
 ```
 
+### GET /pets/:petId
+
+Returns one pet profile by Firestore document id.
+
+Auth: not required by HTTP middleware for HW5 read-only MVP. Firestore Admin SDK bypasses Security Rules, so public exposure should be decided before production deploy.
+
+Response:
+
+```json
+{
+  "data": {
+    "id": "pet-1",
+    "ownerId": "user-1",
+    "ownerName": "Аня",
+    "name": "Бруно",
+    "animalType": "dog",
+    "breed": "Корги",
+    "age": 3,
+    "description": "Обожает мячики, людей и короткие пробежки в парке.",
+    "photoUrl": "https://storage.googleapis.com/petconnect/pets/user-1/pet-1.jpg",
+    "photoEmoji": "dog",
+    "createdAt": "2026-06-16T09:10:00.000Z",
+    "updatedAt": "2026-06-16T09:10:00.000Z"
+  }
+}
+```
+
+Errors:
+
+- `400 validation-error` if `petId` is empty;
+- `404 not-found` if the pet document does not exist.
+
+### GET /pets
+
+Returns pets for one owner sorted by `createdAt desc`.
+
+Auth: not required by HTTP middleware for HW5 read-only MVP.
+
+Query:
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `ownerId` | `string` | Yes | Firebase Auth UID of the pet owner |
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "id": "pet-1",
+      "ownerId": "user-1",
+      "ownerName": "Аня",
+      "name": "Бруно",
+      "animalType": "dog",
+      "breed": "Корги",
+      "age": 3
+    }
+  ]
+}
+```
+
+### POST /pets
+
+Creates a pet profile.
+
+Auth: required.
+
+Headers:
+
+```http
+Authorization: Bearer <firebase-id-token>
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "ownerId": "user-1",
+  "ownerName": "Аня",
+  "name": "Бруно",
+  "animalType": "dog",
+  "breed": "Корги",
+  "age": 3,
+  "description": "Обожает мячики, людей и короткие пробежки в парке.",
+  "photoUrl": "https://storage.googleapis.com/petconnect/pets/user-1/pet-1.jpg",
+  "photoEmoji": "dog"
+}
+```
+
+Validation:
+
+- `ownerId` must match Firebase Auth `uid`;
+- `ownerName`, `name` and `animalType` are required strings;
+- `name` must be 50 characters or fewer;
+- `breed` must be 80 characters or fewer;
+- `age`, if present, must be an integer from 0 to 30;
+- `description` must be 500 characters or fewer;
+- `photoUrl` and `photoEmoji` are optional.
+
+Response:
+
+```json
+{
+  "data": {
+    "id": "pet-1",
+    "ownerId": "user-1",
+    "ownerName": "Аня",
+    "name": "Бруно",
+    "animalType": "dog",
+    "breed": "Корги",
+    "age": 3
+  }
+}
+```
+
 ### GET /posts
 
 Returns posts sorted by `createdAt desc`.

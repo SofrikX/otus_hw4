@@ -1170,3 +1170,57 @@ Cloud Functions API содержит:
 - `WalksController.joinWalk()` теперь обновляет состояние только после результата repository, а success snackbar показывается только после успешного join.
 - `ApiClient` расширен `ApiNetworkException`; тестами покрыты 401, 403, 404, 500 и network failure.
 - `WalksScreen` покрыт widget-тестами для списка, join success и error state с retry.
+
+## Prompt 25 — интеграция данных питомцев с backend
+
+```markdown
+# Role
+Ты Senior Flutter Developer и Firebase Integration Engineer.
+
+# Task
+Интегрируй данные питомцев PetConnect с backend.
+
+# Context
+Питомцы используются в профиле питомца и в постах.
+Для MVP нужно получать данные питомца с backend вместо mock, сохранив fallback.
+
+# Required reading
+Прочитай:
+- docs/firestore_schema.md
+- docs/api_spec.md
+- lib/features/pets/
+- lib/features/feed/
+- test/features/pets/
+
+# Requirements
+1. Добавь PetRepository abstraction, если ее нет.
+2. Добавь Firebase/Api implementation:
+   - getPetById(petId)
+   - getPetsByOwner(ownerId), если это уже поддерживается backend.
+3. Если API endpoint для pets отсутствует, добавь его в Cloud Functions:
+   - GET /pets/:petId
+   - POST /pets
+4. Обнови UI:
+   - loading;
+   - error;
+   - not found;
+   - success.
+5. Обнови tests:
+   - pet profile success;
+   - pet not found;
+   - backend error.
+6. Обнови:
+   - docs/api_spec.md;
+   - development_report.md;
+   - prompts.md.
+```
+
+Результат:
+
+- Добавлен `PetRepository` contract и `ApiPetRepository` / `MockPetRepository`.
+- `PetProfileScreen` получает питомца через `petByIdProvider` и показывает loading, error, not found и success states.
+- `PetsScreen` переведен на `AsyncContentView` с mock fallback для MVP.
+- `ApiClient` получил методы `getPet` и `getPetsByOwner`.
+- Cloud Functions API расширен endpoints `GET /pets/:petId`, `GET /pets?ownerId=...` и `POST /pets`.
+- `POST /pets` защищен Firebase Auth и валидирует ownerId против uid.
+- Добавлены tests для pet profile success, not found, backend error и API mapping.

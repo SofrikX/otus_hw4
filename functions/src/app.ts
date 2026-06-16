@@ -3,6 +3,7 @@ import express from "express";
 import * as logger from "firebase-functions/logger";
 
 import { errorHandler } from "./middleware/errorHandler";
+import { petsRouter } from "./routes/pets";
 import { postsRouter } from "./routes/posts";
 import { walksRouter } from "./routes/walks";
 import { HttpError } from "./types";
@@ -59,6 +60,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/posts", postsRouter);
+app.use("/pets", petsRouter);
 app.use("/walks", walksRouter);
 
 app.use((_req, _res, next) => {

@@ -79,6 +79,19 @@ class ApiClient {
     return postData<Map<String, dynamic>>('/posts/$postId/like');
   }
 
+  Future<Map<String, dynamic>> getPet(String petId) {
+    return getData<Map<String, dynamic>>('/pets/$petId');
+  }
+
+  Future<List<Map<String, dynamic>>> getPetsByOwner(String ownerId) async {
+    final data = await getData<List<dynamic>>(
+      '/pets',
+      queryParameters: {'ownerId': ownerId},
+    );
+
+    return data.cast<Map<String, dynamic>>();
+  }
+
   Future<List<Map<String, dynamic>>> getWalks({int? limit}) async {
     final data = await getData<List<dynamic>>(
       '/walks',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../application/pets_provider.dart';
@@ -18,12 +19,20 @@ class PetProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Профиль питомца')),
       body: SafeArea(
-        child: pet == null
-            ? const ErrorState(
+        child: AsyncContentView<Pet?>(
+          value: pet,
+          onRetry: () => ref.invalidate(petByIdProvider(petId)),
+          dataBuilder: (pet) {
+            if (pet == null) {
+              return const ErrorState(
                 title: 'Питомец не найден',
                 message: 'Проверьте ссылку или вернитесь к списку питомцев.',
-              )
-            : _PetProfileContent(pet: pet),
+              );
+            }
+
+            return _PetProfileContent(pet: pet);
+          },
+        ),
       ),
     );
   }

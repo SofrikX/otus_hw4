@@ -335,3 +335,30 @@ flutter test
 ```
 
 Результат фиксируется в выводе Codex по задаче интеграции прогулок.
+
+## 14. Pets backend integration
+
+Codex интегрировал данные питомцев с Cloud Functions HTTP API и сохранил mock fallback:
+
+- добавлен `PetRepository` как domain-контракт для `getPetById` и `getPetsByOwner`;
+- добавлены `ApiPetRepository` и `MockPetRepository`;
+- `petRepositoryProvider` выбирает `ApiPetRepository` при `USE_FIREBASE_BACKEND=true`, иначе использует mock repository;
+- `petByIdProvider` и `petsProvider` переведены на async provider states;
+- `PetProfileScreen` теперь показывает loading, backend error с retry, not found и success states;
+- `PetsScreen` показывает loading, empty, error и success через общий `AsyncContentView`;
+- `ApiClient` расширен методами `GET /pets/:petId` и `GET /pets?ownerId=...`;
+- в Cloud Functions добавлены `GET /pets/:petId`, `GET /pets?ownerId=...` и `POST /pets`;
+- `POST /pets` валидирует ownerId против Firebase Auth uid и проверяет поля pet profile перед записью в Firestore;
+- 404 для профиля питомца преобразуется в `null` на уровне repository, чтобы UI показывал отдельное состояние "Питомец не найден".
+
+Проверка:
+
+```bash
+dart format .
+flutter test test/features/pets
+flutter analyze
+flutter test
+npm test --prefix functions
+```
+
+Результат фиксируется в выводе Codex по задаче интеграции питомцев.
