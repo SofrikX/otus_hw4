@@ -608,3 +608,88 @@ PetConnect — приложение для владельцев питомцев
 - Добавлены разделы MVP HW5 Data, Indexes, Security Notes и AI-assisted database design.
 - `docs/documents_index.md` и `development_report.md` обновлены ссылкой на новый документ.
 - Flutter-код не менялся.
+
+## Prompt 17 — подготовка Firebase configuration
+
+```markdown
+# Role
+Ты Firebase DevOps Engineer.
+
+# Task
+Подготовь Firebase configuration для проекта PetConnect.
+
+# Context
+Нужно добавить backend-инфраструктуру для ДЗ 5.
+Firebase project может быть подключен позже через Firebase CLI.
+Секреты нельзя коммитить.
+
+# Requirements
+Создай или обнови файлы:
+- firebase.json
+- .firebaserc.example
+- firestore.rules
+- firestore.indexes.json
+- storage.rules
+- .env.example
+- docs/deployment.md
+
+# Firebase services
+Используются:
+- Firestore
+- Storage
+- Functions
+- Auth
+- Emulators
+
+# Requirements for firebase.json
+1. Настрой Firestore rules и indexes.
+2. Настрой Storage rules.
+3. Настрой Functions source: `functions`.
+4. Настрой Emulators:
+   - auth
+   - firestore
+   - functions
+   - storage
+   - ui
+
+# Requirements for .env.example
+Добавь только безопасные placeholder-переменные:
+- FIREBASE_PROJECT_ID
+- FIREBASE_REGION
+- API_BASE_URL
+- USE_FIREBASE_BACKEND
+
+Не добавляй реальные ключи.
+
+# Requirements for docs/deployment.md
+Опиши:
+1. Установку Firebase CLI.
+2. `firebase login`.
+3. `firebase init`.
+4. Локальный запуск emulator suite.
+5. Production deploy.
+6. Предупреждение, что Cloud Functions deploy может требовать Firebase Blaze plan.
+7. Как не коммитить секреты.
+
+# Security
+1. Не добавляй serviceAccount.json.
+2. Не добавляй реальные токены.
+3. Не добавляй реальные Firebase API keys в .env.
+4. Обнови `.gitignore`, если нужно.
+
+# Output format
+1. Summary.
+2. Files changed.
+3. Security notes.
+4. Commands to run manually.
+5. Diff.
+```
+
+Результат:
+
+- Созданы `firebase.json`, `.firebaserc.example`, `firestore.rules`, `firestore.indexes.json`, `storage.rules`, `.env.example` и `docs/deployment.md`.
+- `firebase.json` настраивает Firestore rules/indexes, Storage rules, Functions source `functions` и emulators для Auth, Firestore, Functions, Storage и UI.
+- `.env.example` содержит только безопасные placeholders без реальных ключей.
+- `.gitignore` дополнен правилами для `.env`, `.firebaserc`, service account файлов, Firebase debug logs и `functions/node_modules`.
+- `docs/deployment.md`, `docs/documents_index.md` и `development_report.md` обновлены под Firebase CLI/emulator/deploy workflow.
+- Flutter-код не менялся.

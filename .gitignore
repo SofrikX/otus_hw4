@@ -10,3 +10,25 @@ build/
 .idea/
 
 .DS_Store
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.firebaserc
+serviceAccount.json
+*-service-account.json
+firebase-adminsdk*.json
+
+# Firebase local logs and exports
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+storage-debug.log
+database-debug.log
+firebase-export-*/
+
+# Node / Cloud Functions
+functions/node_modules/
+functions/lib/
+functions/.runtimeconfig.json

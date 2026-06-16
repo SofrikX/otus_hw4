@@ -22,6 +22,7 @@
 | `prompts.md` | HW5 + ДЗ 2 | Проверяющий, студент, Codex | Журнал промптов и результатов | После каждой AI-задачи |
 | `submission_checklist.md` | HW5 | Студент | Финальная проверка сдачи | Перед GitHub-публикацией |
 | `docs/current_homework_scope.md` | HW5 | Codex, студент | 9 шагов ДЗ 5, Firebase mapping, критерии готовности | Перед изменениями scope, backend или интеграции |
+| `docs/deployment.md` | HW5 | Codex, студент | Firebase CLI, Emulator Suite, deploy и правила работы с секретами | При настройке Firebase project, emulators и deploy |
 | `docs/firestore_schema.md` | HW5 | Codex, студент | Схема Cloud Firestore, поля, связи, примеры документов и индексы | При проектировании backend, repositories, rules и Cloud Functions |
 | `docs/technical_specification.md` | ДЗ 3 | Codex, студент | Техническое задание PetConnect с Firebase-архитектурой | При изменении функций, backend schema и архитектуры |
 | `docs/project_description.md` | ДЗ 3 | Codex, студент | Идея продукта и бизнес-контекст | При продуктовых решениях |
@@ -58,7 +59,10 @@
 - `docs/user_stories.md`;
 - `docs/error_handling.md`;
 - `docs/ai_agent_rules.md`;
+- `docs/deployment.md`;
 - `docs/firestore_schema.md`.
+
+Когда задача касается Firebase CLI, emulators, deploy или секретов, обязательно читать `docs/deployment.md`.
 
 Когда появятся файлы Firebase, также читать:
 

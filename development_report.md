@@ -213,6 +213,7 @@ firebase emulators:start
 
 - `AGENTS.md` описывает OpenAI Codex, Flutter + Firebase стек и обязательные проверки;
 - `docs/current_homework_scope.md` содержит 9 шагов ДЗ 5 и Firebase mapping;
+- `docs/deployment.md` описывает Firebase CLI, emulator suite, production deploy, Blaze plan warning и правила некоммита секретов;
 - `docs/firestore_schema.md` описывает коллекции Firestore, поля, связи, примеры документов, MVP data и индексы;
 - `docs/ai_workflow.md` описывает Firestore schema, Security Rules, Cloud Functions API, frontend integration и AI-анализ логов;
 - `docs/documents_index.md` маршрутизирует документы как HW5-материалы;
