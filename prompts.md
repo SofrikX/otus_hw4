@@ -693,3 +693,89 @@ Firebase project может быть подключен позже через Fi
 - `.gitignore` дополнен правилами для `.env`, `.firebaserc`, service account файлов, Firebase debug logs и `functions/node_modules`.
 - `docs/deployment.md`, `docs/documents_index.md` и `development_report.md` обновлены под Firebase CLI/emulator/deploy workflow.
 - Flutter-код не менялся.
+
+## Prompt 18 — реализация Firestore Security Rules
+
+```markdown
+# Role
+Ты Firebase Security Engineer.
+
+# Task
+Реализуй Firestore Security Rules для PetConnect.
+
+# Context
+Backend использует Firebase Auth и Cloud Firestore.
+Нужно заменить логику Supabase RLS из оригинального ДЗ на Firebase Security Rules.
+
+# Required reading
+Прочитай:
+- docs/firestore_schema.md
+- docs/current_homework_scope.md
+- docs/technical_specification.md
+- firestore.rules
+
+# Requirements
+Настрой правила для коллекций:
+
+1. users
+   - пользователь может читать базовые публичные профили;
+   - пользователь может создавать/обновлять только свой документ.
+
+2. pets
+   - читать можно всем авторизованным пользователям;
+   - создавать может авторизованный пользователь;
+   - обновлять/удалять может только ownerId.
+
+3. posts
+   - читать можно всем авторизованным пользователям;
+   - создавать может авторизованный пользователь;
+   - authorId должен совпадать с request.auth.uid;
+   - обновлять/удалять может только автор.
+
+4. posts/{postId}/comments
+   - читать можно всем авторизованным пользователям;
+   - создавать может авторизованный пользователь;
+   - authorId должен совпадать с request.auth.uid;
+   - удалять может автор комментария или автор поста.
+
+5. walks
+   - читать можно всем авторизованным пользователям;
+   - создавать может авторизованный пользователь;
+   - creatorId должен совпадать с request.auth.uid;
+   - обновлять может creatorId или участник при join-сценарии.
+
+6. chats/messages
+   - читать и писать можно только участникам чата.
+
+# Validation
+Добавь helper-функции:
+- signedIn()
+- isOwner(ownerId)
+- isAuthor(authorId)
+- isChatParticipant()
+
+# Documentation
+Обнови или создай:
+- docs/firebase_security.md
+
+В документации объясни:
+- чем Firebase Security Rules заменяют Supabase RLS;
+- какие операции разрешены;
+- какие операции запрещены.
+
+# Output format
+1. Summary.
+2. Rules implemented.
+3. Security assumptions.
+4. Files changed.
+5. Diff.
+```
+
+Результат:
+
+- `firestore.rules` переписан под Firebase Auth и коллекции PetConnect: users, pets, posts, comments, likes, walks, chats и messages.
+- Добавлены helper-функции `signedIn()`, `isOwner(ownerId)`, `isAuthor(authorId)` и `isChatParticipant()`.
+- Реализовано удаление комментария автором комментария или автором родительского поста.
+- Для прогулок добавлен join-сценарий участника: добавление своего UID и увеличение `participantsCount` на 1.
+- Создан `docs/firebase_security.md` с объяснением замены Supabase RLS на Firebase Security Rules, списком разрешенных и запрещенных операций.
+- Flutter-код не менялся.
