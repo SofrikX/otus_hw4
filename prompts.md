@@ -894,3 +894,73 @@ API должен работать с Firestore через Firebase Admin SDK.
 - Настроен CORS для локальных Flutter Web origins и production origins через `CORS_ORIGIN`.
 - Создан `docs/api_spec.md` с описанием endpoints, auth, CORS, error model и команд запуска.
 - Flutter-код не менялся, Supabase не подключался.
+
+## Prompt 20 — seed-данные для Firebase Emulator
+
+```markdown
+# Role
+Ты Firebase Backend Developer и QA Engineer.
+
+# Task
+Добавь seed-данные для локального Firebase Emulator Suite.
+
+# Context
+Для проверки ДЗ преподаватель должен иметь возможность запустить backend локально и увидеть данные в приложении.
+
+# Required reading
+Прочитай:
+- docs/firestore_schema.md
+- functions/src/
+- firestore.rules
+- README.md
+
+# Requirements
+Создай:
+- scripts/seed_firestore.js
+- docs/seed_data.md
+
+# Seed data
+Добавь тестовые данные:
+- 2 users
+- 3 pets
+- 4 posts
+- comments к постам
+- 3 walks
+- 1 chat
+- 2 messages
+
+# Requirements for script
+1. Скрипт должен работать с Firestore Emulator.
+2. Не использовать production credentials.
+3. Использовать FIRESTORE_EMULATOR_HOST.
+4. Иметь npm script или понятную команду запуска.
+5. Не требовать serviceAccount.json.
+6. Данные должны соответствовать docs/firestore_schema.md.
+
+# Documentation
+В docs/seed_data.md опиши:
+- как запустить emulators;
+- как выполнить seed;
+- какие данные создаются.
+
+# Update
+Обнови:
+- README.md
+- prompts.md
+
+# Output format
+1. Summary.
+2. Seed data overview.
+3. Commands.
+4. Files changed.
+5. Diff.
+```
+
+Результат:
+
+- Создан `scripts/seed_firestore.js` для наполнения Firestore Emulator.
+- Скрипт требует `FIRESTORE_EMULATOR_HOST`, не использует `serviceAccount.json` и не содержит production credentials.
+- Добавлен npm script `seed` в `functions/package.json`.
+- Создан `docs/seed_data.md` с командами запуска emulators и seed.
+- `README.md`, `docs/documents_index.md`, `development_report.md` и `prompts.md` обновлены ссылками на seed workflow.
+- Flutter-код не менялся.

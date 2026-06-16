@@ -217,6 +217,7 @@ firebase emulators:start
 - `docs/deployment.md` описывает Firebase CLI, emulator suite, production deploy, Blaze plan warning и правила некоммита секретов;
 - `docs/firebase_security.md` объясняет Firestore Security Rules как замену Supabase RLS и фиксирует разрешенные/запрещенные операции;
 - `docs/firestore_schema.md` описывает коллекции Firestore, поля, связи, примеры документов, MVP data и индексы;
+- `docs/seed_data.md` описывает запуск локальных seed-данных для Firestore Emulator;
 - `docs/ai_workflow.md` описывает Firestore schema, Security Rules, Cloud Functions API, frontend integration и AI-анализ логов;
 - `docs/documents_index.md` маршрутизирует документы как HW5-материалы;
 - `docs/ai_agent_rules.md` больше не запрещает Firebase, а задает правила безопасной интеграции;

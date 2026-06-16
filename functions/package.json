@@ -10,7 +10,8 @@
     "build": "tsc",
     "lint": "tsc --noEmit",
     "test": "npm run build",
-    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth,storage"
+    "serve": "npm run build && firebase emulators:start --only functions,firestore,auth,storage",
+    "seed": "node ../scripts/seed_firestore.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

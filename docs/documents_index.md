@@ -26,6 +26,7 @@
 | `docs/deployment.md` | HW5 | Codex, студент | Firebase CLI, Emulator Suite, deploy и правила работы с секретами | При настройке Firebase project, emulators и deploy |
 | `docs/firebase_security.md` | HW5 | Codex, студент | Firestore Security Rules, замена Supabase RLS, разрешенные и запрещенные операции | При изменении `firestore.rules` и backend-доступов |
 | `docs/firestore_schema.md` | HW5 | Codex, студент | Схема Cloud Firestore, поля, связи, примеры документов и индексы | При проектировании backend, repositories, rules и Cloud Functions |
+| `docs/seed_data.md` | HW5 | Codex, студент | Seed-данные для локального Firestore Emulator | При проверке backend локально и подготовке демо-данных |
 | `docs/technical_specification.md` | ДЗ 3 | Codex, студент | Техническое задание PetConnect с Firebase-архитектурой | При изменении функций, backend schema и архитектуры |
 | `docs/project_description.md` | ДЗ 3 | Codex, студент | Идея продукта и бизнес-контекст | При продуктовых решениях |
 | `docs/user_stories.md` | ДЗ 3 | Codex, студент | User stories и пользовательские сценарии | При разработке API, экранов и тестов |
@@ -65,6 +66,7 @@
 - `docs/deployment.md`;
 - `docs/firebase_security.md`;
 - `docs/firestore_schema.md`.
+- `docs/seed_data.md`.
 
 Когда задача касается Firebase CLI, emulators, deploy или секретов, обязательно читать `docs/deployment.md`.
 

@@ -167,6 +167,18 @@ firebase emulators:exec "npm test --prefix functions"
 
 Cloud Functions deploy в production может потребовать Firebase Blaze plan. Для ДЗ основной проверяемый сценарий должен работать локально через emulators.
 
+### Seed-данные для Firestore Emulator
+
+После запуска emulators можно наполнить локальный Firestore тестовыми данными:
+
+```bash
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
+```
+
+Скрипт `scripts/seed_firestore.js` создает пользователей, питомцев, посты, комментарии, прогулки, чат и сообщения. Он не использует production credentials и не запускается без `FIRESTORE_EMULATOR_HOST`.
+
+Подробнее: `docs/seed_data.md`.
+
 ## Тесты
 
 В проекте уже есть автоматические Flutter-тесты для ключевых функций:
