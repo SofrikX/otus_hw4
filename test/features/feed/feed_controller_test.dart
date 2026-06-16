@@ -6,6 +6,7 @@ import 'package:petconnect/core/config/backend_config.dart';
 import 'package:petconnect/core/data/mock_data.dart';
 import 'package:petconnect/core/network/api_client.dart';
 import 'package:petconnect/core/network/auth_token_provider.dart';
+import 'package:petconnect/features/auth/domain/app_user.dart';
 import 'package:petconnect/features/feed/application/feed_controller.dart';
 import 'package:petconnect/features/feed/data/api_feed_repository.dart';
 import 'package:petconnect/features/feed/data/mock_feed_repository.dart';
@@ -61,6 +62,28 @@ void main() {
     final updatedPost = _firstPost(controller);
     expect(updatedPost?.commentsCount, post.commentsCount + 1);
     expect(updatedPost?.comments.last, comment);
+  });
+
+  test('createPost prepends post returned by repository', () async {
+    const createdText = 'Новый пост из UI';
+    final controller = FeedController(
+      repository: _FakeFeedRepository(posts: [mockPosts.first]),
+      initialPosts: [mockPosts.first],
+    );
+
+    await controller.createPost(
+      author: const AppUser(
+        id: 'user-qa',
+        email: 'qa@example.com',
+        displayName: 'QA User',
+      ),
+      text: createdText,
+    );
+
+    final createdPost = _firstPost(controller);
+    expect(createdPost?.id, 'created-post');
+    expect(createdPost?.text, createdText);
+    expect(controller.state.value, hasLength(2));
   });
 
   test('feedRepositoryProvider uses mock repository by default', () {
@@ -130,8 +153,20 @@ class _FakeFeedRepository implements FeedRepository {
   }
 
   @override
-  Future<PetPost> createPost(CreatePostInput input) {
-    throw UnimplementedError();
+  Future<PetPost> createPost(CreatePostInput input) async {
+    return PetPost(
+      id: 'created-post',
+      petId: input.petId,
+      petName: input.petName ?? 'Питомец',
+      authorName: input.authorName ?? 'Владелец',
+      petEmoji: input.petEmoji ?? '🐾',
+      imageEmoji: input.imageEmoji ?? '📷',
+      text: input.text,
+      createdAt: DateTime(2026),
+      likesCount: 0,
+      commentsCount: 0,
+      isLiked: false,
+    );
   }
 
   @override

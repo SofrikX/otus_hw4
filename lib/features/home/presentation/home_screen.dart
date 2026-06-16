@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
 import '../../chat/presentation/screens/chat_screen.dart';
+import '../../feed/application/feed_controller.dart';
 import '../../feed/presentation/screens/feed_screen.dart';
 import '../../pets/presentation/screens/pets_screen.dart';
 import '../../walks/presentation/screens/walks_screen.dart';
@@ -44,7 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           floatingActionButton: !isWide && _selectedDestination.isFeed
               ? FloatingActionButton(
-                  onPressed: () => _showCreatePostStub(context),
+                  onPressed: () => _showCreatePostSheet(context),
                   tooltip: 'Новый пост',
                   child: const Icon(Icons.add_a_photo_outlined),
                 )
@@ -69,7 +70,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: FilledButton.icon(
-            onPressed: () => _showCreatePostStub(context),
+            onPressed: () => _showCreatePostSheet(context),
             icon: const Icon(Icons.add_a_photo_outlined),
             label: const Text('Новый пост'),
           ),
@@ -103,13 +104,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _selectedIndex = index);
   }
 
-  void _showCreatePostStub(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-            'Создание поста будет подключено к Firebase в следующей версии.'),
-      ),
+  Future<void> _showCreatePostSheet(BuildContext context) async {
+    final author = ref.read(authStateProvider).valueOrNull;
+    if (author == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Войдите, чтобы создать пост.')),
+      );
+      return;
+    }
+
+    final textController = TextEditingController();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Новый пост',
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const Key('create-post-input'),
+                controller: textController,
+                autofocus: true,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 1000,
+                decoration: const InputDecoration(
+                  labelText: 'Что нового у питомца?',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const Key('submit-create-post'),
+                onPressed: () async {
+                  try {
+                    await ref.read(feedControllerProvider.notifier).createPost(
+                          author: author,
+                          text: textController.text,
+                        );
+                    if (!sheetContext.mounted) {
+                      return;
+                    }
+                    Navigator.of(sheetContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Пост опубликован')),
+                    );
+                  } on Object catch (error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(error.toString())),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.send_outlined),
+                label: const Text('Опубликовать'),
+              ),
+            ],
+          ),
+        );
+      },
     );
+
+    textController.dispose();
   }
 
   void _showMockNotification(BuildContext context) {

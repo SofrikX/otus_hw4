@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/data/mock_data.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/domain/app_user.dart';
 import '../data/api_feed_repository.dart';
 import '../data/mock_feed_repository.dart';
 import '../domain/feed_repository.dart';
@@ -111,6 +112,37 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
     }).toList(growable: false);
 
     _setPosts(updated);
+  }
+
+  Future<void> createPost({
+    required AppUser author,
+    required String text,
+    PetPost? referencePost,
+  }) async {
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty) {
+      throw ArgumentError('Пост не может быть пустым');
+    }
+
+    final posts = state.asData?.value ?? _posts;
+    final pet = referencePost ?? (posts.isEmpty ? null : posts.first);
+    if (pet == null) {
+      throw StateError('Сначала добавьте питомца для публикации.');
+    }
+
+    final createdPost = await _repository.createPost(
+      CreatePostInput(
+        authorId: author.id,
+        authorName: author.displayName ?? author.email ?? 'Владелец',
+        petId: pet.petId,
+        petName: pet.petName,
+        petEmoji: pet.petEmoji,
+        imageEmoji: '📷',
+        text: trimmedText,
+      ),
+    );
+
+    _setPosts([createdPost, ...posts]);
   }
 
   static List<PetPost> _resolveInitialPosts(

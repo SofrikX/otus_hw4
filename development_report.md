@@ -481,3 +481,110 @@ npm test --prefix functions
 ```
 
 Результаты проверки фиксируются в выводе Codex по этой задаче.
+
+## 19. End-to-end QA и release review HW5
+
+Дата проверки: 17 июня 2026, локально через Firebase Emulator Suite.
+
+Codex выполнил end-to-end проверку PetConnect HW5 в роли QA Engineer и Release Reviewer.
+
+Прочитаны:
+
+- `README.md`;
+- `backend_documentation.md`;
+- `docs/deployment.md`;
+- `docs/api_spec.md`;
+- `docs/seed_data.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `firebase.json`;
+- `functions/package.json`;
+- `pubspec.yaml`;
+- проектные правила `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`.
+
+Команды проверки и результаты:
+
+```bash
+flutter pub get
+```
+
+Результат: прошел после разрешения на запись во Flutter SDK cache вне workspace sandbox. Зависимости получены, есть только advisory о более новых несовместимых версиях пакетов.
+
+```bash
+npm install
+```
+
+Запускался из `functions/`. Результат: успешно, `up to date`. Предупреждение: `functions/package.json` требует Node 20, локально использовался Node v26.3.0.
+
+```bash
+flutter analyze
+flutter test
+npm run build
+npm test
+```
+
+Результат: `flutter analyze` без замечаний, `flutter test` прошел 48/48, `npm run build` прошел, `npm test` прошел 9/9. Первый sandbox-запуск backend tests упал с `listen EPERM` на Unix sockets; повтор вне sandbox прошел успешно.
+
+```bash
+firebase emulators:start --project demo-petconnect
+```
+
+Результат: Auth, Firestore, Functions, Storage и Emulator UI поднялись на портах из `firebase.json`: `9099`, `8080`, `5001`, `9199`, `4000`. Предупреждения: Firebase CLI не авторизован, `firebase-functions` устарел, локальный Node 26 не совпадает с требуемым Node 20.
+
+```bash
+FIREBASE_PROJECT_ID=demo-petconnect FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
+```
+
+Результат: seed успешно загрузил 2 users, 3 pets, 4 posts, 4 comments, 3 walks, 1 chat, 2 messages. Первый sandbox-запуск завис после metadata lookup warning; повтор вне sandbox прошел успешно.
+
+```bash
+flutter run -d chrome \
+  --dart-define=USE_FIREBASE_AUTH_EMULATOR=true \
+  --dart-define=USE_FIREBASE_BACKEND=true \
+  --dart-define=FIREBASE_PROJECT_ID=demo-petconnect \
+  --dart-define=API_BASE_URL=http://127.0.0.1:5001/demo-petconnect/us-central1/api
+```
+
+Результат: Flutter Web запустился в Chrome, подключился к Auth Emulator, показал ожидаемое emulator warning. Для браузерной manual-проверки дополнительно использован `flutter run -d web-server --web-hostname=127.0.0.1 --web-port=8081` с теми же `dart-define`, потому что порт `8081` включен в CORS whitelist backend.
+
+API smoke-check:
+
+- `GET /health` вернул `200 {"status":"ok"}`;
+- `GET /posts?limit=2` вернул seed/posts data;
+- `GET /walks?limit=2` вернул seed/walks data;
+- `GET /pets?ownerId=user-anya` вернул питомцев владельца;
+- `POST /posts/post-bruno-park/like` без token вернул ожидаемый `401 unauthorized`;
+- через Auth Emulator создан QA-пользователь, выполнены `POST /posts`, `POST /posts/:postId/like`, `POST /walks/:walkId/join`; все protected операции прошли с real Firebase ID token.
+
+Manual scenarios:
+
+1. Регистрация пользователя: пройдена через UI и Auth Emulator.
+2. Вход пользователя: проверен через UI; один повторный login после hot restart дал дружелюбную ошибку окружения, свежая регистрация в чистой сессии прошла.
+3. Загрузка ленты с backend: пройдена, лента показала seed/API posts.
+4. Создание поста: найден дефект UI, исправлен, повторная проверка прошла; новый пост появился в ленте и вернулся из `GET /posts?limit=2`.
+5. Лайк поста: пройден через UI, `likesCount` обновился до `1` и сохранился на backend.
+6. Загрузка прогулок: пройдена, экран прогулок загрузил backend data.
+7. Присоединение к прогулке: пройдено через UI, счетчик вырос с 2 до 3, кнопка стала `Вы участвуете`.
+8. Обработка 401: проверена через curl без Authorization и backend endpoint tests.
+9. Обработка backend error: покрыта backend endpoint test для `500 internal-error` и Flutter tests для typed `ApiServerException`; ручной production-like 500 endpoint не предусмотрен, чтобы не ломать emulator state.
+10. Адаптивность mobile/desktop: проверена через browser viewport. Desktop включает `NavigationRail`, mobile включает bottom navigation; критичных overlap в UI не найдено. Снизу виден emulator warning, это служебный overlay локального режима.
+
+Найденная проблема:
+
+- `HomeScreen` показывал snackbar `Создание поста будет подключено к Firebase в следующей версии`, хотя repository/backend уже поддерживали `POST /posts`. Это ломало manual сценарий "Создание поста" как frontend-to-backend отправку данных.
+
+Минимальное исправление:
+
+- `FeedController` получил метод `createPost`, который валидирует текст, формирует `CreatePostInput`, вызывает текущий `FeedRepository` и добавляет созданный пост в начало state.
+- `HomeScreen` заменил create-post stub на bottom sheet с текстовым полем и кнопкой публикации. UI по-прежнему обращается только к controller, без прямого backend/API вызова.
+- `test/features/feed/feed_controller_test.dart` получил unit test на добавление созданного поста.
+- `README.md` уточнен: лента теперь включает создание поста, а E2E checklist проверяет отправку поста на backend.
+
+Remaining risks:
+
+- Production deploy Cloud Functions не выполнялся; основной подтвержденный сценарий - локальный Emulator Suite.
+- Локальный Node v26.3.0 отличается от `functions/package.json` engines `node: 20`; перед сдачей/CI желательно запускать Functions на Node 20.
+- Firestore/Storage Security Rules не покрыты отдельным rules test suite; текущая проверка опирается на endpoint tests, emulator smoke и ручные сценарии.
+- Read-only API endpoints остаются публичными в HTTP middleware MVP; перед production нужно подтвердить публичность или добавить обязательную auth-проверку.
+- Endpoint создания комментариев и backend сообщений чата пока не реализованы, комментарии остаются локальным fallback-сценарием.
+- Manual backend `500` проверен тестом с fake repository, а не разрушительным сценарием на живом emulator.
