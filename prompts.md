@@ -1326,3 +1326,42 @@ Cloud Functions API содержит:
 - Документ объединяет сведения из README, Firestore schema, Security Rules, API spec/examples, deployment guide, seed data, AI workflow, `firebase.json`, `firestore.rules`, `storage.rules` и исходников Cloud Functions.
 - Описаны реальные endpoints текущего Express API: `/health`, `/pets`, `/pets/:petId`, `/posts`, `/posts/:postId/like`, `/walks`, `/walks/:walkId/join`.
 - Зафиксированы локальный запуск через Firebase Emulator Suite, production deploy, защита секретов, error model, logging, тестирование, frontend-backend integration и известные ограничения MVP.
+
+## Prompt 28 — финальный README для сдачи ДЗ 5
+
+```markdown
+# Role
+Ты Technical Writer и QA Reviewer.
+
+# Task
+Обнови README.md под финальную сдачу ДЗ 5.
+
+# Context
+README должен объяснять, как запустить frontend, backend, emulators, tests и как проверить end-to-end сценарий.
+
+# Required reading
+Прочитай:
+- README.md
+- backend_documentation.md
+- docs/deployment.md
+- docs/api_spec.md
+- docs/api_examples.md
+- docs/seed_data.md
+- pubspec.yaml
+- firebase.json
+- functions/package.json
+
+# Requirements
+README.md должен содержать название проекта, описание, стек, объяснение отсутствия root package.json, основные функции, backend architecture, локальный запуск, тесты, production deploy, API summary, troubleshooting и AI-assisted development.
+
+# Restrictions
+Не меняй код приложения. Не добавляй ложных утверждений о production deploy, если он не выполнен.
+```
+
+Результат:
+
+- README.md переписан как финальный runbook для проверяющего ДЗ 5.
+- Добавлены инструкции по Flutter frontend, Cloud Functions dependencies, Firebase Emulator Suite, seed data, Flutter Web запуску и API smoke-check.
+- Зафиксировано, что production deploy не подтвержден как выполненный; вместо этого описаны безопасные deploy-инструкции и локальный emulator-сценарий.
+- Добавлены разделы про отсутствие `package.json` в корне, API endpoints summary, troubleshooting и AI-assisted development.
+- Код приложения и backend-логика не менялись.

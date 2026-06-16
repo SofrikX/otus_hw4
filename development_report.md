@@ -410,3 +410,24 @@ Codex подготовил финальный файл `backend_documentation.md
 Файл опирается на фактическую реализацию в `functions/src/`, `firebase.json`, `firestore.rules`, `storage.rules`, `docs/api_spec.md`, `docs/api_examples.md`, `docs/firestore_schema.md`, `docs/firebase_security.md`, `docs/deployment.md`, `docs/seed_data.md`, `docs/ai_workflow.md`, `prompts.md` и текущий отчет.
 
 Код приложения и backend-логика в рамках этой задачи не менялись.
+
+## 17. Финальный README для сдачи ДЗ 5
+
+Codex выполнил финальный documentation/QA pass для `README.md`.
+
+README обновлен как основной входной документ для проверяющего и теперь покрывает:
+
+- название и краткое описание PetConnect;
+- стек Flutter, Dart, Riverpod, go_router, Material 3 и Firebase services;
+- объяснение, почему в корне нет `package.json`, а Node.js `package.json` находится в `functions/`;
+- основные функции frontend MVP и backend-интеграции;
+- backend architecture, Firestore collections, Storage paths и security model;
+- локальный запуск frontend, backend, emulators и seed data;
+- end-to-end сценарий проверки через Firebase Emulator Suite;
+- запуск Flutter и Cloud Functions tests;
+- production deploy instructions с явной оговоркой, что deploy не подтвержден как выполненный;
+- API endpoints summary;
+- troubleshooting для Chrome, Firebase emulator, `401 Unauthorized`, `permission-denied` и отсутствующего Git remote;
+- AI-assisted development через OpenAI Codex, `AGENTS.md`, `prompts.md`, `development_report.md` и `backend_documentation.md`.
+
+Код приложения, Cloud Functions и Firebase rules в рамках этой README-задачи не менялись.
