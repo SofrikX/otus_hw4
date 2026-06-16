@@ -50,6 +50,14 @@ PetConnect — приложение для владельцев домашних
 4. **Чаты**
    - базовый экран mock-диалогов как задел под будущую функцию сообщений.
 
+5. **Firebase Auth integration**
+   - вход по email/password;
+   - регистрация по email/password;
+   - выход из аккаунта;
+   - Riverpod auth state provider;
+   - protected routing через `go_router`;
+   - локальный режим Firebase Auth Emulator без production secrets.
+
 ## Цель HW5
 
 HW5 должен подготовить и интегрировать backend:
@@ -68,6 +76,7 @@ lib/
   app/                 # приложение, роутинг, тема
   core/                # shared widgets, data/utils, будущие Firebase providers
   features/
+    auth/              # Firebase Auth repository, controller, login/register UI
     feed/              # лента
     pets/              # питомцы и профиль
     walks/             # прогулки
@@ -144,6 +153,18 @@ flutter devices
 flutter run -d chrome
 ```
 
+Для локальной проверки Firebase Auth через Emulator Suite:
+
+```bash
+firebase emulators:start --only auth --project demo-petconnect
+flutter run -d chrome \
+  --dart-define=USE_FIREBASE_AUTH_EMULATOR=true \
+  --dart-define=FIREBASE_PROJECT_ID=demo-petconnect
+```
+
+В emulator-режиме приложение использует demo Firebase options. Реальные
+Firebase ключи и service account files в репозиторий не добавляются.
+
 Fallback для локальной desktop-проверки на macOS:
 
 ```bash
@@ -186,6 +207,7 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
 - `test/features/feed/post_card_test.dart`
 - `test/features/feed/feed_screen_test.dart`
 - `test/features/feed/feed_controller_test.dart`
+- `test/features/auth/auth_controller_test.dart`
 - `test/features/walks/walks_screen_test.dart`
 - `test/features/pets/pet_profile_screen_test.dart`
 - `test/features/chat/chat_screen_test.dart`

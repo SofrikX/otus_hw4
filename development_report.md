@@ -223,4 +223,28 @@ firebase emulators:start
 - `docs/ai_agent_rules.md` больше не запрещает Firebase, а задает правила безопасной интеграции;
 - `README.md` больше не выглядит как HW4-only и описывает Firebase Emulator Suite.
 
-Код приложения на этом этапе не менялся.
+## 10. Firebase Auth frontend integration
+
+Codex добавил базовую интеграцию Firebase Auth во Flutter frontend:
+
+- добавлены зависимости `firebase_core` и `firebase_auth`;
+- добавлен Firebase bootstrap с поддержкой Auth Emulator через `--dart-define=USE_FIREBASE_AUTH_EMULATOR=true`;
+- создан `AppUser` как доменная модель текущего пользователя;
+- создан `AuthRepository` и `FirebaseAuthRepository` для login, registration, logout и stream auth state;
+- создан `AuthController` на Riverpod `StateNotifier<AsyncValue<void>>`;
+- добавлены экраны `/login` и `/register` с loading/error/success состояниями;
+- `go_router` получил redirect: неавторизованные пользователи попадают на `/login`, авторизованные не остаются на auth-экранах;
+- mock-экраны feed/pets/walks/chat сохранены и остаются доступными после входа;
+- в Home добавлен logout.
+
+Секреты Firebase не добавлялись. Для локального emulator-сценария используются demo options и project id `demo-petconnect`.
+
+Проверка:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат: analyzer без замечаний, Flutter tests прошли.

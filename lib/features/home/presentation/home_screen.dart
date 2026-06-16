@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/presentation/auth_controller.dart';
 import '../../chat/presentation/screens/chat_screen.dart';
 import '../../feed/presentation/screens/feed_screen.dart';
 import '../../pets/presentation/screens/pets_screen.dart';
@@ -7,14 +9,14 @@ import '../../walks/presentation/screens/walks_screen.dart';
 
 const _wideLayoutBreakpoint = 900.0;
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
 
   _HomeDestination get _selectedDestination =>
@@ -72,20 +74,29 @@ class _HomeScreenState extends State<HomeScreen> {
             label: const Text('Новый пост'),
           ),
         ),
+        IconButton(
+          key: const Key('logout-button'),
+          onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
+          icon: const Icon(Icons.logout),
+          tooltip: 'Выйти',
+        ),
       ];
     }
 
-    if (!_selectedDestination.isFeed) {
-      return [
+    return [
+      if (!_selectedDestination.isFeed)
         IconButton(
           onPressed: () => _showMockNotification(context),
           icon: const Icon(Icons.notifications_none),
           tooltip: 'Уведомления',
         ),
-      ];
-    }
-
-    return const [];
+      IconButton(
+        key: const Key('logout-button'),
+        onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
+        icon: const Icon(Icons.logout),
+        tooltip: 'Выйти',
+      ),
+    ];
   }
 
   void _selectDestination(int index) {

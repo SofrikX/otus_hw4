@@ -964,3 +964,43 @@ API должен работать с Firestore через Firebase Admin SDK.
 - Создан `docs/seed_data.md` с командами запуска emulators и seed.
 - `README.md`, `docs/documents_index.md`, `development_report.md` и `prompts.md` обновлены ссылками на seed workflow.
 - Flutter-код не менялся.
+
+## Prompt 21 — Firebase Auth во Flutter frontend
+
+```markdown
+# Role
+Ты Senior Flutter Developer и Firebase Auth Engineer.
+
+# Task
+Добавь базовую интеграцию Firebase Auth во Flutter frontend.
+
+# Context
+ДЗ требует аутентификацию: регистрация и вход пользователей.
+Проект уже использует Flutter, Riverpod и go_router.
+
+# Requirements
+1. Добавь firebase_core и firebase_auth.
+2. Создай auth domain/data/presentation структуру.
+3. Реализуй email/password login, registration, logout и auth state provider.
+4. Добавь loading/error/success состояния.
+5. Обнови routing: /login, /register и auth redirect.
+6. Не ломай текущие mock-экраны.
+7. Предусмотри Firebase Auth Emulator.
+8. Не коммить реальные Firebase secrets.
+
+# Testing
+Добавь минимум 2 widget/unit tests для auth controller или screen.
+
+# Documentation
+Обнови README.md, development_report.md, prompts.md.
+```
+
+Результат:
+
+- `firebase_core` и `firebase_auth` добавлены через `flutter pub add`.
+- Созданы `AppUser`, `FirebaseAuthRepository`, `AuthController`, `LoginScreen` и `RegisterScreen`.
+- Добавлен Firebase bootstrap с demo options для Auth Emulator через `--dart-define=USE_FIREBASE_AUTH_EMULATOR=true`.
+- `go_router` получил routes `/login`, `/register` и redirect для protected screens.
+- В `HomeScreen` добавлен logout, mock-экраны feed/pets/walks/chat не переводились на Firebase и не сломались.
+- Добавлен `test/features/auth/auth_controller_test.dart` с двумя unit-тестами loading/success и error сценариев.
+- `dart format .`, `flutter analyze`, `flutter test` завершились успешно.
