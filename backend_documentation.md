@@ -4,7 +4,21 @@
 
 PetConnect - Flutter-приложение для владельцев домашних животных. Backend-часть ДЗ 5 описывает переход frontend MVP к Supabase Free Tier как текущему backend-решению для учебного production deployment.
 
-Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и план миграции. Supabase project еще не считается созданным, реальные URL и keys в репозиторий не добавляются.
+Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и production deployment checklist. Реальные Supabase URL и keys в репозиторий не добавляются.
+
+## Production project status
+
+| Area | Status | Evidence / next action |
+|---|---|---|
+| Supabase production project | Ready for manual setup | Project создается владельцем аккаунта в Supabase Dashboard на Free Tier; реальные project ref и keys не коммитятся |
+| Database deployed | Manual verification required | Apply `supabase/migrations/001_initial_schema.sql` and `supabase/migrations/002_rls_policies.sql` through SQL Editor or `supabase db push` |
+| Auth enabled | Manual verification required | Supabase Auth email/password должен быть включен; sign up/sign in проверяются через Flutter app |
+| RLS enabled | Defined in migrations | `002_rls_policies.sql` enables RLS for application tables; hosted project must be checked after applying migrations |
+| Storage buckets | Defined in migrations | `avatars`, `pet-photos`, `post-images` are created by `001_initial_schema.sql` |
+| REST API available | Provided by Supabase/PostgREST | Available at `https://<project-ref>.supabase.co/rest/v1` after project creation |
+| Frontend backend mode | Implemented | Flutter uses `USE_SUPABASE_BACKEND=true`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `supabase_flutter` repositories |
+
+Hosted production verification has not been recorded in this repository yet. Until the checklist in `docs/supabase_setup.md` is completed manually, the correct status is `Manual verification checklist`, not `production verified`.
 
 ## 2. Architecture Decision: Firebase to Supabase
 
@@ -254,12 +268,15 @@ Storage policies:
 
 1. Создать Supabase project на Free Tier.
 2. Открыть project после завершения provisioning.
-3. В Connect/API settings скопировать Project URL.
-4. Скопировать anon public key или publishable key для client-side операций.
+3. В Connect/API settings скопировать Project URL как `SUPABASE_URL`.
+4. Скопировать anon public key или publishable key как `SUPABASE_ANON_KEY`.
 5. Не копировать service role key в Flutter, `.env.example`, README или screenshots.
-6. Открыть SQL Editor и применить migrations, если CLI не используется.
-7. Создать двух demo Auth users перед seed, если нужен наполненный demo backend.
-8. Проверить таблицы, RLS policies, Storage buckets и seed rows.
+6. Открыть SQL Editor и применить `supabase/migrations/001_initial_schema.sql`.
+7. Применить `supabase/migrations/002_rls_policies.sql`.
+8. Создать двух demo Auth users перед seed, если нужен наполненный demo backend.
+9. Заменить demo UUID в `supabase/seed.sql` на реальные `auth.users.id`.
+10. Выполнить seed через SQL Editor.
+11. Проверить таблицы, RLS policies, Storage buckets и seed rows.
 
 ### CLI steps
 
@@ -376,17 +393,19 @@ Anon key допустим для клиентских приложений по 
 
 ## 14. Frontend Integration Plan
 
-Текущий Flutter UI и бизнес-логика на этом шаге не меняются.
+Текущий Flutter UI работает через repository layer и не обращается к Supabase напрямую.
 
-План технической миграции:
+Фактическое состояние интеграции:
 
 1. Supabase Auth integration выполнена через `supabase_flutter`.
 2. Supabase initializer добавлен в `lib/core/supabase`.
 3. Auth repository layer выбирает `SupabaseAuthRepository` при `USE_SUPABASE_BACKEND=true`, Firebase legacy repository при `USE_FIREBASE_BACKEND=true` и mock repository в local mode.
 4. После sign up/sign in Supabase repository выполняет upsert профиля в `public.profiles`, если есть authenticated session.
-5. Следующий шаг: добавить Supabase implementations для feed, pets и walks repositories.
-6. Оставить mock implementations для tests/fallback.
-7. Удалить Firebase dependencies и prototype files только после успешной миграции data repositories.
+5. Feed repository использует Supabase для `posts`, `post_likes` и `comments` в backend mode.
+6. Pets repository использует Supabase для списка питомцев, профиля питомца и создания питомца в backend mode.
+7. Walks repository использует Supabase для списка прогулок, создания прогулки, join и leave в backend mode.
+8. Mock implementations сохранены для tests/fallback.
+9. Legacy Firebase prototype files остаются только как история предыдущей исследованной ветки.
 
 ## 15. Validation
 
@@ -429,6 +448,42 @@ Manual checks:
 - load walks;
 - join walk;
 - verify denied access for foreign rows through RLS.
+
+## 15.1. Production verification
+
+Если hosted Supabase project еще не проверен вручную, используйте этот раздел как `Manual verification checklist`.
+
+Backend deployment checklist:
+
+- [ ] Supabase project создан на Free Tier.
+- [ ] `SUPABASE_URL` получен из Project Settings / API.
+- [ ] `SUPABASE_ANON_KEY` получен как anon public key или publishable key.
+- [ ] `001_initial_schema.sql` применен к hosted project.
+- [ ] `002_rls_policies.sql` применен к hosted project.
+- [ ] `seed.sql` применен после создания demo Auth users и замены demo UUID.
+- [ ] Таблицы `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages` видны в Table Editor.
+- [ ] RLS enabled для всех application tables.
+- [ ] Storage buckets `avatars`, `pet-photos`, `post-images` созданы.
+
+End-to-end checklist:
+
+- [ ] `SELECT posts` работает для authenticated user:
+
+```sql
+select id, pet_name, author_name, text, likes_count, comments_count
+from public.posts
+where deleted_at is null
+order by created_at desc
+limit 5;
+```
+
+- [ ] Sign up работает в Flutter app.
+- [ ] Sign in работает в Flutter app.
+- [ ] Create post работает через Supabase-backed feed flow.
+- [ ] Like post работает и обновляет `posts.likes_count`.
+- [ ] Join walk работает и обновляет `walks.participants_count`.
+- [ ] Анонимный REST-запрос к application tables отклоняется RLS/Auth.
+- [ ] User B не может update/delete rows пользователя A.
 
 ## 16. Error Handling and Logging
 
@@ -485,10 +540,10 @@ Firebase не удаляется из истории разработки. Он 
 
 ## 19. Known Limitations
 
-- Supabase project еще нужно создать.
-- SQL migrations и RLS policies подготовлены в `supabase/migrations/`, но их еще нужно применить к реальному project.
+- Hosted Supabase production smoke test еще не зафиксирован в репозитории.
+- Supabase project, migrations и RLS нужно подтвердить по `Manual verification checklist` после ручного Dashboard/CLI deployment.
 - Для hosted seed нужно создать demo Auth users через Supabase Auth UI или приложение и заменить demo UUID на реальные `auth.users.id`.
-- Supabase Auth migration на `supabase_flutter` выполнена; data repositories feed/pets/walks еще ожидают Supabase migration.
+- Supabase Auth, feed, pets и walks repositories подготовлены для `USE_SUPABASE_BACKEND=true`; проверка с реальными hosted credentials остается ручным release step.
 - Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
 - Реальные Supabase URL и keys не должны появляться в документации или git history.
 

@@ -1904,3 +1904,52 @@ Walks сейчас работают на mock-данных.
 - `backend_documentation.md` дополнен разделами error handling, logging и AI-assisted debugging.
 - `development_report.md` дополнен реальными кейсами отладки Supabase.
 - Проверки прошли: `flutter analyze`, полный `flutter test` — 68 tests passed.
+
+## Prompt 41 — Supabase production release documentation
+
+```markdown
+Role
+Ты Supabase Release Engineer и QA Reviewer.
+
+Task
+Подготовь и задокументируй production-развертывание Supabase backend.
+
+Context
+Supabase backend должен быть развернут и доступен.
+Для сдачи нужно показать, что:
+* Supabase project создан;
+* migrations применены;
+* RLS включен;
+* frontend подключается к backend;
+* приложение работает end-to-end.
+
+Required reading
+Прочитай:
+* README.md
+* backend_documentation.md
+* docs/supabase_setup.md
+* docs/database_schema.md
+* docs/supabase_security.md
+* docs/api_spec.md
+* supabase/migrations/
+* supabase/seed.sql
+
+Requirements
+1. Обнови docs/supabase_setup.md.
+2. Обнови backend_documentation.md.
+3. Обнови README.md.
+4. Добавь раздел "Production verification".
+5. Не добавляй реальные anon key в git.
+6. Если production еще не проверен вручную, не утверждай, что проверен. Напиши "Manual verification checklist".
+7. Обнови development_report.md.
+8. Обнови prompts.md.
+```
+
+Результат:
+
+- `docs/supabase_setup.md` переписан как production Supabase runbook: project creation, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, SQL Editor migrations, seed, table checks, RLS checks, Flutter launch and manual verification checklist.
+- `backend_documentation.md` дополнен `Production project status` и `Production verification`.
+- `README.md` обновлен под production backend setup, Flutter launch command и release checklist.
+- `development_report.md` дополнен записью о release documentation review.
+- Реальные Supabase keys/secrets не добавлялись.
+- Hosted production smoke test не заявлен как выполненный; проверка оформлена как `Manual verification checklist`.

@@ -877,3 +877,35 @@ flutter test
 
 - `flutter analyze` завершился без замечаний;
 - полный `flutter test` прошел: 68 tests passed.
+
+## 20. Supabase production release documentation
+
+Дата документационного release review: 17 июня 2026.
+
+Codex выступил в роли Supabase Release Engineer и QA Reviewer. Целью было подготовить документы для production-развертывания Supabase backend и не утверждать ручную проверку hosted project без фактического smoke test.
+
+Что обновлено:
+
+- `docs/supabase_setup.md` переписан как production runbook: создание Supabase project, получение `SUPABASE_URL`, получение `SUPABASE_ANON_KEY`, применение migrations через SQL Editor, применение `seed.sql`, проверка таблиц, проверка RLS и manual verification checklist.
+- `backend_documentation.md` получил раздел `Production project status`: Supabase project, database, Auth, RLS, Storage, REST API и frontend backend mode.
+- `README.md` получил production backend setup, Flutter launch command с `--dart-define` и release checklist.
+- В документации явно указано, что реальные anon key, service role key, database password и `.env` не добавляются в git.
+- Production verification оформлен как `Manual verification checklist`, потому что hosted project smoke test не был выполнен в рамках этой Codex-задачи.
+
+Production verification checklist для сдачи:
+
+- Supabase project создан на Free Tier.
+- Migrations применены к hosted project.
+- RLS включен для application tables.
+- Flutter запущен с `USE_SUPABASE_BACKEND=true`.
+- `SELECT posts` работает для authenticated user.
+- Sign up/sign in работает.
+- Create post работает.
+- Like post работает и обновляет counter.
+- Join walk работает и обновляет counter.
+
+Проверка этой задачи:
+
+- Код Flutter и SQL migrations не менялись.
+- Реальные Supabase credentials не добавлялись.
+- Выполнена документационная проверка diff.
