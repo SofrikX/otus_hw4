@@ -62,4 +62,40 @@ class MockFeedRepository implements FeedRepository {
       likesCount: post.likesCount,
     );
   }
+
+  @override
+  Future<PostCommentResult> addComment(AddCommentInput input) async {
+    final trimmedText = input.text.trim();
+    if (trimmedText.isEmpty) {
+      throw ArgumentError('Комментарий не может быть пустым');
+    }
+
+    PetPost? updatedPost;
+    _posts = _posts.map((post) {
+      if (post.id != input.postId) {
+        return post;
+      }
+
+      updatedPost = post.copyWith(
+        commentsCount: post.commentsCount + 1,
+        comments: List<String>.unmodifiable([
+          ...post.comments,
+          trimmedText,
+        ]),
+      );
+
+      return updatedPost!;
+    }).toList(growable: false);
+
+    final post = updatedPost;
+    if (post == null) {
+      throw ArgumentError('Post not found: ${input.postId}');
+    }
+
+    return PostCommentResult(
+      postId: post.id,
+      text: trimmedText,
+      commentsCount: post.commentsCount,
+    );
+  }
 }

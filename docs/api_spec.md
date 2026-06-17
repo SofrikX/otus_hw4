@@ -29,6 +29,29 @@ Email/password auth выполняется через Supabase Auth:
 
 ## Operations
 
+### Feed data flow
+
+Flutter UI не обращается к Supabase напрямую. Поток данных:
+
+```text
+FeedScreen/PostCard
+  -> FeedController
+  -> FeedRepository
+  -> SupabaseFeedRepository when USE_SUPABASE_BACKEND=true
+  -> MockFeedRepository when USE_SUPABASE_BACKEND=false
+```
+
+`SupabaseFeedRepository` использует таблицы:
+
+| Operation | Tables | Notes |
+|---|---|---|
+| `fetchPosts()` | `posts`, `post_likes`, `comments` | Загружает public feed, user likes и последние тексты комментариев |
+| `createPost()` | `posts` | Создает post от текущего `auth.uid()` |
+| `toggleLike()` | `post_likes`, `posts` | Insert/delete like row, затем перечитывает post counters |
+| `addComment()` | `comments`, `posts` | Создает comment от текущего `auth.uid()`, затем перечитывает post counters |
+
+PostgREST/Supabase exceptions мапятся в typed `ApiException`, чтобы UI показывал error state, а не пустой список.
+
 ### Feed: get posts
 
 Supabase client:
@@ -36,11 +59,39 @@ Supabase client:
 ```dart
 await supabase
     .from('posts')
-    .select()
+    .select('''
+      id,
+      pet_id,
+      pet_name,
+      author_name,
+      pet_emoji,
+      image_emoji,
+      text,
+      created_at,
+      likes_count,
+      comments_count
+    ''')
     .eq('visibility', 'public')
     .isFilter('deleted_at', null)
     .order('created_at', ascending: false)
     .limit(20);
+```
+
+Дополнительно для отображения текущего состояния пользователя:
+
+```dart
+await supabase
+    .from('post_likes')
+    .select('post_id')
+    .eq('user_id', userId)
+    .inFilter('post_id', postIds);
+
+await supabase
+    .from('comments')
+    .select('post_id,text,created_at')
+    .inFilter('post_id', postIds)
+    .isFilter('deleted_at', null)
+    .order('created_at', ascending: true);
 ```
 
 REST shape:
@@ -63,10 +114,14 @@ Required:
 ```dart
 await supabase.from('posts').insert({
   'author_id': userId,
+  'author_name': authorName,
   'pet_id': petId,
+  'pet_name': petName,
+  'pet_emoji': petEmoji,
   'text': text,
   'image_urls': imageUrls,
-});
+  'image_emoji': imageEmoji,
+}).select().single();
 ```
 
 RLS also verifies that the post belongs to the authenticated user.
@@ -93,6 +148,7 @@ await supabase
 ```
 
 The database trigger updates `posts.likes_count`.
+Flutter перечитывает строку `posts` после insert/delete, чтобы показать актуальный `likes_count`.
 
 ### Comments: create comment
 
@@ -100,11 +156,13 @@ The database trigger updates `posts.likes_count`.
 await supabase.from('comments').insert({
   'post_id': postId,
   'author_id': userId,
+  'author_name': authorName,
   'text': text,
-});
+}).select('text').single();
 ```
 
 The database trigger updates `posts.comments_count`.
+Flutter перечитывает строку `posts` после insert, чтобы показать актуальный `comments_count`.
 
 ### Pets: get owner pets
 

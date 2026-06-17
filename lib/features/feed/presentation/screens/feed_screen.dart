@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/responsive_center.dart';
+import '../../../auth/presentation/auth_controller.dart';
 import '../../application/feed_controller.dart';
 import '../widgets/pet_stories_strip.dart';
 import '../widgets/post_card.dart';
@@ -42,15 +43,34 @@ class FeedScreen extends ConsumerWidget {
               return PostCard(
                 post: post,
                 onLike: () => controller.toggleLike(post.id),
-                onComment: (text) {
+                onComment: (text) async {
                   try {
-                    controller.addComment(post.id, text);
+                    await controller.addComment(
+                      post.id,
+                      text,
+                      author: ref.read(authStateProvider).valueOrNull,
+                    );
+                    if (!context.mounted) {
+                      return;
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Комментарий добавлен')),
                     );
                   } on ArgumentError catch (error) {
+                    if (!context.mounted) {
+                      return;
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(error.message.toString())),
+                    );
+                  } on Object {
+                    if (!context.mounted) {
+                      return;
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Не удалось добавить комментарий.'),
+                      ),
                     );
                   }
                 },

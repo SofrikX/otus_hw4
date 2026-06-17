@@ -4,17 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/backend_config.dart';
 import '../../../core/data/mock_data.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/supabase/supabase_client_provider.dart';
 import '../../auth/domain/app_user.dart';
-import '../data/api_feed_repository.dart';
 import '../data/mock_feed_repository.dart';
+import '../data/supabase_feed_repository.dart';
 import '../domain/feed_repository.dart';
 import '../domain/pet_post.dart';
 
 final feedRepositoryProvider = Provider<FeedRepository>((ref) {
   final config = ref.watch(backendConfigProvider);
-  if (config.useFirebaseBackend) {
-    return ApiFeedRepository(ref.watch(apiClientProvider));
+  if (config.useSupabaseBackend) {
+    return SupabaseFeedRepository(ref.watch(supabaseClientProvider));
   }
 
   return MockFeedRepository();
@@ -24,7 +24,7 @@ final feedControllerProvider =
     StateNotifierProvider<FeedController, AsyncValue<List<PetPost>>>((ref) {
   final controller = FeedController(
     repository: ref.watch(feedRepositoryProvider),
-    loadOnStart: ref.watch(backendConfigProvider).useFirebaseBackend,
+    loadOnStart: ref.watch(backendConfigProvider).useSupabaseBackend,
   );
 
   return controller;
@@ -87,7 +87,11 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
     unawaited(_syncLike(postId));
   }
 
-  void addComment(String postId, String text) {
+  Future<void> addComment(
+    String postId,
+    String text, {
+    AppUser? author,
+  }) async {
     final trimmedText = text.trim();
     if (trimmedText.isEmpty) {
       throw ArgumentError('Комментарий не может быть пустым');
@@ -113,6 +117,38 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
     }).toList(growable: false);
 
     _setPosts(updated);
+
+    try {
+      final result = await _repository.addComment(
+        AddCommentInput(
+          postId: postId,
+          text: trimmedText,
+          authorId: author?.id,
+          authorName: author?.displayName ?? author?.email,
+        ),
+      );
+
+      final syncedPosts = state.asData?.value;
+      if (syncedPosts == null) {
+        return;
+      }
+
+      _setPosts(
+        syncedPosts.map((post) {
+          if (post.id != result.postId) {
+            return post;
+          }
+
+          return post.copyWith(
+            commentsCount: result.commentsCount,
+            comments: post.comments,
+          );
+        }).toList(growable: false),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<void> createPost({

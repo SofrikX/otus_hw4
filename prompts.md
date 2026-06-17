@@ -1723,3 +1723,48 @@ PetConnect — приложение для владельцев питомцев
 - `SupabaseAuthRepository` после sign up/sign in делает upsert в `public.profiles`.
 - Обновлены auth tests и добавлены widget/router tests.
 - Проверки прошли: `dart format .`, `flutter analyze`, полный `flutter test` — 52 tests passed.
+
+## Prompt 37 — Supabase feed integration
+
+```markdown
+# Role
+Ты Senior Flutter Developer, Riverpod Engineer и Supabase Integration Engineer.
+
+# Task
+Интегрируй ленту PetConnect с Supabase.
+
+# Context
+Feed сейчас работает на mock-данных.
+Нужно добавить Supabase implementation, сохранив mock fallback.
+
+# Required reading
+Прочитай:
+- lib/features/feed/
+- lib/core/
+- docs/database_schema.md
+- docs/api_spec.md
+- supabase/migrations/
+- test/features/feed/
+
+# Requirements
+1. Создай или обнови FeedRepository abstraction.
+2. Добавь SupabaseFeedRepository.
+3. Реализуй операции fetchPosts(), createPost(), toggleLike(), addComment().
+4. USE_SUPABASE_BACKEND=true -> SupabaseFeedRepository; false -> MockFeedRepository.
+5. UI должен показывать loading, error with retry, empty, success.
+6. Не превращай backend ошибки в пустые списки без отображения error state.
+7. Обработай PostgREST/Supabase exceptions.
+8. Добавь/обнови тесты feed success, empty state, error state, like action, comment action.
+9. Обнови docs/api_spec.md, development_report.md, prompts.md.
+```
+
+Результат:
+
+- `FeedRepository` расширен методом `addComment(AddCommentInput)`.
+- Добавлен `SupabaseFeedRepository` на `supabase_flutter` для таблиц `posts`, `post_likes` и `comments`.
+- `feedRepositoryProvider` теперь выбирает `SupabaseFeedRepository` при `USE_SUPABASE_BACKEND=true`, иначе `MockFeedRepository`.
+- `MockFeedRepository` поддерживает `addComment`; legacy `ApiFeedRepository` оставлен компилируемым.
+- `FeedController.addComment()` стал async, делает optimistic update и переводит state в error при backend failure.
+- `FeedScreen` продолжает использовать `AsyncContentView` для loading/error/empty/success и передает текущего auth user в comment action, если он есть.
+- `docs/api_spec.md`, `README.md` и `development_report.md` обновлены под Supabase feed data flow.
+- Проверки прошли: `flutter test test/features/feed`, `flutter analyze`, полный `flutter test` — 53 tests passed.

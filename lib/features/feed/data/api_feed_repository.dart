@@ -25,6 +25,13 @@ class ApiFeedRepository implements FeedRepository {
     return PostLikeResult.fromJson(result);
   }
 
+  @override
+  Future<PostCommentResult> addComment(AddCommentInput input) async {
+    final result =
+        await _apiClient.addPostComment(input.postId, input.toJson());
+    return PostCommentResult.fromJson(result);
+  }
+
   PetPost _mapPost(Map<String, dynamic> json) {
     return PetPost(
       id: json['id'] as String,

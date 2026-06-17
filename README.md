@@ -26,7 +26,7 @@ Supabase project, URL и anon key в репозиторий не добавле�
 | Frontend tests | flutter_test, mocktail |
 | Backend validation | SQL migrations, RLS policies, Supabase dashboard/API checks |
 
-> Current implementation note: Supabase Auth is integrated through `supabase_flutter` for email/password sign up, sign in, sign out, auth state changes and profile upsert. Feed/pets/walks data repositories still keep the existing mock/Firebase prototype fallback until the next Supabase data-integration step.
+> Current implementation note: Supabase Auth is integrated through `supabase_flutter` for email/password sign up, sign in, sign out, auth state changes and profile upsert. The feed repository now uses Supabase for posts, likes and comments when `USE_SUPABASE_BACKEND=true`; mock repositories remain the local fallback. Pets and walks still keep their existing mock/Firebase prototype data repositories until their Supabase data-integration step.
 
 ## Architecture Decision: Firebase to Supabase
 

@@ -705,3 +705,45 @@ flutter test
 - реальные Supabase project URL и anon key не добавлялись;
 - ручная проверка hosted Supabase sign up/sign in остается next step после создания project;
 - feed/pets/walks repositories еще не переведены на Supabase data API в этом шаге.
+
+## 16. Supabase feed frontend integration
+
+Дата интеграции: 17 июня 2026.
+
+Codex интегрировал ленту PetConnect с Supabase data API, сохранив mock fallback:
+
+- `FeedRepository` расширен операцией `addComment`;
+- добавлен `SupabaseFeedRepository` для `fetchPosts`, `createPost`, `toggleLike` и `addComment`;
+- `feedRepositoryProvider` выбирает `SupabaseFeedRepository` только при `USE_SUPABASE_BACKEND=true`, иначе использует `MockFeedRepository`;
+- старый `ApiFeedRepository` для Firebase/Cloud Functions оставлен компилируемым как legacy implementation, но больше не является выбранным backend path для feed;
+- `FeedController` сохраняет loading/error/empty/success states через `AsyncValue` и не превращает backend errors в пустую ленту;
+- `toggleLike` и `addComment` делают optimistic UI update, а затем синхронизируют счетчики с repository result;
+- Supabase/PostgREST/Auth exceptions мапятся в typed `ApiException`, чтобы `AsyncContentView` показывал дружелюбный error state с retry.
+
+Используемые Supabase таблицы:
+
+- `posts` для SELECT public feed и INSERT новых постов;
+- `post_likes` для INSERT/DELETE лайка текущего пользователя;
+- `comments` для INSERT комментариев и отображения последних комментариев;
+- counters `posts.likes_count` и `posts.comments_count` перечитываются после write operations, потому что обновляются database triggers.
+
+Проверки:
+
+```bash
+dart format lib/core/network/api_client.dart lib/core/supabase/supabase_client_provider.dart lib/features/feed/domain/feed_repository.dart lib/features/feed/data/mock_feed_repository.dart lib/features/feed/data/api_feed_repository.dart lib/features/feed/data/supabase_feed_repository.dart lib/features/feed/application/feed_controller.dart lib/features/feed/presentation/screens/feed_screen.dart test/features/feed/feed_controller_test.dart
+flutter test test/features/feed
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter test test/features/feed` прошел: 17 feed tests passed;
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 53 tests passed.
+
+Ограничения:
+
+- реальные Supabase URL/anon key не добавлялись;
+- hosted Supabase smoke test остается next step после создания project и применения migrations;
+- pets/walks data repositories остаются следующими кандидатами на Supabase integration.

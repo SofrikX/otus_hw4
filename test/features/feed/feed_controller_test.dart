@@ -1,17 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:petconnect/core/config/backend_config.dart';
 import 'package:petconnect/core/data/mock_data.dart';
-import 'package:petconnect/core/network/api_client.dart';
-import 'package:petconnect/core/network/auth_token_provider.dart';
+import 'package:petconnect/core/supabase/supabase_client_provider.dart';
 import 'package:petconnect/features/auth/domain/app_user.dart';
 import 'package:petconnect/features/feed/application/feed_controller.dart';
-import 'package:petconnect/features/feed/data/api_feed_repository.dart';
 import 'package:petconnect/features/feed/data/mock_feed_repository.dart';
+import 'package:petconnect/features/feed/data/supabase_feed_repository.dart';
 import 'package:petconnect/features/feed/domain/feed_repository.dart';
 import 'package:petconnect/features/feed/domain/pet_post.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   test('refresh loads feed from repository', () async {
@@ -52,16 +50,35 @@ void main() {
     expect(updatedPost?.likesCount, post.likesCount + 1);
   });
 
-  test('addComment stores comment text in mock feed state', () {
+  test('addComment stores comment text in mock feed state', () async {
     const comment = 'Бруно отлично справился!';
     final controller = FeedController();
     final post = mockPosts.first;
 
-    controller.addComment(post.id, comment);
+    await controller.addComment(post.id, comment);
 
     final updatedPost = _firstPost(controller);
     expect(updatedPost?.commentsCount, post.commentsCount + 1);
     expect(updatedPost?.comments.last, comment);
+  });
+
+  test('addComment exposes backend error state', () async {
+    final post = mockPosts.first;
+    final controller = FeedController(
+      repository: _FakeFeedRepository(
+        posts: [post],
+        commentError: Exception('Comment failed'),
+      ),
+      initialPosts: [post],
+    );
+
+    await expectLater(
+      controller.addComment(post.id, 'Комментарий'),
+      throwsA(isA<Exception>()),
+    );
+
+    expect(controller.state.hasError, isTrue);
+    expect(controller.state.error.toString(), contains('Comment failed'));
   });
 
   test('createPost prepends post returned by repository', () async {
@@ -99,29 +116,30 @@ void main() {
     expect(container.read(feedRepositoryProvider), isA<MockFeedRepository>());
   });
 
-  test('feedRepositoryProvider uses API repository when backend is enabled',
+  test(
+      'feedRepositoryProvider uses Supabase repository when backend is enabled',
       () {
     final container = ProviderContainer(
       overrides: [
         backendConfigProvider.overrideWithValue(
           const BackendConfig(
-            baseUrl: 'http://127.0.0.1:5001/demo/us-central1/api',
-            useFirebaseBackend: true,
+            baseUrl: '',
+            useSupabaseBackend: true,
+            supabaseUrl: 'https://example.supabase.co',
+            supabaseAnonKey: 'anon-key',
           ),
         ),
-        apiClientProvider.overrideWithValue(
-          ApiClient(
-            baseUri: Uri.parse('http://127.0.0.1:5001/demo/us-central1/api'),
-            httpClient:
-                MockClient((_) async => http.Response('{"data":[]}', 200)),
-            authTokenProvider: const _FakeAuthTokenProvider('token-123'),
-          ),
+        supabaseClientProvider.overrideWithValue(
+          SupabaseClient('https://example.supabase.co', 'anon-key'),
         ),
       ],
     );
     addTearDown(container.dispose);
 
-    expect(container.read(feedRepositoryProvider), isA<ApiFeedRepository>());
+    expect(
+      container.read(feedRepositoryProvider),
+      isA<SupabaseFeedRepository>(),
+    );
   });
 }
 
@@ -137,10 +155,12 @@ class _FakeFeedRepository implements FeedRepository {
   const _FakeFeedRepository({
     this.posts = const [],
     this.fetchError,
+    this.commentError,
   });
 
   final List<PetPost> posts;
   final Object? fetchError;
+  final Object? commentError;
 
   @override
   Future<List<PetPost>> fetchPosts({int limit = 20}) async {
@@ -182,13 +202,22 @@ class _FakeFeedRepository implements FeedRepository {
       likesCount: post.likesCount + (post.isLiked ? -1 : 1),
     );
   }
-}
-
-class _FakeAuthTokenProvider implements AuthTokenProvider {
-  const _FakeAuthTokenProvider(this._token);
-
-  final String? _token;
 
   @override
-  Future<String?> getToken() async => _token;
+  Future<PostCommentResult> addComment(AddCommentInput input) async {
+    final error = commentError;
+    if (error != null) {
+      throw error;
+    }
+
+    final post = posts.firstWhere(
+      (post) => post.id == input.postId,
+      orElse: () => mockPosts.firstWhere((post) => post.id == input.postId),
+    );
+    return PostCommentResult(
+      postId: post.id,
+      text: input.text,
+      commentsCount: post.commentsCount + 1,
+    );
+  }
 }

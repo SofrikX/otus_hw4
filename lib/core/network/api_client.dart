@@ -75,6 +75,16 @@ class ApiClient {
     return postData<Map<String, dynamic>>('/posts/$postId/like');
   }
 
+  Future<Map<String, dynamic>> addPostComment(
+    String postId,
+    Map<String, Object?> input,
+  ) {
+    return postData<Map<String, dynamic>>(
+      '/posts/$postId/comments',
+      body: input,
+    );
+  }
+
   Future<Map<String, dynamic>> getPet(String petId) {
     return getData<Map<String, dynamic>>('/pets/$petId');
   }
