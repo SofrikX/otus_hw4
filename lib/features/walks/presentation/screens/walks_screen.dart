@@ -36,13 +36,24 @@ class WalksScreen extends ConsumerWidget {
               return WalkCard(
                 walk: walk,
                 onJoin: () async {
-                  final joined = await controller.joinWalk(walk.id);
-                  if (!context.mounted || !joined) {
+                  final status = await controller.joinWalk(walk.id);
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  final message = switch (status) {
+                    WalkJoinStatus.joined => 'Вы присоединились: ${walk.title}',
+                    WalkJoinStatus.alreadyJoined =>
+                      'Вы уже участвуете: ${walk.title}',
+                    WalkJoinStatus.unavailable => null,
+                    WalkJoinStatus.failed => null,
+                  };
+                  if (message == null) {
                     return;
                   }
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Вы присоединились: ${walk.title}')),
+                    SnackBar(content: Text(message)),
                   );
                 },
               );

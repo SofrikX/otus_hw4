@@ -14,9 +14,23 @@ class ApiWalksRepository implements WalksRepository {
   }
 
   @override
+  Future<Walk> createWalk(CreateWalkInput input) async {
+    throw UnsupportedError(
+      'Creating walks is not supported by the legacy API repository.',
+    );
+  }
+
+  @override
   Future<WalkJoinResult> joinWalk(String walkId) async {
     final result = await _apiClient.joinWalk(walkId);
     return WalkJoinResult.fromJson(result);
+  }
+
+  @override
+  Future<WalkJoinResult> leaveWalk(String walkId) async {
+    throw UnsupportedError(
+      'Leaving walks is not supported by the legacy API repository.',
+    );
   }
 
   Walk _mapWalk(Map<String, dynamic> json) {

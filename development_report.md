@@ -790,3 +790,49 @@ flutter test
 - реальные Supabase URL/anon key не добавлялись;
 - hosted Supabase smoke test профилей питомцев остается next step после создания project и применения migrations;
 - Supabase Storage upload фото питомца пока не подключался к UI, используется существующий `photo_emoji` fallback.
+
+## 18. Supabase walks integration
+
+Дата интеграции: 17 июня 2026.
+
+Codex интегрировал прогулки PetConnect с Supabase data API, сохранив mock fallback:
+
+- `WalksRepository` расширен операциями `createWalk` и `leaveWalk`; существующие `fetchWalks` и `joinWalk` сохранены;
+- добавлен `SupabaseWalkRepository` для таблиц `walks` и `walk_participants`;
+- `walksRepositoryProvider` выбирает `SupabaseWalkRepository` при `USE_SUPABASE_BACKEND=true`, legacy `ApiWalksRepository` при `USE_FIREBASE_BACKEND=true`, иначе `MockWalksRepository`;
+- `WalksController` сохраняет loading/error/empty/success states через `AsyncValue`;
+- `joinWalk` возвращает typed status: `joined`, `alreadyJoined`, `unavailable` или `failed`;
+- unique constraint `walk_participants(walk_id, user_id)` с PostgREST code `23505` превращается в friendly `alreadyJoined` result, а UI показывает snackbar "Вы уже участвуете";
+- `WalksScreen` продолжает использовать `AsyncContentView` для loading, error with retry, empty и success states.
+
+Используемые Supabase операции:
+
+```dart
+supabase.from('walks').select(...).eq('status', 'active').order('scheduled_at');
+supabase.from('walk_participants').select('walk_id').eq('user_id', userId);
+supabase.from('walks').insert({...}).select(...).single();
+supabase.from('walk_participants').insert({'walk_id': walkId, 'user_id': userId});
+supabase.from('walk_participants').delete().eq('walk_id', walkId).eq('user_id', userId);
+```
+
+Проверки:
+
+```bash
+dart format lib/features/walks test/features/walks
+flutter test test/features/walks
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter test test/features/walks` прошел: 20 walks tests passed;
+- добавлены repository/controller/widget tests для list success, join success, already joined и error state;
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 68 tests passed.
+
+Ограничения:
+
+- реальные Supabase URL/anon key не добавлялись;
+- hosted Supabase smoke test прогулок остается next step после создания project и применения migrations;
+- создание прогулки реализовано в repository layer, но отдельная UI-форма создания прогулки в этой задаче не добавлялась.

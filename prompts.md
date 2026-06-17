@@ -1811,3 +1811,49 @@ Feed сейчас работает на mock-данных.
 - RLS denial/PostgREST code `42501` мапится в `ApiForbiddenException`.
 - Добавлены тесты `supabase_pet_repository_test.dart`; widget tests профиля сохранены и обновлены под Supabase terminology.
 - `docs/api_spec.md` и `development_report.md` обновлены под pet profile Supabase data flow.
+
+## Prompt 39 — Supabase walks integration
+
+```markdown
+# Role
+Ты Senior Flutter Developer и Supabase Integration Engineer.
+
+# Task
+Интегрируй прогулки PetConnect с Supabase.
+
+# Context
+Walks сейчас работают на mock-данных.
+Нужно добавить Supabase implementation, сохранив mock fallback.
+
+# Required reading
+Прочитай:
+- lib/features/walks/
+- docs/database_schema.md
+- supabase/migrations/
+- test/features/walks/
+
+# Requirements
+1. Создай или обнови WalkRepository abstraction.
+2. Добавь SupabaseWalkRepository.
+3. Реализуй fetchWalks(); createWalk(), если нужно для CRUD; joinWalk(walkId); leaveWalk(walkId), если удобно.
+4. Для join используй таблицу walk_participants.
+5. Обработай unique constraint: если пользователь уже присоединился, показать понятное состояние, а не падение.
+6. UI должен показывать loading; error with retry; empty; success; join success.
+7. Добавь/обнови тесты: walks list success; join success; already joined; error state.
+8. Обнови docs/api_spec.md.
+9. Обнови development_report.md.
+10. Обнови prompts.md.
+```
+
+Результат:
+
+- `WalksRepository` расширен операциями `createWalk` и `leaveWalk`; mock fallback обновлен.
+- Добавлен `SupabaseWalkRepository` на `supabase_flutter` для таблиц `walks` и `walk_participants`.
+- `walksRepositoryProvider` выбирает Supabase implementation при `USE_SUPABASE_BACKEND=true`, legacy API при `USE_FIREBASE_BACKEND=true`, mock fallback по умолчанию.
+- `fetchWalks` загружает активные прогулки и joined state текущего пользователя.
+- `joinWalk` пишет в `walk_participants`, перечитывает `walks.participants_count` и обрабатывает unique constraint `23505` как `alreadyJoined`.
+- `leaveWalk` удаляет строку `walk_participants` текущего пользователя и перечитывает счетчик.
+- `WalksScreen` сохраняет loading, error with retry, empty, success и join success states; already joined показывает понятный snackbar.
+- Добавлены Supabase repository tests и обновлены controller/widget tests.
+- `docs/api_spec.md`, `development_report.md` и `prompts.md` обновлены под walks Supabase data flow.
+- Проверки прошли: `dart format .`, `flutter analyze`, `flutter test test/features/walks`, полный `flutter test` — 68 tests passed.

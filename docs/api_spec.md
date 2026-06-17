@@ -53,6 +53,10 @@ FeedScreen/PostCard
 | `getPetById()` | `pets` | Загружает профиль питомца по id для экрана `/pets/:petId` |
 | `getPetsByOwner()` | `pets` | Загружает питомцев выбранного владельца |
 | `createPet()` | `pets` | Создает профиль питомца текущего `auth.uid()` |
+| `fetchWalks()` | `walks`, `walk_participants` | Загружает активные прогулки и участие текущего пользователя |
+| `createWalk()` | `walks` | Создает прогулку от текущего `auth.uid()` |
+| `joinWalk()` | `walk_participants`, `walks` | Добавляет current user в участники, затем перечитывает счетчик |
+| `leaveWalk()` | `walk_participants`, `walks` | Удаляет current user из участников, затем перечитывает счетчик |
 
 PostgREST/Supabase exceptions мапятся в typed `ApiException`, чтобы UI показывал error state, а не пустой список.
 
@@ -248,14 +252,65 @@ RLS requires `owner_id = auth.uid()`. A denied write is mapped to `ApiForbiddenE
 
 ### Walks: get active walks
 
+Walks data flow:
+
+```text
+WalksScreen/WalkCard
+  -> WalksController
+  -> WalksRepository
+  -> SupabaseWalkRepository when USE_SUPABASE_BACKEND=true
+  -> MockWalksRepository when USE_SUPABASE_BACKEND=false
+```
+
 ```dart
 await supabase
     .from('walks')
-    .select()
+    .select('''
+      id,
+      organizer_name,
+      title,
+      place,
+      scheduled_at,
+      description,
+      participants_count
+    ''')
     .eq('status', 'active')
     .order('scheduled_at', ascending: true)
     .limit(20);
 ```
+
+Дополнительно для состояния кнопки join:
+
+```dart
+await supabase
+    .from('walk_participants')
+    .select('walk_id')
+    .eq('user_id', userId)
+    .inFilter('walk_id', walkIds);
+```
+
+REST shape:
+
+```http
+GET /rest/v1/walks?status=eq.active&order=scheduled_at.asc&limit=20
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <user-access-token>
+```
+
+### Walks: create walk
+
+```dart
+await supabase.from('walks').insert({
+  'creator_id': userId,
+  'organizer_name': organizerName,
+  'title': title,
+  'place': place,
+  'scheduled_at': startsAt.toIso8601String(),
+  'description': description,
+}).select().single();
+```
+
+RLS requires `creator_id = auth.uid()`.
 
 ### Walks: join walk
 
@@ -266,7 +321,22 @@ await supabase.from('walk_participants').insert({
 });
 ```
 
-RLS requires `user_id = auth.uid()` and an active walk. The database trigger updates `walks.participants_count`.
+RLS requires `user_id = auth.uid()`. The database trigger updates `walks.participants_count`.
+Flutter перечитывает строку `walks` после insert, чтобы показать актуальный `participants_count`.
+
+If PostgreSQL returns unique constraint code `23505` for `(walk_id, user_id)`, `SupabaseWalkRepository` does not expose a crash to UI. It returns a `WalkJoinResult` with `alreadyJoined=true`, and `WalksScreen` shows a friendly "Вы уже участвуете" snackbar.
+
+### Walks: leave walk
+
+```dart
+await supabase
+    .from('walk_participants')
+    .delete()
+    .eq('walk_id', walkId)
+    .eq('user_id', userId);
+```
+
+The database trigger updates `walks.participants_count`; Flutter then rereads `walks` for the fresh count.
 
 ### Storage: upload image
 

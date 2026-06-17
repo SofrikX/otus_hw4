@@ -6,11 +6,14 @@ import 'package:petconnect/core/config/backend_config.dart';
 import 'package:petconnect/core/data/mock_data.dart';
 import 'package:petconnect/core/network/api_client.dart';
 import 'package:petconnect/core/network/auth_token_provider.dart';
+import 'package:petconnect/core/supabase/supabase_client_provider.dart';
 import 'package:petconnect/features/walks/application/walks_controller.dart';
 import 'package:petconnect/features/walks/data/api_walks_repository.dart';
 import 'package:petconnect/features/walks/data/mock_walks_repository.dart';
+import 'package:petconnect/features/walks/data/supabase_walk_repository.dart';
 import 'package:petconnect/features/walks/domain/walk.dart';
 import 'package:petconnect/features/walks/domain/walks_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   test('refresh loads walks from repository', () async {
@@ -53,10 +56,33 @@ void main() {
 
     final joined = await controller.joinWalk(walk.id);
 
-    expect(joined, isTrue);
+    expect(joined, WalkJoinStatus.joined);
     final updatedWalk = controller.state.value?.first;
     expect(updatedWalk?.isJoined, isTrue);
     expect(updatedWalk?.participantCount, 4);
+  });
+
+  test('joinWalk reports already joined without error state', () async {
+    final walk = mockWalks.first.copyWith(isJoined: false, participantCount: 3);
+    final controller = WalksController(
+      repository: _FakeWalksRepository(
+        walks: [walk],
+        joinResult: const WalkJoinResult(
+          walkId: 'walk-1',
+          isJoined: true,
+          participantsCount: 3,
+          alreadyJoined: true,
+        ),
+      ),
+      initialState: AsyncValue<List<Walk>>.data([walk]),
+    );
+
+    final joined = await controller.joinWalk(walk.id);
+
+    expect(joined, WalkJoinStatus.alreadyJoined);
+    expect(controller.state.hasError, isFalse);
+    expect(controller.state.value?.first.isJoined, isTrue);
+    expect(controller.state.value?.first.participantCount, 3);
   });
 
   test('joinWalk exposes backend error state', () async {
@@ -71,7 +97,7 @@ void main() {
 
     final joined = await controller.joinWalk(walk.id);
 
-    expect(joined, isFalse);
+    expect(joined, WalkJoinStatus.failed);
     expect(controller.state.hasError, isTrue);
     expect(controller.state.error.toString(), contains('Walk join failed'));
   });
@@ -113,6 +139,34 @@ void main() {
 
     expect(container.read(walksRepositoryProvider), isA<ApiWalksRepository>());
   });
+
+  test('walksRepositoryProvider uses Supabase repository in backend mode', () {
+    final container = ProviderContainer(
+      overrides: [
+        backendConfigProvider.overrideWithValue(
+          const BackendConfig(
+            baseUrl: '',
+            useSupabaseBackend: true,
+            supabaseUrl: 'https://example.supabase.co',
+            supabaseAnonKey: 'anon-key',
+          ),
+        ),
+        supabaseClientProvider.overrideWithValue(
+          SupabaseClient(
+            'https://example.supabase.co',
+            'anon-key',
+            httpClient: MockClient((_) async => http.Response('[]', 200)),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    expect(
+      container.read(walksRepositoryProvider),
+      isA<SupabaseWalkRepository>(),
+    );
+  });
 }
 
 class _FakeWalksRepository implements WalksRepository {
@@ -139,6 +193,20 @@ class _FakeWalksRepository implements WalksRepository {
   }
 
   @override
+  Future<Walk> createWalk(CreateWalkInput input) async {
+    return Walk(
+      id: 'walk-new',
+      title: input.title,
+      place: input.place,
+      startsAt: input.startsAt,
+      description: input.description,
+      organizerName: input.organizerName ?? 'Ava',
+      participantCount: 0,
+      isJoined: false,
+    );
+  }
+
+  @override
   Future<WalkJoinResult> joinWalk(String walkId) async {
     final error = joinError;
     if (error != null) {
@@ -155,6 +223,18 @@ class _FakeWalksRepository implements WalksRepository {
       walkId: walk.id,
       isJoined: true,
       participantsCount: walk.participantCount + 1,
+    );
+  }
+
+  @override
+  Future<WalkJoinResult> leaveWalk(String walkId) async {
+    final walk = walks.firstWhere((walk) => walk.id == walkId);
+    return WalkJoinResult(
+      walkId: walk.id,
+      isJoined: false,
+      participantsCount: walk.participantCount > 0
+          ? walk.participantCount - 1
+          : walk.participantCount,
     );
   }
 }

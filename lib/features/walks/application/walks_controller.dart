@@ -5,13 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/backend_config.dart';
 import '../../../core/data/mock_data.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/supabase/supabase_client_provider.dart';
 import '../data/api_walks_repository.dart';
 import '../data/mock_walks_repository.dart';
+import '../data/supabase_walk_repository.dart';
 import '../domain/walk.dart';
 import '../domain/walks_repository.dart';
 
 final walksRepositoryProvider = Provider<WalksRepository>((ref) {
   final config = ref.watch(backendConfigProvider);
+  if (config.useSupabaseBackend) {
+    return SupabaseWalkRepository(ref.watch(supabaseClientProvider));
+  }
+
   if (config.useFirebaseBackend) {
     return ApiWalksRepository(ref.watch(apiClientProvider));
   }
@@ -21,13 +27,19 @@ final walksRepositoryProvider = Provider<WalksRepository>((ref) {
 
 final walksControllerProvider =
     StateNotifierProvider<WalksController, AsyncValue<List<Walk>>>((ref) {
-  final useFirebaseBackend =
-      ref.watch(backendConfigProvider).useFirebaseBackend;
+  final config = ref.watch(backendConfigProvider);
   return WalksController(
     repository: ref.watch(walksRepositoryProvider),
-    loadOnStart: useFirebaseBackend,
+    loadOnStart: config.useSupabaseBackend || config.useFirebaseBackend,
   );
 });
+
+enum WalkJoinStatus {
+  joined,
+  alreadyJoined,
+  unavailable,
+  failed,
+}
 
 class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
   WalksController({
@@ -62,10 +74,10 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
     });
   }
 
-  Future<bool> joinWalk(String walkId) async {
+  Future<WalkJoinStatus> joinWalk(String walkId) async {
     final walks = state.asData?.value;
     if (walks == null) {
-      return false;
+      return WalkJoinStatus.unavailable;
     }
 
     Walk? selectedWalk;
@@ -76,17 +88,23 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
       }
     }
 
-    if (selectedWalk == null || selectedWalk.isJoined) {
-      return false;
+    if (selectedWalk == null) {
+      return WalkJoinStatus.unavailable;
+    }
+
+    if (selectedWalk.isJoined) {
+      return WalkJoinStatus.alreadyJoined;
     }
 
     try {
       final result = await _repository.joinWalk(walkId);
       _applyJoinResult(result);
-      return true;
+      return result.alreadyJoined
+          ? WalkJoinStatus.alreadyJoined
+          : WalkJoinStatus.joined;
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
-      return false;
+      return WalkJoinStatus.failed;
     }
   }
 

@@ -1,0 +1,290 @@
+import 'dart:convert';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/network/api_error.dart';
+import '../domain/walk.dart';
+import '../domain/walks_repository.dart';
+
+class SupabaseWalkRepository implements WalksRepository {
+  const SupabaseWalkRepository(
+    this._client, {
+    String? currentUserId,
+  }) : _currentUserIdOverride = currentUserId;
+
+  static const _walkColumns = '''
+id,
+organizer_name,
+title,
+place,
+scheduled_at,
+description,
+participants_count
+''';
+
+  final SupabaseClient _client;
+  final String? _currentUserIdOverride;
+
+  @override
+  Future<List<Walk>> fetchWalks({int limit = 20}) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      final response = await _client
+          .from('walks')
+          .select(_walkColumns)
+          .eq('status', 'active')
+          .order('scheduled_at', ascending: true)
+          .limit(limit);
+
+      final walkRows = _rowsFrom(response);
+      if (walkRows.isEmpty) {
+        return const <Walk>[];
+      }
+
+      final walkIds = walkRows.map((row) => row['id'] as String).toList();
+      final joinedWalkIds = await _fetchJoinedWalkIds(
+        userId: userId,
+        walkIds: walkIds,
+      );
+
+      return walkRows
+          .map(
+            (row) => _mapWalk(
+              row,
+              isJoined: joinedWalkIds.contains(row['id'] as String),
+            ),
+          )
+          .toList(growable: false);
+    });
+  }
+
+  @override
+  Future<Walk> createWalk(CreateWalkInput input) {
+    return _guard(() async {
+      final user = _requiredUser();
+      final response = await _client
+          .from('walks')
+          .insert({
+            'creator_id': user.id,
+            'organizer_name': input.organizerName ?? _displayNameFor(user),
+            'title': input.title,
+            'place': input.place,
+            'scheduled_at': input.startsAt.toIso8601String(),
+            'description': input.description,
+          })
+          .select(_walkColumns)
+          .single();
+
+      return _mapWalk(response);
+    });
+  }
+
+  @override
+  Future<WalkJoinResult> joinWalk(String walkId) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      try {
+        await _client.from('walk_participants').insert({
+          'walk_id': walkId,
+          'user_id': userId,
+        });
+      } on PostgrestException catch (error) {
+        if (_postgrestCode(error) != '23505') {
+          rethrow;
+        }
+
+        final walk = await _fetchWalkById(walkId, isJoined: true);
+        return WalkJoinResult(
+          walkId: walk.id,
+          isJoined: true,
+          participantsCount: walk.participantCount,
+          alreadyJoined: true,
+        );
+      }
+
+      final walk = await _fetchWalkById(walkId, isJoined: true);
+      return WalkJoinResult(
+        walkId: walk.id,
+        isJoined: true,
+        participantsCount: walk.participantCount,
+      );
+    });
+  }
+
+  @override
+  Future<WalkJoinResult> leaveWalk(String walkId) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      await _client
+          .from('walk_participants')
+          .delete()
+          .eq('walk_id', walkId)
+          .eq('user_id', userId);
+
+      final walk = await _fetchWalkById(walkId, isJoined: false);
+      return WalkJoinResult(
+        walkId: walk.id,
+        isJoined: false,
+        participantsCount: walk.participantCount,
+      );
+    });
+  }
+
+  Future<Set<String>> _fetchJoinedWalkIds({
+    required String userId,
+    required List<String> walkIds,
+  }) async {
+    if (walkIds.isEmpty) {
+      return const <String>{};
+    }
+
+    final response = await _client
+        .from('walk_participants')
+        .select('walk_id')
+        .eq('user_id', userId)
+        .inFilter('walk_id', walkIds);
+
+    return _rowsFrom(response).map((row) => row['walk_id'] as String).toSet();
+  }
+
+  Future<Walk> _fetchWalkById(
+    String walkId, {
+    required bool isJoined,
+  }) async {
+    final response = await _client
+        .from('walks')
+        .select(_walkColumns)
+        .eq('id', walkId)
+        .single();
+
+    return _mapWalk(response, isJoined: isJoined);
+  }
+
+  Walk _mapWalk(
+    Map<String, dynamic> row, {
+    bool isJoined = false,
+  }) {
+    return Walk(
+      id: row['id'] as String,
+      title: row['title'] as String? ?? 'Прогулка',
+      place: row['place'] as String? ?? 'Место уточняется',
+      startsAt: DateTime.parse(row['scheduled_at'] as String),
+      description: row['description'] as String? ?? '',
+      organizerName: row['organizer_name'] as String? ?? 'Организатор',
+      participantCount: (row['participants_count'] as num?)?.toInt() ?? 0,
+      isJoined: isJoined,
+    );
+  }
+
+  List<Map<String, dynamic>> _rowsFrom(Object? response) {
+    if (response is List) {
+      return response.cast<Map<String, dynamic>>();
+    }
+
+    throw const ApiUnexpectedException(
+      statusCode: 500,
+      code: 'invalid-supabase-response',
+      message: 'Supabase returned an unexpected walks response.',
+    );
+  }
+
+  User _requiredUser() {
+    final user = _client.auth.currentUser;
+    if (user == null && _currentUserIdOverride == null) {
+      throw const ApiUnauthorizedException(
+        message: 'Supabase session is required for walk operations.',
+      );
+    }
+
+    return user ??
+        User(
+          id: _currentUserIdOverride!,
+          appMetadata: const {},
+          userMetadata: const {},
+          aud: 'authenticated',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0).toIso8601String(),
+        );
+  }
+
+  String _requiredUserId() => _requiredUser().id;
+
+  String _displayNameFor(User user) {
+    final metadata = user.userMetadata ?? const <String, dynamic>{};
+    final displayName = metadata['display_name'] as String? ??
+        metadata['name'] as String? ??
+        metadata['full_name'] as String?;
+
+    final trimmedDisplayName = displayName?.trim();
+    if (trimmedDisplayName != null && trimmedDisplayName.isNotEmpty) {
+      return trimmedDisplayName;
+    }
+
+    return user.email ?? 'Владелец';
+  }
+
+  Future<T> _guard<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on ApiException {
+      rethrow;
+    } on AuthException catch (error) {
+      throw ApiUnauthorizedException(message: error.message);
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestException(error);
+    } on FormatException catch (error) {
+      throw ApiUnexpectedException(
+        statusCode: 500,
+        code: 'invalid-supabase-response',
+        message: error.message,
+      );
+    } on Object catch (error) {
+      if (error is Error) {
+        rethrow;
+      }
+
+      throw const ApiNetworkException();
+    }
+  }
+
+  ApiException _mapPostgrestException(PostgrestException error) {
+    final code = _postgrestCode(error);
+    if (code == '42501') {
+      return ApiForbiddenException(message: error.message, code: code);
+    }
+    if (code == '23505' ||
+        code == '23503' ||
+        code == '23514' ||
+        code == '22P02') {
+      return ApiValidationException(message: error.message, code: code);
+    }
+    if (code == 'PGRST116' || code == '406') {
+      return ApiNotFoundException(message: error.message, code: code);
+    }
+    if (code == '401' || code == 'PGRST301') {
+      return ApiUnauthorizedException(message: error.message, code: code);
+    }
+
+    return ApiUnexpectedException(
+      statusCode: 500,
+      code: code,
+      message: error.message,
+    );
+  }
+
+  String _postgrestCode(PostgrestException error) {
+    final message = error.message;
+    try {
+      final decoded = jsonDecode(message);
+      if (decoded is Map<String, dynamic>) {
+        final code = decoded['code'] as String?;
+        if (code != null && code.isNotEmpty) {
+          return code;
+        }
+      }
+    } on FormatException {
+      // Supabase can also provide a plain-text message.
+    }
+
+    return error.code ?? 'postgrest-error';
+  }
+}
