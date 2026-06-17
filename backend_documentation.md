@@ -181,7 +181,7 @@ Unique: `(walk_id, user_id)`.
 Чаты проектируются отдельными таблицами:
 
 - `chats`: `id`, `last_message_text`, `last_message_sender_id`, `last_message_at`, `created_at`, `updated_at`;
-- `chat_participants`: `chat_id`, `user_id`, `display_name`, `pet_name`, `unread_count`;
+- `chat_participants`: `chat_id`, `user_id`, `companion_name`, `pet_name`, `unread_count`;
 - `messages`: `id`, `chat_id`, `sender_id`, `sender_name`, `text`, `status`, `created_at`, `updated_at`.
 
 RLS для чатов должна разрешать чтение и запись только участникам.
@@ -257,8 +257,9 @@ Storage policies:
 3. В Connect/API settings скопировать Project URL.
 4. Скопировать anon public key или publishable key для client-side операций.
 5. Не копировать service role key в Flutter, `.env.example`, README или screenshots.
-6. Открыть SQL Editor и применить migration, если CLI не используется.
-7. Проверить таблицы, RLS policies и Storage buckets.
+6. Открыть SQL Editor и применить migrations, если CLI не используется.
+7. Создать двух demo Auth users перед seed, если нужен наполненный demo backend.
+8. Проверить таблицы, RLS policies, Storage buckets и seed rows.
 
 ### CLI steps
 
@@ -277,9 +278,37 @@ supabase db lint
 supabase db reset
 ```
 
-`supabase db push` применяет SQL migrations к linked project. `supabase db reset` используется для локальной базы и применяет `supabase/seed.sql`.
+`supabase db push` применяет SQL migrations к linked project. `supabase db reset` используется для локальной базы и применяет `supabase/seed.sql`. Локальный seed создает две минимальные demo rows в `auth.users`, потому что `public.profiles.id` зависит от `auth.users.id`.
 
-## 10. Local Configuration
+## 10. Seed Data
+
+Файл `supabase/seed.sql` содержит demo-данные для проверки PetConnect:
+
+| Entity | Count |
+|---|---:|
+| Demo profiles | 2 |
+| Pets | 3 |
+| Posts | 4 |
+| Comments | 5 |
+| Post likes | 4 |
+| Walks | 3 |
+| Walk participants | 4 |
+| Chats | 1 |
+| Chat participants | 2 |
+| Messages | 3 |
+
+Seed не создает реальных production users и не хранит реальные персональные данные. Для локальной проверки он добавляет demo Auth users с emails `example.test` и demo password `DemoPass123!`. Ограничение связано со схемой: `public.profiles.id` является foreign key на `auth.users.id`.
+
+Для hosted Supabase project нужно:
+
+1. Создать двух demo-пользователей через Supabase Auth UI или через регистрацию в приложении.
+2. Скопировать их `auth.users.id`.
+3. Заменить в `supabase/seed.sql` demo UUID `11111111-1111-1111-1111-111111111111` и `22222222-2222-2222-2222-222222222222`.
+4. Выполнить seed через Dashboard SQL Editor или `psql`.
+
+Фиксированные UUID в файле предназначены для локальной проверки. Блок `insert into auth.users ...` использует `on conflict (id) do nothing`, но для hosted project предпочтительнее создавать пользователей через Supabase Auth UI или приложение. Подробная инструкция: `docs/seed_data.md`.
+
+## 11. Local Configuration
 
 Файл `.env.example` содержит только безопасные placeholders:
 
@@ -309,7 +338,7 @@ flutter run -d chrome \
   --dart-define=SUPABASE_ANON_KEY=<your-public-client-key>
 ```
 
-## 11. Production Backend URL
+## 12. Production Backend URL
 
 Production backend URL для PetConnect - это Supabase Project URL:
 
@@ -325,7 +354,7 @@ https://<project-ref>.supabase.co/rest/v1
 
 В репозитории не указывается реальный `<project-ref>`. Проверяющий или владелец project подставляет свои значения локально.
 
-## 12. Environment and Secrets
+## 13. Environment and Secrets
 
 В репозитории допустимы только placeholders:
 
@@ -345,22 +374,21 @@ USE_SUPABASE_BACKEND=true
 
 Anon key допустим для клиентских приложений по модели Supabase, но в учебном репозитории реальные значения все равно лучше не фиксировать.
 
-## 13. Frontend Integration Plan
+## 14. Frontend Integration Plan
 
 Текущий Flutter UI и бизнес-логика на этом шаге не меняются.
 
 План технической миграции:
 
-1. Добавить `supabase_flutter` в `pubspec.yaml`.
-2. Создать Supabase initializer в `lib/core`.
-3. Заменить Firebase auth repository на Supabase auth repository.
-4. Добавить Supabase implementations для feed, pets и walks repositories.
-5. Оставить mock implementations для tests/fallback.
-6. Перевести backend flag на `USE_SUPABASE_BACKEND`.
-7. Обновить API/client tests под Supabase repository behavior.
-8. Удалить Firebase dependencies и prototype files только после успешной миграции.
+1. Supabase Auth integration выполнена через `supabase_flutter`.
+2. Supabase initializer добавлен в `lib/core/supabase`.
+3. Auth repository layer выбирает `SupabaseAuthRepository` при `USE_SUPABASE_BACKEND=true`, Firebase legacy repository при `USE_FIREBASE_BACKEND=true` и mock repository в local mode.
+4. После sign up/sign in Supabase repository выполняет upsert профиля в `public.profiles`, если есть authenticated session.
+5. Следующий шаг: добавить Supabase implementations для feed, pets и walks repositories.
+6. Оставить mock implementations для tests/fallback.
+7. Удалить Firebase dependencies и prototype files только после успешной миграции data repositories.
 
-## 14. Validation
+## 15. Validation
 
 Flutter:
 
@@ -377,6 +405,20 @@ supabase db lint
 supabase db reset
 ```
 
+Seed smoke checks:
+
+```sql
+select count(*) from public.profiles;
+select count(*) from public.pets;
+select count(*) from public.posts;
+select count(*) from public.comments;
+select count(*) from public.post_likes;
+select count(*) from public.walks;
+select count(*) from public.walk_participants;
+select count(*) from public.chats;
+select count(*) from public.messages;
+```
+
 Manual checks:
 
 - registration/login through Supabase Auth;
@@ -388,7 +430,7 @@ Manual checks:
 - join walk;
 - verify denied access for foreign rows through RLS.
 
-## 15. Firebase Prototype History
+## 16. Firebase Prototype History
 
 Firebase не удаляется из истории разработки. Он остается корректно описанным исследованным вариантом:
 
@@ -400,15 +442,16 @@ Firebase не удаляется из истории разработки. Он 
 
 Итоговое решение: для текущего ДЗ production backend - Supabase Free Tier, а Firebase-прототип является частью AI-assisted exploration и не считается выбранным production backend.
 
-## 16. Known Limitations
+## 17. Known Limitations
 
 - Supabase project еще нужно создать.
 - SQL migrations и RLS policies подготовлены в `supabase/migrations/`, но их еще нужно применить к реальному project.
-- Flutter SDK migration на `supabase_flutter` еще не выполнена.
+- Для hosted seed нужно создать demo Auth users через Supabase Auth UI или приложение и заменить demo UUID на реальные `auth.users.id`.
+- Supabase Auth migration на `supabase_flutter` выполнена; data repositories feed/pets/walks еще ожидают Supabase migration.
 - Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
 - Реальные Supabase URL и keys не должны появляться в документации или git history.
 
-## 17. AI-assisted Development
+## 18. AI-assisted Development
 
 Основной AI-агент проекта - OpenAI Codex.
 
@@ -419,4 +462,5 @@ Codex использовался для:
 - выявления production deployment риска Cloud Functions Blaze plan;
 - выбора Supabase как бесплатного backend для текущего ДЗ;
 - документирования mapping Firebase -> Supabase;
+- создания Supabase seed data для проверяемого demo backend;
 - фиксации remaining tasks без ложного утверждения о готовом Supabase deployment.

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:petconnect/features/auth/data/firebase_auth_repository.dart';
 import 'package:petconnect/features/auth/domain/app_user.dart';
+import 'package:petconnect/features/auth/domain/auth_repository.dart';
 import 'package:petconnect/features/auth/presentation/auth_controller.dart';
 
 void main() {
@@ -32,6 +32,12 @@ void main() {
 
     expect(container.read(authControllerProvider).hasValue, isTrue);
     expect(repository.lastSignInEmail, 'owner@example.com');
+    expect(
+        controller.currentUser,
+        const AppUser(
+          id: 'user-1',
+          email: 'owner@example.com',
+        ));
   });
 
   test('register exposes repository errors', () async {
@@ -65,7 +71,11 @@ class _FakeAuthRepository implements AuthRepository {
   final _authStateController = StreamController<AppUser?>.broadcast();
   final _signInCompleter = Completer<AppUser>();
 
+  AppUser? _currentUser;
   String? lastSignInEmail;
+
+  @override
+  AppUser? get currentUser => _currentUser;
 
   @override
   Stream<AppUser?> authStateChanges() {
@@ -82,6 +92,7 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   void completeSignIn(AppUser user) {
+    _currentUser = user;
     _signInCompleter.complete(user);
     _authStateController.add(user);
   }
@@ -97,11 +108,15 @@ class _FakeAuthRepository implements AuthRepository {
       throw error;
     }
 
-    return AppUser(id: 'user-2', email: email, displayName: displayName);
+    final user = AppUser(id: 'user-2', email: email, displayName: displayName);
+    _currentUser = user;
+    _authStateController.add(user);
+    return user;
   }
 
   @override
   Future<void> signOut() async {
+    _currentUser = null;
     _authStateController.add(null);
   }
 

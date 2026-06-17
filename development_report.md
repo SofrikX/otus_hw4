@@ -625,3 +625,83 @@ Codex подготовил структуру подключения Supabase б
 - `README.md` и `backend_documentation.md` дополнены Supabase project setup, local configuration, production backend URL и Flutter run command.
 
 Реальные Supabase URL, anon key, service role key, database password и user data не добавлялись. Flutter UI, `lib/`, `test/` и `pubspec.yaml` не менялись.
+
+## 14. Supabase seed data and local validation
+
+Дата проверки: 17 июня 2026.
+
+Codex подготовил и проверил Supabase seed data для backend QA:
+
+- `supabase/seed.sql` наполняет локальную Supabase database demo-данными;
+- seed создает минимальные локальные demo rows в `auth.users`, потому что `profiles.id` ссылается на `auth.users.id`;
+- для hosted Supabase project документация требует создать demo users через Supabase Auth UI или регистрацию в приложении и заменить demo UUID на реальные `auth.users.id`;
+- реальные персональные данные, production URLs, anon keys, service role keys, database passwords и secrets не добавлялись.
+
+Установленные локальные инструменты для проверки:
+
+- Supabase CLI `2.106.0` через Homebrew;
+- Docker CLI через Homebrew;
+- Colima/Lima как Docker-compatible runtime.
+
+Команды проверки:
+
+```bash
+supabase db start
+supabase db reset
+supabase db lint
+```
+
+Результат:
+
+- `supabase db start` применил migrations и seed;
+- `supabase db reset` успешно пересоздал локальную database, применил `001_initial_schema.sql`, `002_rls_policies.sql` и `supabase/seed.sql`;
+- `supabase db lint` завершился без schema errors;
+- SQL smoke checks подтвердили ожидаемые counts: 2 profiles, 3 pets, 4 posts, 5 comments, 4 post_likes, 3 walks, 4 walk_participants, 1 chat, 2 chat_participants и 3 messages;
+- counter triggers пересчитали `posts.likes_count`, `posts.comments_count` и `walks.participants_count`.
+
+Ограничение окружения:
+
+- Полный `supabase start` с API/Studio stack на Colima дошел до seed, но затем упал на запуске `supabase_vector_otus_dz4` из-за mount ошибки Docker socket Colima. Для текущей SQL/RLS/seed проверки использован поддерживаемый путь `supabase db start` / `supabase db reset`, который поднимает локальный Postgres и валидирует migrations plus seed.
+
+## 15. Supabase Auth frontend integration
+
+Дата интеграции: 17 июня 2026.
+
+Codex интегрировал Supabase Auth во Flutter frontend без добавления реальных Supabase credentials:
+
+- добавлена зависимость `supabase_flutter`;
+- `BackendConfig` читает `USE_SUPABASE_BACKEND`, `SUPABASE_URL` и `SUPABASE_ANON_KEY` из `--dart-define`;
+- добавлен `initializeSupabaseApp`, который инициализирует Supabase только при `USE_SUPABASE_BACKEND=true`;
+- auth abstraction вынесена в `AuthRepository`;
+- добавлен `SupabaseAuthRepository` для email/password sign up, sign in, sign out, current user и auth state changes;
+- после sign up/sign in выполняется upsert строки в `public.profiles`, если Supabase session доступна;
+- добавлен `MockAuthRepository`, чтобы mock mode не требовал backend credentials;
+- `AuthController` и `authStateProvider` сохранены как Riverpod entry points для UI;
+- routing теперь защищает экраны только в backend auth mode и ведет anonymous user на `/login` при `USE_SUPABASE_BACKEND=true`;
+- token provider умеет отдавать Supabase access token для дальнейших Supabase API calls.
+
+UI:
+
+- существующие `LoginScreen` и `RegisterScreen` используют controller, показывают loading/error states и получают success redirect через auth state + router;
+- user-facing ошибки нормализованы для invalid credentials, already registered email, weak password, invalid email и network/service failure.
+
+Проверки:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `dart format .` выполнен;
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 52 tests passed;
+- добавлены тесты auth controller success/error, login screen loading/error и routing guard для Supabase backend vs mock mode.
+
+Ограничения:
+
+- реальные Supabase project URL и anon key не добавлялись;
+- ручная проверка hosted Supabase sign up/sign in остается next step после создания project;
+- feed/pets/walks repositories еще не переведены на Supabase data API в этом шаге.

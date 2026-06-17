@@ -7,10 +7,6 @@ import '../config/backend_config.dart';
 import 'api_error.dart';
 import 'auth_token_provider.dart';
 
-final backendConfigProvider = Provider<BackendConfig>((ref) {
-  return BackendConfig.fromEnvironment();
-});
-
 final httpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
   ref.onDispose(client.close);

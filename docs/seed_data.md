@@ -1,92 +1,105 @@
-# Seed Data — PetConnect Firebase Emulator
+# Seed Data - PetConnect Supabase
 
 ## Назначение
 
-Seed-данные нужны, чтобы преподаватель мог запустить локальный Firebase Emulator Suite и увидеть наполненную базу PetConnect без production credentials.
+`supabase/seed.sql` наполняет PetConnect demo-данными для проверки backend после применения Supabase schema и RLS migrations.
 
-Скрипт:
+Seed нужен, чтобы после подключения Flutter-приложения к Supabase можно было увидеть реальные rows в ленте, питомцах, прогулках и чатах без использования production data.
 
-```text
-scripts/seed_firestore.js
-```
+## Важное ограничение Auth
 
-Скрипт работает только с Firestore Emulator и отказывается запускаться без `FIRESTORE_EMULATOR_HOST`.
+`public.profiles.id` ссылается на `auth.users.id`. Для локального `supabase start` / `supabase db reset` seed создает две минимальные demo rows в `auth.users`, чтобы foreign keys проходили автоматически.
+
+Для hosted Supabase project безопаснее не создавать production Auth users SQL-ом. Используйте отдельный ручной flow:
+
+Для hosted Supabase project используйте безопасный flow:
+
+1. Создайте двух demo-пользователей через Supabase Dashboard -> Authentication -> Users или зарегистрируйте их через приложение.
+2. Скопируйте их `auth.users.id`.
+3. Замените в `supabase/seed.sql` фиксированные demo UUID:
+
+| Placeholder | Demo UUID in file | Заменить на |
+|---|---|---|
+| `DEMO_USER_A_ID` | `11111111-1111-1111-1111-111111111111` | UUID первого demo Auth user |
+| `DEMO_USER_B_ID` | `22222222-2222-2222-2222-222222222222` | UUID второго demo Auth user |
+
+Фиксированные UUID и demo password `DemoPass123!` предназначены только для локальной проверки. Не используйте реальные персональные данные: demo emails в seed используют домен `example.test`.
 
 ## Что создается
 
-Seed соответствует `docs/firestore_schema.md` и создает:
+| Table | Количество | Назначение |
+|---|---:|---|
+| `profiles` | 2 | Demo Alina и Demo Mark |
+| `pets` | 3 | Bruno, Mia, Rocky |
+| `posts` | 4 | Публичные посты для социальной ленты |
+| `comments` | 5 | Комментарии к постам |
+| `post_likes` | 4 | Лайки между demo-пользователями |
+| `walks` | 3 | Активные прогулки |
+| `walk_participants` | 4 | Участники прогулок |
+| `chats` | 1 | Диалог между demo-пользователями |
+| `chat_participants` | 2 | Участники чата |
+| `messages` | 3 | Сообщения внутри чата |
 
-| Коллекция | Количество |
-|---|---:|
-| `users` | 2 |
-| `pets` | 3 |
-| `posts` | 4 |
-| `posts/{postId}/comments` | 4 |
-| `posts/{postId}/likes` | 2 |
-| `walks` | 3 |
-| `chats` | 1 |
-| `chats/{chatId}/messages` | 2 |
+`posts.likes_count`, `posts.comments_count` и `walks.participants_count` не задаются вручную. Они пересчитываются trigger-функциями из `supabase/migrations/001_initial_schema.sql` после вставки лайков, комментариев и участников прогулок.
 
-Тестовые пользователи:
+## Как применить локально
 
-- `user-anya`
-- `user-maksim`
-
-Тестовые питомцы:
-
-- `pet-bruno`
-- `pet-mia`
-- `pet-rocky`
-
-## Как запустить emulators
-
-Установить зависимости Functions:
+Если Supabase CLI настроен и локальная база используется для проверки, `supabase db reset` применяет migrations и затем выполняет `supabase/seed.sql`:
 
 ```bash
-npm install --prefix functions
+supabase db reset
 ```
 
-Запустить Firebase Emulator Suite:
+Локальный seed сам создает demo Auth users с ids из seed-файла, затем вставляет application rows в `public.*`.
+
+## Как применить в hosted Supabase
+
+1. Примените migrations:
 
 ```bash
-firebase emulators:start
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase db push
 ```
 
-Firestore emulator по умолчанию слушает:
+2. Создайте двух demo Auth users через Dashboard или приложение.
+3. Замените оба demo UUID в `supabase/seed.sql` на реальные ids созданных demo users.
+4. Выполните измененный SQL через Dashboard SQL Editor или через `psql` к linked database. Блок `insert into auth.users ...` использует `on conflict (id) do nothing`, но для hosted project предпочтительнее полагаться на уже созданных Auth users, а не создавать пользователей SQL-ом.
 
-```text
-127.0.0.1:8080
+Не вставляйте service role key, database password или реальные пользовательские данные в репозиторий.
+
+## Smoke checks
+
+После загрузки seed проверьте:
+
+```sql
+select count(*) from public.profiles;
+select count(*) from public.pets;
+select count(*) from public.posts;
+select count(*) from public.comments;
+select count(*) from public.post_likes;
+select count(*) from public.walks;
+select count(*) from public.walk_participants;
+select count(*) from public.chats;
+select count(*) from public.messages;
 ```
 
-Emulator UI:
+Ожидаемые ключевые проверки:
 
-```text
-http://127.0.0.1:4000
-```
-
-## Как выполнить seed
-
-В отдельном терминале из корня проекта:
-
-```bash
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
-```
-
-Если нужен явный local project id:
-
-```bash
-FIREBASE_PROJECT_ID=petconnect-local FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npm run seed --prefix functions
-```
+- `posts` содержит 4 публичных записи, отсортированные по `created_at`;
+- `posts.likes_count` показывает пересчитанные лайки;
+- `posts.comments_count` показывает пересчитанные комментарии;
+- `walks` содержит 3 активные прогулки с пересчитанным `participants_count`;
+- `chats` содержит 1 диалог, видимый только его участникам по RLS;
+- `messages` содержит 3 сообщения для demo-чата.
 
 ## Safety
 
-Скрипт не использует `serviceAccount.json`, реальные токены или production credentials.
+Seed idempotent для фиксированных demo UUID: перед вставкой удаляются только rows с demo ids из этого файла.
 
-Защита от случайной записи в production:
+Ограничения:
 
-- требуется `FIRESTORE_EMULATOR_HOST`;
-- используется Firebase Admin SDK только против emulator host;
-- project id берется из `FIREBASE_PROJECT_ID` или безопасного fallback `petconnect-local`;
-- фиксированные document ids делают повторный запуск idempotent.
-
-Если `FIRESTORE_EMULATOR_HOST` не задан, скрипт завершится ошибкой и ничего не запишет.
+- seed создает только локальные demo Auth users с emails `example.test`;
+- seed не содержит реальных персональных данных;
+- seed не содержит secrets;
+- для hosted project всегда используйте отдельных demo users и заменяйте UUID перед запуском.

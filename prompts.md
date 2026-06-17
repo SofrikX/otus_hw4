@@ -1638,3 +1638,88 @@ PetConnect — приложение для владельцев питомцев
 - Write-доступ ограничен владельцем профиля/питомца, автором поста/комментария, self-like, self-join и участниками чата.
 - Прямое client-side создание чата не открыто; для этого нужна будущая безопасная RPC/серверная операция.
 - `docs/supabase_security.md` и `backend_documentation.md` обновлены описанием security model.
+
+## Prompt 35 — Supabase seed data для backend QA
+
+```markdown
+# Role
+Ты Supabase QA Engineer и Database Developer.
+
+# Task
+Создай seed-данные для проверки PetConnect в Supabase.
+
+# Context
+Для сдачи ДЗ нужно, чтобы backend был проверяемым и приложение показывало реальные данные после подключения к Supabase.
+
+# Required reading
+Прочитай:
+- supabase/migrations/001_initial_schema.sql
+- supabase/migrations/002_rls_policies.sql
+- docs/database_schema.md
+- docs/current_homework_scope.md
+- README.md
+
+# Requirements
+1. Создай или обнови `supabase/seed.sql` и `docs/seed_data.md`.
+2. Seed должен включать 2 demo profiles, 3 pets, 4 posts, comments, post_likes, 3 walks, walk_participants, 1 chat и messages.
+3. Seed должен быть совместим со schema.
+4. Не используй реальные персональные данные.
+5. Объясни ограничение hosted Supabase Auth users и замену UUID.
+6. Обнови README.md, backend_documentation.md и prompts.md.
+```
+
+Результат:
+
+- `supabase/seed.sql` заменен с placeholder на идемпотентный demo seed для публичных Supabase tables.
+- Seed создает 2 profiles, 3 pets, 4 posts, 5 comments, 4 post_likes, 3 walks, 4 walk_participants, 1 chat, 2 chat_participants и 3 messages.
+- Seed не содержит реальных персональных данных, production emails, URL, keys, tokens или service role secrets.
+- Для локальной проверки seed создает минимальные demo rows в `auth.users` с emails `example.test`, чтобы `profiles.id -> auth.users.id` проходил при `supabase db reset`.
+- Документация объясняет, что в hosted Supabase Auth users нужно создать через Authentication UI или регистрацию в приложении, затем заменить demo UUID на реальные `auth.users.id`.
+- `docs/seed_data.md`, `README.md` и `backend_documentation.md` обновлены командами применения seed, ожидаемыми данными и smoke checks.
+- После установки Supabase CLI 2.106.0, Docker CLI и Colima выполнены проверки: `supabase db start`, `supabase db reset`, `supabase db lint` и SQL smoke checks. `db reset` и lint прошли, counts соответствуют ожидаемому seed.
+
+## Prompt 36 — Supabase Auth во Flutter frontend
+
+```markdown
+# Role
+Ты Senior Flutter Developer и Supabase Auth Engineer.
+
+# Task
+Интегрируй Supabase Auth во Flutter frontend.
+
+# Context
+ДЗ требует аутентификацию: регистрация и вход пользователей. В Supabase это делается через Supabase Auth.
+
+# Required reading
+Прочитай:
+- lib/features/auth/
+- lib/app/
+- lib/core/
+- pubspec.yaml
+- docs/supabase_security.md
+- backend_documentation.md
+
+# Requirements
+1. Реализуй auth layer: AuthRepository abstraction, SupabaseAuthRepository, AuthController через Riverpod, auth state provider.
+2. Поддержи sign up, sign in, sign out, current user, auth state changes.
+3. UI должен иметь login/register screens, loading/error states и success redirect.
+4. Routing: при `USE_SUPABASE_BACKEND=true` anonymous users идут на login; mock mode не ломается.
+5. После регистрации создай/обнови profile в `profiles`, если это предусмотрено schema.
+6. Обработай invalid credentials, email already registered и network error.
+7. Добавь/обнови тесты auth controller success/error и login screen loading/error.
+8. Обнови README.md, development_report.md и prompts.md.
+```
+
+Результат:
+
+- Добавлена зависимость `supabase_flutter`.
+- Auth abstraction вынесена в `lib/features/auth/domain/auth_repository.dart`.
+- Добавлены `SupabaseAuthRepository` и `MockAuthRepository`; Firebase repository оставлен как legacy fallback.
+- `AuthController` выбирает Supabase Auth при `USE_SUPABASE_BACKEND=true`, Firebase legacy при `USE_FIREBASE_BACKEND=true`, mock repository по умолчанию.
+- Добавлен Supabase initializer в `lib/core/supabase/supabase_initializer.dart`.
+- `BackendConfig` читает `SUPABASE_URL`, `SUPABASE_ANON_KEY` и `USE_SUPABASE_BACKEND`.
+- `AuthTokenProvider` умеет отдавать Supabase access token.
+- Router защищает app routes только в backend auth mode; mock mode открывает Home без login.
+- `SupabaseAuthRepository` после sign up/sign in делает upsert в `public.profiles`.
+- Обновлены auth tests и добавлены widget/router tests.
+- Проверки прошли: `dart format .`, `flutter analyze`, полный `flutter test` — 52 tests passed.

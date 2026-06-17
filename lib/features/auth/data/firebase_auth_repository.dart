@@ -1,33 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/app_user.dart';
-
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return FirebaseAuthRepository(FirebaseAuth.instance);
-});
-
-abstract class AuthRepository {
-  Stream<AppUser?> authStateChanges();
-
-  Future<AppUser> signInWithEmailAndPassword({
-    required String email,
-    required String password,
-  });
-
-  Future<AppUser> registerWithEmailAndPassword({
-    required String email,
-    required String password,
-    String? displayName,
-  });
-
-  Future<void> signOut();
-}
+import '../domain/auth_repository.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   const FirebaseAuthRepository(this._firebaseAuth);
 
   final FirebaseAuth _firebaseAuth;
+
+  @override
+  AppUser? get currentUser => _mapFirebaseUser(_firebaseAuth.currentUser);
 
   @override
   Stream<AppUser?> authStateChanges() {
@@ -116,18 +98,9 @@ class FirebaseAuthRepository implements AuthRepository {
       case 'weak-password':
         return 'Пароль должен быть надежнее.';
       case 'network-request-failed':
-        return 'Нет соединения с Firebase Auth.';
+        return 'Нет соединения с сервисом авторизации.';
       default:
         return 'Не удалось выполнить вход. Попробуйте еще раз.';
     }
   }
-}
-
-class AuthFailure implements Exception {
-  const AuthFailure(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }

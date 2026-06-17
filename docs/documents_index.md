@@ -24,6 +24,7 @@
 | `submission_checklist.md` | HW5 | Студент | Финальная проверка сдачи | Перед GitHub-публикацией |
 | `docs/supabase_setup.md` | HW5 | Студент, Codex | Создание Supabase project, env, migrations, Flutter run | При подключении Supabase |
 | `docs/database_schema.md` | HW5 | Codex, студент | PostgreSQL schema, constraints, indexes, Storage buckets | При изменении SQL migrations |
+| `docs/seed_data.md` | HW5 | Codex, студент, проверяющий | Supabase demo seed, Auth UUID replacement, smoke checks | При наполнении Supabase demo data |
 | `docs/api_spec.md` | HW5 | Codex, студент | Supabase auto REST / Flutter client operations | При backend/frontend integration |
 | `docs/supabase_security.md` | HW5 | Codex, студент | RLS, Storage policies, secrets, security review | При изменении policies |
 | `docs/current_homework_scope.md` | HW5 | Codex, студент | 9 шагов ДЗ 5, Supabase scope, Firebase-to-Supabase mapping | Перед изменениями scope, backend или интеграции |
@@ -46,7 +47,6 @@
 - `docs/deployment.md`;
 - `docs/firebase_security.md`;
 - `docs/firestore_schema.md`;
-- `docs/seed_data.md`;
 - `firebase.json`;
 - `firestore.rules`;
 - `storage.rules`;
@@ -67,6 +67,7 @@
 - `backend_documentation.md`;
 - `docs/supabase_setup.md`;
 - `docs/database_schema.md`;
+- `docs/seed_data.md`;
 - `docs/api_spec.md`;
 - `docs/supabase_security.md`;
 - `development_report.md`;
@@ -79,6 +80,7 @@
 - `backend_documentation.md`;
 - `docs/supabase_setup.md`;
 - `docs/database_schema.md`;
+- `docs/seed_data.md`;
 - `docs/api_spec.md`;
 - `docs/supabase_security.md`;
 - `docs/current_homework_scope.md`;
