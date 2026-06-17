@@ -81,7 +81,7 @@ void main() {
         initialLocation: '/pets/pet-1',
         repository: _FakePetRepository(
           error: const ApiServerException(
-            message: 'Firestore временно недоступен.',
+            message: 'Supabase временно недоступен.',
           ),
         ),
       ),
@@ -135,6 +135,16 @@ class _FakePetRepository implements PetRepository {
   final Object? error;
 
   @override
+  Future<List<Pet>> fetchPets({int limit = 50}) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    return pets.take(limit).toList(growable: false);
+  }
+
+  @override
   Future<Pet?> getPetById(String petId) async {
     final error = this.error;
     if (error != null) {
@@ -158,5 +168,25 @@ class _FakePetRepository implements PetRepository {
     }
 
     return pets.where((pet) => pet.ownerId == ownerId).toList(growable: false);
+  }
+
+  @override
+  Future<Pet> createPet(CreatePetInput input) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    return Pet(
+      id: 'created-pet',
+      ownerId: input.ownerId,
+      name: input.name,
+      animalType: input.animalType,
+      breed: input.breed,
+      age: input.age,
+      description: input.description,
+      photoEmoji: input.photoEmoji ?? '🐾',
+      ownerName: input.ownerName ?? 'Владелец',
+    );
   }
 }

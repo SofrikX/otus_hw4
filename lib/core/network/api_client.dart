@@ -89,6 +89,15 @@ class ApiClient {
     return getData<Map<String, dynamic>>('/pets/$petId');
   }
 
+  Future<List<Map<String, dynamic>>> getPets({int? limit}) async {
+    final data = await getData<List<dynamic>>(
+      '/pets',
+      queryParameters: _limitQuery(limit),
+    );
+
+    return data.cast<Map<String, dynamic>>();
+  }
+
   Future<List<Map<String, dynamic>>> getPetsByOwner(String ownerId) async {
     final data = await getData<List<dynamic>>(
       '/pets',
@@ -96,6 +105,10 @@ class ApiClient {
     );
 
     return data.cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> createPet(Map<String, Object?> input) {
+    return postData<Map<String, dynamic>>('/pets', body: input);
   }
 
   Future<List<Map<String, dynamic>>> getWalks({int? limit}) async {

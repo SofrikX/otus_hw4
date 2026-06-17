@@ -747,3 +747,46 @@ flutter test
 - реальные Supabase URL/anon key не добавлялись;
 - hosted Supabase smoke test остается next step после создания project и применения migrations;
 - pets/walks data repositories остаются следующими кандидатами на Supabase integration.
+
+## 17. Supabase pet profile integration
+
+Дата интеграции: 17 июня 2026.
+
+Codex интегрировал профили питомцев PetConnect с Supabase data API, сохранив mock fallback:
+
+- `PetRepository` расширен операциями `fetchPets` и `createPet`, а существующие `getPetById` и `getPetsByOwner` сохранены;
+- добавлен `SupabasePetRepository` для таблицы `pets`;
+- `petRepositoryProvider` выбирает `SupabasePetRepository` при `USE_SUPABASE_BACKEND=true`, legacy `ApiPetRepository` при `USE_FIREBASE_BACKEND=true`, иначе `MockPetRepository`;
+- `PetsScreen` и `PetProfileScreen` продолжают получать данные через Riverpod providers, а не через прямой Supabase SDK call из UI;
+- `PetProfileScreen` сохраняет loading, error with retry, not found и success states через `AsyncContentView`;
+- Supabase/PostgREST/Auth exceptions мапятся в typed `ApiException`; RLS denial `42501` превращается в `ApiForbiddenException`;
+- mock repository поддерживает создание питомца для локальной разработки и тестов.
+
+Используемые Supabase операции:
+
+```dart
+supabase.from('pets').select(...).eq('id', petId).maybeSingle();
+supabase.from('pets').select(...).eq('owner_id', ownerId).order('created_at');
+supabase.from('pets').insert({...}).select(...).single();
+```
+
+Проверки:
+
+```bash
+dart format lib/core/network/api_client.dart lib/features/pets test/features/pets
+flutter test test/features/pets
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter test test/features/pets` прошел: 14 pet tests passed;
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 59 tests passed.
+
+Ограничения:
+
+- реальные Supabase URL/anon key не добавлялись;
+- hosted Supabase smoke test профилей питомцев остается next step после создания project и применения migrations;
+- Supabase Storage upload фото питомца пока не подключался к UI, используется существующий `photo_emoji` fallback.

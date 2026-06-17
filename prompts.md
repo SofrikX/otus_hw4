@@ -1768,3 +1768,46 @@ Feed сейчас работает на mock-данных.
 - `FeedScreen` продолжает использовать `AsyncContentView` для loading/error/empty/success и передает текущего auth user в comment action, если он есть.
 - `docs/api_spec.md`, `README.md` и `development_report.md` обновлены под Supabase feed data flow.
 - Проверки прошли: `flutter test test/features/feed`, `flutter analyze`, полный `flutter test` — 53 tests passed.
+
+## Prompt 38 — Supabase pet profiles integration
+
+```markdown
+# Role
+Ты Senior Flutter Developer и Supabase Integration Engineer.
+
+# Task
+Интегрируй профили питомцев PetConnect с Supabase.
+
+# Context
+Профиль питомца должен получать реальные данные из Supabase в backend mode.
+
+# Required reading
+Прочитай:
+- lib/features/pets/
+- docs/database_schema.md
+- supabase/migrations/
+- test/features/pets/
+
+# Requirements
+1. Создай или обнови PetRepository abstraction.
+2. Добавь SupabasePetRepository.
+3. Реализуй getPetById(petId), getPetsByOwner(ownerId), createPet() при необходимости.
+4. Сохрани mock fallback.
+5. UI должен поддерживать loading, error, not found, success.
+6. Обработай RLS/permission errors.
+7. Добавь/обнови тесты pet profile success, pet not found, backend error.
+8. Обнови docs/api_spec.md.
+9. Обнови development_report.md.
+10. Обнови prompts.md.
+```
+
+Результат:
+
+- `PetRepository` расширен операциями `fetchPets` и `createPet`; `getPetById` и `getPetsByOwner` сохранены.
+- Добавлен `SupabasePetRepository` на `supabase_flutter` для таблицы `pets`.
+- `petRepositoryProvider` выбирает Supabase implementation при `USE_SUPABASE_BACKEND=true`, legacy API при `USE_FIREBASE_BACKEND=true`, mock fallback по умолчанию.
+- `PetsScreen` теперь получает список через repository abstraction и в backend mode не подменяет результат mock-данными.
+- `PetProfileScreen` сохраняет loading/error/not found/success через `AsyncContentView`.
+- RLS denial/PostgREST code `42501` мапится в `ApiForbiddenException`.
+- Добавлены тесты `supabase_pet_repository_test.dart`; widget tests профиля сохранены и обновлены под Supabase terminology.
+- `docs/api_spec.md` и `development_report.md` обновлены под pet profile Supabase data flow.

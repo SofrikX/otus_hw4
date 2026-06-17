@@ -9,6 +9,12 @@ class ApiPetRepository implements PetRepository {
   final ApiClient _apiClient;
 
   @override
+  Future<List<Pet>> fetchPets({int limit = 50}) async {
+    final pets = await _apiClient.getPets(limit: limit);
+    return pets.map(_mapPet).toList(growable: false);
+  }
+
+  @override
   Future<Pet?> getPetById(String petId) async {
     try {
       final pet = await _apiClient.getPet(petId);
@@ -22,6 +28,22 @@ class ApiPetRepository implements PetRepository {
   Future<List<Pet>> getPetsByOwner(String ownerId) async {
     final pets = await _apiClient.getPetsByOwner(ownerId);
     return pets.map(_mapPet).toList(growable: false);
+  }
+
+  @override
+  Future<Pet> createPet(CreatePetInput input) async {
+    final pet = await _apiClient.createPet({
+      'ownerId': input.ownerId,
+      'ownerName': input.ownerName,
+      'name': input.name,
+      'animalType': input.animalType,
+      'breed': input.breed,
+      'age': input.age,
+      'description': input.description,
+      'photoEmoji': input.photoEmoji,
+    });
+
+    return _mapPet(pet);
   }
 
   Pet _mapPet(Map<String, dynamic> json) {
