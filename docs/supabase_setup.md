@@ -2,7 +2,7 @@
 
 Этот документ описывает production-развертывание Supabase backend для PetConnect без добавления секретов в репозиторий.
 
-Статус репозитория: SQL migrations, RLS policies, Storage buckets, seed data и Flutter Supabase integration подготовлены. Hosted Supabase project создается владельцем аккаунта вручную. Если ручная проверка production project еще не выполнена, используйте раздел `Manual verification checklist` ниже и не отмечайте deployment как verified.
+Статус репозитория: SQL migrations, RLS policies, Storage buckets, seed data и Flutter Supabase integration подготовлены. Hosted Supabase project linked через Supabase CLI, migrations применены, backend/API smoke checks выполнены. Реальные credentials не записываются в репозиторий.
 
 ## 1. Создать Supabase project
 
@@ -93,13 +93,23 @@ Seed-файл находится в `supabase/seed.sql`. Он нужен для 
    - `11111111-1111-1111-1111-111111111111` -> id первого demo user;
    - `22222222-2222-2222-2222-222222222222` -> id второго demo user.
 4. Не используйте demo emails/passwords из seed как реальные учетные записи.
-5. Выполните подготовленный SQL через Dashboard SQL Editor.
+5. Выполните подготовленный SQL для `public.*` demo rows через Dashboard SQL Editor или `supabase db query`.
+
+Для hosted verification был использован именно этот принцип: demo Auth users созданы через Auth API/Admin flow, затем public demo rows загружены отдельно. Прямой SQL insert в `auth.users` оставлен для локального `supabase db reset`, но не считается рекомендуемым hosted Auth setup.
 
 Для локального Supabase CLI `supabase db reset` применяет migrations и затем выполняет `supabase/seed.sql` автоматически:
 
 ```bash
 supabase db reset
 ```
+
+Если локальный stack запускается через Colima и контейнер `supabase_vector_*` падает на mount Docker socket, используйте локальную команду без logging vector container:
+
+```bash
+supabase start --exclude vector
+```
+
+Этот workaround нужен только для локальной проверки Supabase CLI. Hosted Supabase deployment и application schema/RLS от него не зависят.
 
 ## 7. Проверить таблицы
 
@@ -224,9 +234,60 @@ flutter run -d macos \
 
 Реальные значения передаются локально и не добавляются в README, screenshots, commits или issue-тексты.
 
+## 10. Проверить Supabase CLI перед hosted deploy
+
+Локальная проверка перед cloud push:
+
+```bash
+supabase start --exclude vector
+supabase db lint
+supabase db reset
+```
+
+Ожидаемый результат:
+
+- migrations применяются без SQL errors;
+- seed применяет demo rows;
+- `supabase db lint` возвращает `No schema errors found`;
+- RLS включен для application tables;
+- Storage buckets `avatars`, `pet-photos`, `post-images` созданы как private.
+
+Hosted deploy через CLI требует авторизации и привязки project:
+
+```bash
+supabase login --token <local-access-token>
+supabase link --project-ref <project-ref> --password <db-password>
+supabase db push --linked --dry-run
+supabase db push --linked
+```
+
+В текущей проверке hosted project был linked через Supabase CLI, `supabase db push --linked --dry-run` выполнен перед deploy, затем `supabase db push --linked` применил migrations. Не коммитьте access token, database password, project secrets или реальные `.env` значения.
+
 ## Production verification
 
-Если hosted project еще не проверен вручную, используйте этот раздел как `Manual verification checklist`.
+Hosted Supabase verification выполнен 17 июня 2026. Ниже зафиксированы результаты без секретов.
+
+### Current verification status
+
+Backend checks:
+
+- [x] Supabase project создан на Free Tier.
+- [x] `SUPABASE_URL` и public client key получены локально и не закоммичены.
+- [x] `001_initial_schema.sql` применен без ошибок.
+- [x] `002_rls_policies.sql` применен без ошибок.
+- [x] `003_api_grants.sql` применен без ошибок.
+- [x] Demo Auth users созданы через Auth API/Admin flow.
+- [x] Public seed rows применены.
+- [x] Authenticated REST read вернул seeded feed/walks.
+- [x] Like/comment/join REST writes прошли и обновили counters.
+- [x] RLS negative smoke check подтвердил, что User B не меняет rows User A.
+- [x] Flutter Web запущен с `USE_SUPABASE_BACKEND=true` и hosted Supabase values из local env.
+
+Оставшиеся ручные UI-проверки:
+
+- [ ] Sign up через Flutter UI с новым email.
+- [ ] Create post через feed UI.
+- [ ] Mobile/desktop click-through в живом браузере.
 
 ### Manual verification checklist
 

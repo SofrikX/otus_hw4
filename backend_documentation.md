@@ -4,21 +4,21 @@
 
 PetConnect - Flutter-приложение для владельцев домашних животных. Backend-часть ДЗ 5 описывает переход frontend MVP к Supabase Free Tier как текущему backend-решению для учебного production deployment.
 
-Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и production deployment checklist. Реальные Supabase URL и keys в репозиторий не добавляются.
+Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и production deployment status. Реальные Supabase URL и keys в репозиторий не добавляются.
 
 ## Production project status
 
 | Area | Status | Evidence / next action |
 |---|---|---|
-| Supabase production project | Ready for manual setup | Project создается владельцем аккаунта в Supabase Dashboard на Free Tier; реальные project ref и keys не коммитятся |
-| Database deployed | Manual verification required | Apply `supabase/migrations/001_initial_schema.sql` and `supabase/migrations/002_rls_policies.sql` through SQL Editor or `supabase db push` |
-| Auth enabled | Manual verification required | Supabase Auth email/password должен быть включен; sign up/sign in проверяются через Flutter app |
-| RLS enabled | Defined in migrations | `002_rls_policies.sql` enables RLS for application tables; hosted project must be checked after applying migrations |
-| Storage buckets | Defined in migrations | `avatars`, `pet-photos`, `post-images` are created by `001_initial_schema.sql` |
-| REST API available | Provided by Supabase/PostgREST | Available at `https://<project-ref>.supabase.co/rest/v1` after project creation |
-| Frontend backend mode | Implemented | Flutter uses `USE_SUPABASE_BACKEND=true`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `supabase_flutter` repositories |
+| Supabase production project | Verified | Hosted project linked through Supabase CLI; project ref, keys and passwords are not committed |
+| Database deployed | Verified | `001_initial_schema.sql`, `002_rls_policies.sql` and `003_api_grants.sql` applied through `supabase db push --linked` |
+| Auth enabled | Verified | Demo Auth login passed against hosted Supabase |
+| RLS enabled | Verified | RLS enabled for application tables; negative cross-user update smoke check left foreign rows unchanged |
+| Storage buckets | Verified locally and defined in migration | `avatars`, `pet-photos`, `post-images` are created by `001_initial_schema.sql` as private buckets |
+| REST API available | Verified | Authenticated PostgREST read/write smoke checks passed for feed, likes, comments and walk joins |
+| Frontend backend mode | Verified | Flutter Web launched with `USE_SUPABASE_BACKEND=true`, local `SUPABASE_URL`, local `SUPABASE_ANON_KEY` and `supabase_flutter` repositories |
 
-Hosted production verification has not been recorded in this repository yet. Until the checklist in `docs/supabase_setup.md` is completed manually, the correct status is `Manual verification checklist`, not `production verified`.
+Secrets are intentionally excluded from this repository. The hosted verification evidence is recorded as command names and outcomes only, without access tokens, database passwords or API keys.
 
 ## 2. Architecture Decision: Firebase to Supabase
 
@@ -314,7 +314,7 @@ supabase db reset
 | Chat participants | 2 |
 | Messages | 3 |
 
-Seed не создает реальных production users и не хранит реальные персональные данные. Для локальной проверки он добавляет demo Auth users с emails `example.test` и demo password `DemoPass123!`. Ограничение связано со схемой: `public.profiles.id` является foreign key на `auth.users.id`.
+Seed не создает реальных production users и не хранит реальные персональные данные. Для локальной и hosted demo-проверки он добавляет demo Auth users с emails на домене `petconnect-demo.com`, demo password `DemoPass123!` и matching `auth.identities` rows. Ограничение связано со схемой: `public.profiles.id` является foreign key на `auth.users.id`, а Supabase Auth login требует не только `auth.users`, но и identity rows.
 
 Для hosted Supabase project нужно:
 
@@ -451,23 +451,22 @@ Manual checks:
 
 ## 15.1. Production verification
 
-Если hosted Supabase project еще не проверен вручную, используйте этот раздел как `Manual verification checklist`.
+Hosted Supabase verification выполнен 17 июня 2026.
 
-Backend deployment checklist:
+Backend deployment evidence:
 
-- [ ] Supabase project создан на Free Tier.
-- [ ] `SUPABASE_URL` получен из Project Settings / API.
-- [ ] `SUPABASE_ANON_KEY` получен как anon public key или publishable key.
-- [ ] `001_initial_schema.sql` применен к hosted project.
-- [ ] `002_rls_policies.sql` применен к hosted project.
-- [ ] `seed.sql` применен после создания demo Auth users и замены demo UUID.
-- [ ] Таблицы `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages` видны в Table Editor.
-- [ ] RLS enabled для всех application tables.
-- [ ] Storage buckets `avatars`, `pet-photos`, `post-images` созданы.
+- Supabase CLI авторизован локально без сохранения access token в репозиторий.
+- Hosted project linked через `supabase link`.
+- `supabase db push --linked --dry-run` выполнен перед deploy.
+- `supabase db push --linked` применил migrations, включая `003_api_grants.sql`.
+- Demo Auth users созданы через Auth API/Admin flow, public demo rows загружены из seed SQL.
+- Hosted sign in прошел для demo user.
+- Authenticated REST read вернул seeded posts и walks.
+- Authenticated REST writes прошли для like, comment и join walk.
+- RLS negative smoke check подтвердил, что User B не изменяет rows User A.
+- Flutter Web запущен с `USE_SUPABASE_BACKEND=true` и локальными Supabase values.
 
-End-to-end checklist:
-
-- [ ] `SELECT posts` работает для authenticated user:
+Reference query for manual re-check:
 
 ```sql
 select id, pet_name, author_name, text, likes_count, comments_count
@@ -477,13 +476,11 @@ order by created_at desc
 limit 5;
 ```
 
-- [ ] Sign up работает в Flutter app.
-- [ ] Sign in работает в Flutter app.
-- [ ] Create post работает через Supabase-backed feed flow.
-- [ ] Like post работает и обновляет `posts.likes_count`.
-- [ ] Join walk работает и обновляет `walks.participants_count`.
-- [ ] Анонимный REST-запрос к application tables отклоняется RLS/Auth.
-- [ ] User B не может update/delete rows пользователя A.
+Remaining manual UI checks before final homework recording:
+
+- Sign up through Flutter UI with a fresh email.
+- Create post through the feed UI.
+- Mobile and desktop click-through in browser viewports.
 
 ## 16. Error Handling and Logging
 
@@ -540,10 +537,10 @@ Firebase не удаляется из истории разработки. Он 
 
 ## 19. Known Limitations
 
-- Hosted Supabase production smoke test еще не зафиксирован в репозитории.
-- Supabase project, migrations и RLS нужно подтвердить по `Manual verification checklist` после ручного Dashboard/CLI deployment.
-- Для hosted seed нужно создать demo Auth users через Supabase Auth UI или приложение и заменить demo UUID на реальные `auth.users.id`.
-- Supabase Auth, feed, pets и walks repositories подготовлены для `USE_SUPABASE_BACKEND=true`; проверка с реальными hosted credentials остается ручным release step.
+- Hosted Supabase smoke test зафиксирован в `development_report.md`, но без публикации реальных URL/keys/passwords.
+- Sign up и create post были проверены на backend/API уровне частично; полный UI click-through остается manual browser step.
+- Для hosted seed надежнее создавать demo Auth users через Supabase Auth Dashboard/Admin API, а public demo rows загружать после этого.
+- Supabase Auth, feed, pets и walks repositories подготовлены для `USE_SUPABASE_BACKEND=true`; mock fallback остается для локальной разработки и tests.
 - Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
 - Реальные Supabase URL и keys не должны появляться в документации или git history.
 
@@ -559,4 +556,4 @@ Codex использовался для:
 - выбора Supabase как бесплатного backend для текущего ДЗ;
 - документирования mapping Firebase -> Supabase;
 - создания Supabase seed data для проверяемого demo backend;
-- фиксации remaining tasks без ложного утверждения о готовом Supabase deployment.
+- фиксации hosted deployment evidence без публикации secrets.

@@ -1673,7 +1673,7 @@ PetConnect — приложение для владельцев питомцев
 - `supabase/seed.sql` заменен с placeholder на идемпотентный demo seed для публичных Supabase tables.
 - Seed создает 2 profiles, 3 pets, 4 posts, 5 comments, 4 post_likes, 3 walks, 4 walk_participants, 1 chat, 2 chat_participants и 3 messages.
 - Seed не содержит реальных персональных данных, production emails, URL, keys, tokens или service role secrets.
-- Для локальной проверки seed создает минимальные demo rows в `auth.users` с emails `example.test`, чтобы `profiles.id -> auth.users.id` проходил при `supabase db reset`.
+- Для локальной проверки seed создает минимальные demo rows в `auth.users`, чтобы `profiles.id -> auth.users.id` проходил при `supabase db reset`.
 - Документация объясняет, что в hosted Supabase Auth users нужно создать через Authentication UI или регистрацию в приложении, затем заменить demo UUID на реальные `auth.users.id`.
 - `docs/seed_data.md`, `README.md` и `backend_documentation.md` обновлены командами применения seed, ожидаемыми данными и smoke checks.
 - После установки Supabase CLI 2.106.0, Docker CLI и Colima выполнены проверки: `supabase db start`, `supabase db reset`, `supabase db lint` и SQL smoke checks. `db reset` и lint прошли, counts соответствуют ожидаемому seed.
@@ -1953,3 +1953,108 @@ Requirements
 - `development_report.md` дополнен записью о release documentation review.
 - Реальные Supabase keys/secrets не добавлялись.
 - Hosted production smoke test не заявлен как выполненный; проверка оформлена как `Manual verification checklist`.
+
+## Prompt 42 — end-to-end QA review with Supabase backend
+
+```markdown
+Role
+Ты QA Engineer и Release Reviewer.
+
+Task
+Проведи end-to-end проверку PetConnect с Supabase backend.
+
+Context
+Нужно убедиться, что frontend работает с Supabase end-to-end.
+
+Required reading
+Прочитай:
+* README.md
+* backend_documentation.md
+* docs/supabase_setup.md
+* docs/api_spec.md
+* docs/supabase_security.md
+* development_report.md
+* prompts.md
+* lib/
+* test/
+
+Manual scenarios to verify
+1. Запуск mock mode.
+2. Запуск Supabase mode.
+3. Регистрация пользователя.
+4. Вход пользователя.
+5. Загрузка ленты из Supabase.
+6. Создание поста.
+7. Лайк поста.
+8. Добавление комментария.
+9. Открытие профиля питомца.
+10. Загрузка прогулок.
+11. Присоединение к прогулке.
+12. Проверка error state при неправильном SUPABASE_URL.
+13. Проверка RLS: пользователь не может менять чужие данные.
+14. Проверка mobile/desktop адаптивности.
+
+Commands to run
+* flutter pub get
+* dart format .
+* flutter analyze
+* flutter test
+* flutter run -d chrome --dart-define=USE_SUPABASE_BACKEND=false
+* flutter run -d chrome --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL= --dart-define=SUPABASE_ANON_KEY=
+
+Requirements
+1. Если найдена ошибка, объясни причину и предложи минимальный fix.
+2. Не скрывай реальные проблемы.
+3. Обнови development_report.md:
+    * команды;
+    * результаты;
+    * найденные проблемы;
+    * исправления.
+4. Обнови prompts.md.
+5. Не добавляй secrets.
+
+Output format
+1. Summary.
+2. Commands run.
+3. Manual checks.
+4. Issues found.
+5. Fixes applied.
+6. Remaining risks.
+7. Diff.
+```
+
+Результат:
+
+- Прочитаны README, backend documentation, Supabase setup/security/API docs, development report, prompts, структура `lib/` и `test/`.
+- Выполнены `flutter pub get`, `dart format .`, `flutter analyze`, `flutter test`.
+- Mock mode запущен через `flutter run -d chrome --dart-define=USE_SUPABASE_BACKEND=false`.
+- Supabase mode с пустыми `SUPABASE_URL` и `SUPABASE_ANON_KEY` сначала показал дефект: приложение падало до UI с `DartError`.
+- Добавлен startup error screen для `BackendConfigException`, чтобы неправильная Supabase-конфигурация давала user-facing error state.
+- Добавлен `test/app/startup_error_app_test.dart`.
+- После исправления повторная проверка прошла: `dart format .`, `flutter analyze`, `flutter test` — 69 tests passed; повторный Supabase blank запуск больше не падает на bootstrap.
+- На первичном QA pass hosted credentials еще не были подключены, поэтому live e2e был перенесен в следующий release step; secrets не добавлялись.
+
+## Prompt 43 — prepare real Supabase deploy
+
+```markdown
+Для сдачи ДЗ необходима интеграция с настоящим сервером и деплой, делаем
+```
+
+Результат:
+
+- Проверен статус рабочей ветки: есть незакоммиченные QA-изменения из предыдущего шага, они не откатывались.
+- Прочитаны routing docs для Supabase задач: `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`, `docs/supabase_setup.md`, Supabase migrations, seed и backend docs.
+- Проверен Supabase CLI: установлен `2.106.0`.
+- Выполнен `supabase init`, добавлен `supabase/config.toml` и локальный `supabase/.gitignore`.
+- Docker runtime поднят через `colima start`.
+- `supabase start` сначала упал на `supabase_vector_*` из-за Colima docker socket mount. Использован минимальный workaround: `supabase start --exclude vector`.
+- Локальный Supabase успешно применил migrations и seed.
+- `supabase db lint` прошел: `No schema errors found`.
+- `supabase db reset` прошел успешно.
+- SQL smoke checks подтвердили demo counts, private Storage buckets, RLS enabled для всех application tables и корректные trigger counters.
+- Повторно выполнены `dart format .`, `flutter analyze`, `flutter test`; результат: analyzer clean, 69 tests passed.
+- Hosted deploy был продолжен после локальной CLI-авторизации и project link.
+- Добавлена migration `003_api_grants.sql`, потому что hosted PostgREST authenticated writes сначала получили `403` из-за отсутствующих table grants.
+- Hosted smoke checks прошли: Supabase Auth login, feed/walks read, like, comment, join walk, RLS negative check и Flutter Web Supabase init.
+- Прямой SQL insert в `auth.users` для hosted login оказался ненадежным; рабочий flow — создать demo Auth users через Auth Admin/Dashboard/API, затем применить public seed rows.
+- Реальные Supabase URL, anon key, database password и access token не записывались в tracked files или отчеты.

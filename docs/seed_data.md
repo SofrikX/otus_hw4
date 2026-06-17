@@ -10,20 +10,18 @@ Seed нужен, чтобы после подключения Flutter-прило
 
 `public.profiles.id` ссылается на `auth.users.id`. Для локального `supabase start` / `supabase db reset` seed создает две минимальные demo rows в `auth.users`, чтобы foreign keys проходили автоматически.
 
-Для hosted Supabase project безопаснее не создавать production Auth users SQL-ом. Используйте отдельный ручной flow:
+Для hosted Supabase project безопаснее не создавать production Auth users SQL-ом. Используйте отдельный flow:
 
-Для hosted Supabase project используйте безопасный flow:
-
-1. Создайте двух demo-пользователей через Supabase Dashboard -> Authentication -> Users или зарегистрируйте их через приложение.
+1. Создайте двух demo-пользователей через Supabase Dashboard -> Authentication -> Users, через приложение или через Auth Admin API.
 2. Скопируйте их `auth.users.id`.
-3. Замените в `supabase/seed.sql` фиксированные demo UUID:
+3. Для hosted seed public tables используйте эти UUID вместо фиксированных demo UUID:
 
 | Placeholder | Demo UUID in file | Заменить на |
 |---|---|---|
 | `DEMO_USER_A_ID` | `11111111-1111-1111-1111-111111111111` | UUID первого demo Auth user |
 | `DEMO_USER_B_ID` | `22222222-2222-2222-2222-222222222222` | UUID второго demo Auth user |
 
-Фиксированные UUID и demo password `DemoPass123!` предназначены только для локальной проверки. Не используйте реальные персональные данные: demo emails в seed используют домен `example.test`.
+Фиксированные UUID и demo password `DemoPass123!` предназначены только для demo-проверки. Не используйте реальные персональные данные: demo emails в seed используют домен `petconnect-demo.com`.
 
 ## Что создается
 
@@ -64,7 +62,9 @@ supabase db push
 
 2. Создайте двух demo Auth users через Dashboard или приложение.
 3. Замените оба demo UUID в `supabase/seed.sql` на реальные ids созданных demo users.
-4. Выполните измененный SQL через Dashboard SQL Editor или через `psql` к linked database. Блок `insert into auth.users ...` использует `on conflict (id) do nothing`, но для hosted project предпочтительнее полагаться на уже созданных Auth users, а не создавать пользователей SQL-ом.
+4. Выполните SQL для `public.*` demo rows через Dashboard SQL Editor, `supabase db query` или `psql` к linked database. Блок `insert into auth.users ...` в `supabase/seed.sql` нужен для локального `supabase db reset`; для hosted project предпочтительнее полагаться на уже созданных Auth users, а не создавать пользователей SQL-ом.
+
+В ходе hosted verification прямой SQL insert в `auth.users` не дал надежный email/password sign in на hosted Supabase. Рабочий минимальный flow: создать demo Auth users через Auth Admin/Dashboard, затем применить public demo rows с теми же UUID.
 
 Не вставляйте service role key, database password или реальные пользовательские данные в репозиторий.
 
@@ -99,7 +99,7 @@ Seed idempotent для фиксированных demo UUID: перед вста
 
 Ограничения:
 
-- seed создает только локальные demo Auth users с emails `example.test`;
+- seed создает demo Auth users с emails на домене `petconnect-demo.com`;
 - seed не содержит реальных персональных данных;
 - seed не содержит secrets;
 - для hosted project всегда используйте отдельных demo users и заменяйте UUID перед запуском.

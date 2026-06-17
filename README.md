@@ -6,7 +6,7 @@ PetConnect - Flutter-приложение для владельцев домаш
 
 Firebase-ветка была спроектирована и проверялась как исследованный вариант, потому что Firebase был указан в технической спецификации предыдущего этапа. На этапе подготовки production deployment выяснилось, что Firebase Cloud Functions могут требовать Blaze/pay-as-you-go plan. Для учебного проекта выбран Supabase, так как исходное задание прямо допускает Supabase и этот путь сохраняет бесплатный, воспроизводимый production backend.
 
-Реальные Supabase URL и anon key в репозиторий не добавлены. Документация описывает production setup и manual verification checklist без утверждения о ручной проверке hosted project до фактического smoke test.
+Hosted Supabase backend развернут и проверен smoke-сценариями через CLI/REST и Flutter Web. Реальные Supabase URL, anon key, database password и access token в репозиторий не добавлены: значения передаются только локально через `.env.deploy` или `--dart-define`.
 
 ## Стек
 
@@ -203,9 +203,10 @@ supabase db push
 ```text
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_rls_policies.sql
+supabase/migrations/003_api_grants.sql
 ```
 
-Порядок важен: сначала `001_initial_schema.sql`, затем `002_rls_policies.sql`.
+Порядок важен: сначала `001_initial_schema.sql`, затем `002_rls_policies.sql`, затем `003_api_grants.sql`.
 
 ### 5. Применить seed-данные
 
@@ -217,7 +218,7 @@ supabase/seed.sql
 
 Он не содержит реальных пользователей, production data или secrets. Для локального `supabase start` / `supabase db reset` seed создает две минимальные demo rows в `auth.users`, потому что `public.profiles.id` ссылается на `auth.users.id`.
 
-Для hosted Supabase сначала создайте двух demo users через Authentication UI или регистрацию в приложении, затем замените в `supabase/seed.sql` demo UUID:
+Для hosted Supabase сначала создайте двух demo users через Authentication UI, Auth Admin API или регистрацию в приложении, затем используйте их ids для public demo rows. Прямой SQL insert в `auth.users` оставлен для локального `supabase db reset`.
 
 | Placeholder | Demo UUID |
 |---|---|
@@ -230,9 +231,9 @@ supabase/seed.sql
 supabase db reset
 ```
 
-Локальный demo password для seed users: `DemoPass123!`. Он предназначен только для локального QA.
+Локальный demo password для seed users: `DemoPass123!`. Он предназначен только для demo QA.
 
-Для hosted project выполните seed через Dashboard SQL Editor после замены UUID на ids созданных demo Auth users.
+Для hosted project выполните public seed rows через Dashboard SQL Editor или Supabase CLI после замены UUID на ids созданных demo Auth users.
 
 После применения seed появятся:
 
@@ -329,16 +330,16 @@ supabase db reset
 
 Если Supabase CLI еще не подключен, проверку SQL/RLS нужно выполнить через Supabase dashboard SQL editor или добавить CLI setup отдельной задачей.
 
-## Remaining Release Tasks
+## Release Status
 
-1. Создать hosted Supabase project на Free Tier.
-2. Получить `SUPABASE_URL` и `SUPABASE_ANON_KEY` без добавления их в git.
-3. Применить SQL migrations из `supabase/migrations/`.
-4. Применить `supabase/seed.sql` после создания demo Auth users и замены UUID.
-5. Проверить RLS policies и Storage buckets.
-6. Запустить Flutter с `USE_SUPABASE_BACKEND=true`.
-7. Провести manual end-to-end verification: sign up/sign in, SELECT posts, create post, like post, join walk.
-8. Удалить Firebase dependencies и prototype files только отдельной cleanup-задачей, если они больше не нужны для истории разработки.
+1. Hosted Supabase project создан на Free Tier и linked через Supabase CLI.
+2. `SUPABASE_URL` и public client key получены локально и не добавлены в git.
+3. SQL migrations из `supabase/migrations/` применены к hosted database.
+4. Demo Auth users созданы через Auth flow, public demo rows загружены.
+5. RLS smoke check и PostgREST read/write checks выполнены.
+6. Flutter Web запущен с `USE_SUPABASE_BACKEND=true`.
+7. Оставшиеся ручные UI-проверки: fresh sign up через Flutter UI, create post через feed UI, mobile/desktop click-through.
+8. Firebase dependencies и prototype files удалять только отдельной cleanup-задачей, если они больше не нужны для истории разработки.
 
 ## Troubleshooting
 
@@ -359,7 +360,7 @@ flutter create . --platforms=web,android,ios
 
 ### Supabase credentials отсутствуют
 
-До создания проекта используйте mock fallback. Не добавляйте реальные URL, anon key или service role key в репозиторий.
+Если локальные values недоступны, используйте mock fallback. Не добавляйте реальные URL, anon key или service role key в репозиторий.
 
 ### Wrong `SUPABASE_URL`
 

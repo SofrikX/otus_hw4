@@ -5,6 +5,8 @@
 --   service role secrets are stored here.
 -- - public.profiles.id references auth.users(id), so this file creates two
 --   minimal demo Auth users for local Supabase validation.
+-- - Hosted Supabase email/password login also needs matching auth.identities
+--   rows. The seed creates deterministic demo identities for the demo users.
 -- - For a hosted Supabase project, the safer flow is to create demo users
 --   through Supabase Auth UI or through the application sign-up flow first, then
 --   replace DEMO_USER_A_ID and DEMO_USER_B_ID below with those real auth.users
@@ -88,6 +90,12 @@ where id in (
   '22222222-2222-2222-2222-222222222222'
 );
 
+delete from auth.users
+where id in (
+  '11111111-1111-1111-1111-111111111111',
+  '22222222-2222-2222-2222-222222222222'
+);
+
 insert into auth.users (
   id,
   aud,
@@ -98,33 +106,75 @@ insert into auth.users (
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
-  updated_at
+  updated_at,
+  is_sso_user,
+  is_anonymous
 ) values
   (
     '11111111-1111-1111-1111-111111111111',
     'authenticated',
     'authenticated',
-    'demo.alina@example.test',
+    'demo.alina@petconnect-demo.com',
     crypt('DemoPass123!', gen_salt('bf')),
     now(),
     '{"provider": "email", "providers": ["email"]}'::jsonb,
     '{"display_name": "Demo Alina"}'::jsonb,
     now() - interval '14 days',
-    now() - interval '14 days'
+    now() - interval '14 days',
+    false,
+    false
   ),
   (
     '22222222-2222-2222-2222-222222222222',
     'authenticated',
     'authenticated',
-    'demo.mark@example.test',
+    'demo.mark@petconnect-demo.com',
     crypt('DemoPass123!', gen_salt('bf')),
     now(),
     '{"provider": "email", "providers": ["email"]}'::jsonb,
     '{"display_name": "Demo Mark"}'::jsonb,
     now() - interval '12 days',
-    now() - interval '12 days'
+    now() - interval '12 days',
+    false,
+    false
   )
 on conflict (id) do nothing;
+
+insert into auth.identities (
+  id,
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+) values
+  (
+    '12111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    '{"sub": "11111111-1111-1111-1111-111111111111", "email": "demo.alina@petconnect-demo.com", "email_verified": true, "phone_verified": false}'::jsonb,
+    'email',
+    now() - interval '14 days',
+    now() - interval '14 days',
+    now() - interval '14 days'
+  ),
+  (
+    '12222222-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
+    '{"sub": "22222222-2222-2222-2222-222222222222", "email": "demo.mark@petconnect-demo.com", "email_verified": true, "phone_verified": false}'::jsonb,
+    'email',
+    now() - interval '12 days',
+    now() - interval '12 days',
+    now() - interval '12 days'
+  )
+on conflict (provider_id, provider) do update
+set
+  user_id = excluded.user_id,
+  identity_data = excluded.identity_data,
+  updated_at = excluded.updated_at;
 
 insert into public.profiles (
   id,
@@ -139,7 +189,7 @@ insert into public.profiles (
   (
     '11111111-1111-1111-1111-111111111111',
     'Demo Alina',
-    'demo.alina@example.test',
+    'demo.alina@petconnect-demo.com',
     null,
     'Loves calm morning walks and training games.',
     'Demo City',
@@ -149,7 +199,7 @@ insert into public.profiles (
   (
     '22222222-2222-2222-2222-222222222222',
     'Demo Mark',
-    'demo.mark@example.test',
+    'demo.mark@petconnect-demo.com',
     null,
     'Keeps notes about friendly pet places.',
     'Demo City',

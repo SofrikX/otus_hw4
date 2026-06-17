@@ -563,6 +563,8 @@ API smoke-check:
 
 Manual scenarios:
 
+Этот список фиксирует первичный QA pass до передачи локальных hosted Supabase values. Актуальный hosted backend smoke status см. в разделе 23.
+
 1. Регистрация пользователя: пройдена через UI и Auth Emulator.
 2. Вход пользователя: проверен через UI; один повторный login после hot restart дал дружелюбную ошибку окружения, свежая регистрация в чистой сессии прошла.
 3. Загрузка ленты с backend: пройдена, лента показала seed/API posts.
@@ -909,3 +911,254 @@ Production verification checklist для сдачи:
 - Код Flutter и SQL migrations не менялись.
 - Реальные Supabase credentials не добавлялись.
 - Выполнена документационная проверка diff.
+
+## 21. End-to-end QA review with Supabase backend
+
+Дата QA review: 17 июня 2026.
+
+Codex выступил в роли QA Engineer и Release Reviewer. Цель проверки — подтвердить, что PetConnect готов к end-to-end работе с Supabase backend, и не скрывать проблемы, если hosted Supabase project или credentials отсутствуют.
+
+Прочитано и проверено:
+
+- `README.md`;
+- `backend_documentation.md`;
+- `docs/supabase_setup.md`;
+- `docs/api_spec.md`;
+- `docs/supabase_security.md`;
+- `development_report.md`;
+- `prompts.md`;
+- структура `lib/`;
+- структура `test/`;
+- Supabase repositories для auth, feed, pets и walks;
+- startup configuration flow в `main.dart` и `BackendConfig`.
+
+Команды и результаты:
+
+```bash
+flutter pub get
+```
+
+Результат: успешно. Первичный запуск в sandbox уперся в запрет записи Flutter SDK cache вне workspace, после разрешения команда прошла. Зависимости получены, новых secrets не добавлено.
+
+```bash
+dart format .
+```
+
+Результат: успешно, изменений форматирования нет.
+
+```bash
+flutter analyze
+```
+
+Результат: успешно, `No issues found!`.
+
+```bash
+flutter test
+```
+
+Результат до исправления: 68 tests passed.
+
+После исправления startup error state:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат: успешно, `No issues found!`, полный test suite прошел: 69 tests passed.
+
+Запуск mock mode:
+
+```bash
+flutter run -d chrome --dart-define=USE_SUPABASE_BACKEND=false
+```
+
+Результат: приложение запустилось в Chrome debug mode, Dart VM service поднялся. Mock mode не требует Supabase credentials. In-app browser tool не смог открыть random local Flutter web port из-за `ERR_BLOCKED_BY_CLIENT`, поэтому ручные клики в живом браузере не были выполнены через tool; соответствующие сценарии подтверждаются widget/controller tests.
+
+Запуск Supabase mode с пустыми значениями, как в QA-задании:
+
+```bash
+flutter run -d chrome --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL= --dart-define=SUPABASE_ANON_KEY=
+```
+
+Первичный результат: найден дефект. Приложение падало до UI с `DartError: SUPABASE_URL is required when USE_SUPABASE_BACKEND=true.`. Это не соответствовало сценарию "error state при неправильном SUPABASE_URL".
+
+После исправления та же команда запускается без DartError на bootstrap и показывает startup error screen для неверной Supabase-конфигурации.
+
+Manual scenarios:
+
+| # | Scenario | Result |
+|---|---|---|
+| 1 | Запуск mock mode | Passed: Flutter Web запускается с `USE_SUPABASE_BACKEND=false` |
+| 2 | Запуск Supabase mode | Partially passed: приложение запускается с пустыми values после fix, но hosted Supabase e2e требует реальные local credentials |
+| 3 | Регистрация пользователя | Первичный UI pass требовал local hosted values; final fresh sign-up оставлен как ручной UI step |
+| 4 | Вход пользователя | Backend/Auth smoke позже пройден на hosted Supabase; auth repository/widget tests также проходят |
+| 5 | Загрузка ленты из Supabase | Backend/API smoke позже пройден на hosted Supabase; SupabaseFeedRepository покрыт tests |
+| 6 | Создание поста | Backend path подготовлен; полный create post через Flutter UI оставлен как ручной UI step |
+| 7 | Лайк поста | Backend/API smoke позже пройден на hosted Supabase |
+| 8 | Добавление комментария | Backend/API smoke позже пройден на hosted Supabase |
+| 9 | Открытие профиля питомца | Mock/widget path passed by tests; hosted Supabase path blocked без credentials/seed |
+| 10 | Загрузка прогулок | Mock/widget path passed by tests; hosted Supabase path blocked без credentials/seed |
+| 11 | Присоединение к прогулке | Mock/controller path passed by tests; hosted Supabase path blocked без credentials/seed |
+| 12 | Error state при неправильном `SUPABASE_URL` | Failed before fix, passed after fix through startup error screen |
+| 13 | RLS: пользователь не может менять чужие данные | Not executed against hosted project; repository tests cover RLS denial mapping for `42501`, SQL/RLS manual verification still required |
+| 14 | Mobile/desktop адаптивность | Covered by existing responsive widgets and screenshot docs; live browser viewport check blocked by browser tool local-port restriction |
+
+Найденные проблемы:
+
+1. Supabase configuration error падал до UI.
+   Причина: `initializeSupabaseApp()` обращался к `BackendConfig.supabaseUri`, который бросает `BackendConfigException`, а `main()` не перехватывал это исключение до `runApp`.
+   Минимальный fix: перехватить `BackendConfigException` в `main()` и показать отдельный Material startup error screen.
+
+2. Hosted Supabase e2e на этом первичном шаге не мог быть честно подтвержден без локальных `SUPABASE_URL` и `SUPABASE_ANON_KEY`.
+   Причина: в репозитории intentionally отсутствуют real credentials, secrets не должны добавляться.
+   Минимальный fix для release process: выполнить hosted deployment и smoke checks с локальными credentials. Это выполнено позже в разделе 23.
+
+Исправления:
+
+- добавлен `lib/app/startup_error_app.dart`;
+- `lib/main.dart` теперь перехватывает `BackendConfigException` при startup и показывает friendly error state;
+- добавлен `test/app/startup_error_app_test.dart`;
+- `flutter test` обновлен до 69 passing tests.
+
+Remaining risks на момент первичного QA pass:
+
+- на момент первичного QA pass hosted Supabase smoke еще не был выполнен; итоговый hosted smoke см. в разделе 23;
+- RLS policies не проверены против реального hosted project двумя пользователями;
+- create post / like / comment / join walk e2e требуют seeded hosted data и authenticated session;
+- browser tool не смог открыть локальный Flutter Web random port, поэтому live responsive click-through проверка выполнена не была.
+
+## 22. Supabase CLI validation before hosted deploy
+
+Дата проверки: 17 июня 2026.
+
+После решения о необходимости настоящего backend deployment Codex подготовил Supabase CLI workflow и выполнил локальную проверку migrations/RLS/seed перед cloud push.
+
+Что сделано:
+
+- создан `supabase/config.toml` через `supabase init`;
+- добавлен Supabase-local `.gitignore` для `.branches`, `.temp` и локальных env-key файлов;
+- поднят Docker runtime через `colima start`;
+- локальный Supabase запущен командой `supabase start --exclude vector`, потому что стандартный `supabase_vector_*` container в текущей Colima-конфигурации падал на mount docker socket;
+- выполнены `supabase db lint` и `supabase db reset`;
+- SQL smoke checks выполнены через `docker exec supabase_db_otus_dz4 psql`.
+
+Команды и результаты:
+
+```bash
+supabase --version
+```
+
+Результат: CLI установлен, версия `2.106.0`.
+
+```bash
+supabase projects list
+```
+
+Результат на этом промежуточном шаге: CLI требовал локальную авторизацию через `supabase login --token` или `SUPABASE_ACCESS_TOKEN`. Hosted deploy был выполнен позже в разделе 23.
+
+```bash
+supabase init
+colima start
+supabase start --exclude vector
+supabase db lint
+supabase db reset
+```
+
+Результат:
+
+- migrations `001_initial_schema.sql` и `002_rls_policies.sql` применяются локально;
+- seed применяется локально;
+- `supabase db lint` вернул `No schema errors found`;
+- `supabase db reset` завершился успешно.
+
+Smoke checks:
+
+| Check | Result |
+|---|---|
+| `profiles` | 2 |
+| `pets` | 3 |
+| `posts` | 4 |
+| `comments` | 5 |
+| `post_likes` | 4 |
+| `walks` | 3 |
+| `walk_participants` | 4 |
+| `chats` | 1 |
+| `chat_participants` | 2 |
+| `messages` | 3 |
+| RLS enabled | `true` для всех application tables |
+| Storage buckets | `avatars`, `pet-photos`, `post-images`, all private |
+| Trigger counters | likes sum 4, comments sum 5, walk participants sum 4 |
+
+Дополнительная Flutter-проверка после Supabase config:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат: format без изменений, analyzer без замечаний, полный тестовый набор прошел: 69 tests passed.
+
+Hosted deployment был продолжен в следующем release step. Реальные Supabase credentials и production secrets в репозиторий не добавлялись.
+
+## 23. Hosted Supabase deployment and smoke test
+
+Дата проверки: 17 июня 2026.
+
+Цель: выполнить настоящий hosted Supabase deployment для сдачи ДЗ и подтвердить end-to-end backend path без добавления secrets в git.
+
+Команды и результаты:
+
+```bash
+supabase login --token <local-token>
+```
+
+Результат: успешно. Access token использовался только локально и не записан в отчеты или tracked files.
+
+```bash
+supabase link --project-ref <project-ref> --password <db-password>
+```
+
+Результат: hosted project linked через Supabase CLI. Project credentials остались в локальном `.env.deploy`, который не коммитится.
+
+```bash
+supabase db push --linked --dry-run
+supabase db push --linked
+```
+
+Результат: migrations применены к hosted database. После обнаружения PostgREST permission issue добавлена migration `supabase/migrations/003_api_grants.sql`, которая выдает `authenticated` role доступ к application tables; RLS policies остаются row-level guard.
+
+Hosted seed:
+
+- прямой SQL insert в `auth.users` оказался недостаточным для надежного hosted email/password login;
+- минимальный fix: создать demo Auth users через Supabase Auth Admin/API flow, затем применить public demo rows из seed с теми же UUID;
+- service role key и database password не сохранялись в репозитории.
+
+Hosted smoke checks:
+
+| Scenario | Result |
+|---|---|
+| Supabase Auth login | Passed |
+| Load feed from Supabase | Passed: authenticated REST read returned seeded posts |
+| Load walks from Supabase | Passed: authenticated REST read returned seeded walks |
+| Like post | Passed: REST insert succeeded and counter updated |
+| Add comment | Passed: REST insert succeeded and counter updated |
+| Join walk | Passed: REST insert succeeded and counter updated |
+| RLS: User B cannot mutate User A rows | Passed: attempted updates left User A rows unchanged |
+| Flutter Web Supabase mode | Passed: `supabase_flutter` initialized with hosted values from local env |
+
+Additional issue found:
+
+1. Hosted PostgREST returned `403` for authenticated writes before grants.
+   Cause: RLS policies existed, but table privileges for `authenticated` role were missing.
+   Minimal fix: add `supabase/migrations/003_api_grants.sql` with grants for application tables and `is_chat_participant(uuid)`.
+
+Remaining risks:
+
+- Full sign-up through Flutter UI with a fresh email still needs final manual browser click-through.
+- Create post through the Flutter feed UI still needs final manual browser click-through.
+- Mobile/desktop responsiveness should be rechecked in a live browser after final deployment credentials are set locally.
+
+No secrets were added to tracked files.

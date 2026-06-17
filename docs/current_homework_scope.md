@@ -44,7 +44,7 @@ Supabase выбран потому что:
 - auto REST API снижает потребность в отдельном Cloud Functions/API deployment;
 - Flutter SDK позволяет сохранить repository layer без изменения UI.
 
-Supabase project еще не считается созданным. Реальные URL и keys не добавляются.
+Supabase hosted project создан, linked через Supabase CLI и проверен smoke-сценариями. Реальные URL, keys, database password и access token не добавляются в репозиторий; они используются только локально.
 
 ## Firebase-to-Supabase Mapping
 
