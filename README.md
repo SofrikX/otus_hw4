@@ -341,6 +341,63 @@ flutter create . --platforms=web,android,ios
 
 До создания проекта используйте mock fallback. Не добавляйте реальные URL, anon key или service role key в репозиторий.
 
+### Wrong `SUPABASE_URL`
+
+Симптомы:
+
+- приложение не проходит Supabase initialization;
+- login/feed/pets/walks показывают сетевую ошибку;
+- в debug-log видно только безопасную строку вида `operation=... status=0 code=network-error`.
+
+Проверьте, что URL имеет формат:
+
+```text
+https://<project-ref>.supabase.co
+```
+
+Не добавляйте `/rest/v1`, пробелы или кавычки в значение `SUPABASE_URL`.
+
+### Wrong `SUPABASE_ANON_KEY`
+
+Симптомы:
+
+- вход или запросы к таблицам возвращают unauthorized;
+- приложение показывает `Войдите в аккаунт, чтобы продолжить.`;
+- Supabase dashboard показывает rejected request для неверного client key.
+
+Скопируйте именно anon public key / publishable key из API settings. Не используйте service role key во Flutter и не коммитьте реальные ключи.
+
+### RLS permission denied
+
+Симптомы:
+
+- UI показывает `У вас нет доступа к этому действию.`;
+- debug-log содержит `status=403 code=42501` или код PostgREST, связанный с policy denial.
+
+Проверьте, что пользователь авторизован, `owner_id`/`author_id`/`user_id` совпадает с `auth.uid()`, а migrations с RLS policies применены к текущему Supabase project.
+
+### Empty data because seed not applied
+
+Симптомы:
+
+- приложение запускается без ошибки, но feed/pets/walks пустые;
+- SQL smoke checks возвращают `0` rows.
+
+Примените `supabase/seed.sql`. Для hosted project сначала создайте demo Auth users и замените demo UUID на реальные `auth.users.id`, как описано в `docs/seed_data.md`.
+
+### Email confirmation issue
+
+Симптомы:
+
+- регистрация проходит, но вход не работает;
+- Supabase Auth сообщает, что email не подтвержден.
+
+Для учебного smoke test можно временно отключить email confirmations в Supabase Auth settings или подтвердить demo user через Dashboard. Зафиксируйте выбранный вариант в отчете проверки.
+
+### CORS/browser issue
+
+Для обычного Flutter Web + `supabase_flutter` CORS обычно не требует отдельной настройки: Supabase API поддерживает browser clients. Если browser console показывает CORS/preflight ошибки, проверьте, что используется правильный Project URL, запрос идет к `https://<project-ref>.supabase.co`, а не к локальному/старому Firebase endpoint, и что расширения браузера не блокируют запросы.
+
 ### Нужен Firebase emulator
 
 Firebase emulator workflow относится к предыдущей исследованной ветке. Он остается в истории разработки и может помогать понять уже сделанную интеграцию, но не является выбранным production backend для текущей сдачи.

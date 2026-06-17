@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/api_error.dart';
+import '../../../core/supabase/supabase_error_mapper.dart';
 import '../domain/feed_repository.dart';
 import '../domain/pet_post.dart';
 
@@ -271,47 +272,9 @@ comments_count
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
-    try {
-      return await action();
-    } on ApiException {
-      rethrow;
-    } on AuthException catch (error) {
-      throw ApiUnauthorizedException(message: error.message);
-    } on PostgrestException catch (error) {
-      throw _mapPostgrestException(error);
-    } on FormatException catch (error) {
-      throw ApiUnexpectedException(
-        statusCode: 500,
-        code: 'invalid-supabase-response',
-        message: error.message,
-      );
-    } on Object {
-      throw const ApiNetworkException();
-    }
-  }
-
-  ApiException _mapPostgrestException(PostgrestException error) {
-    final code = error.code ?? 'postgrest-error';
-    if (code == '42501') {
-      return ApiForbiddenException(message: error.message, code: code);
-    }
-    if (code == '23505' ||
-        code == '23503' ||
-        code == '23514' ||
-        code == '22P02') {
-      return ApiValidationException(message: error.message, code: code);
-    }
-    if (code == 'PGRST116') {
-      return ApiNotFoundException(message: error.message, code: code);
-    }
-    if (code == '401' || code == 'PGRST301') {
-      return ApiUnauthorizedException(message: error.message, code: code);
-    }
-
-    return ApiUnexpectedException(
-      statusCode: 500,
-      code: code,
-      message: error.message,
+    return guardSupabaseOperation<T>(
+      operation: 'feed',
+      action: action,
     );
   }
 }

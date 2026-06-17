@@ -106,7 +106,7 @@ void main() {
             .having((error) => error.statusCode, 'statusCode', 502)
             .having((error) => error.code, 'code', 'http-502')
             .having((error) => error.userMessage, 'userMessage',
-                'Request failed with status 502.'),
+                'Сервер временно недоступен. Попробуйте позже.'),
       ),
     );
   });

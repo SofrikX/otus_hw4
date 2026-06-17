@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/network/api_error.dart';
+import '../../../core/supabase/supabase_error_mapper.dart';
 import '../domain/walk.dart';
 import '../domain/walks_repository.dart';
 
@@ -89,7 +88,7 @@ participants_count
           'user_id': userId,
         });
       } on PostgrestException catch (error) {
-        if (_postgrestCode(error) != '23505') {
+        if (postgrestCode(error) != '23505') {
           rethrow;
         }
 
@@ -223,68 +222,9 @@ participants_count
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
-    try {
-      return await action();
-    } on ApiException {
-      rethrow;
-    } on AuthException catch (error) {
-      throw ApiUnauthorizedException(message: error.message);
-    } on PostgrestException catch (error) {
-      throw _mapPostgrestException(error);
-    } on FormatException catch (error) {
-      throw ApiUnexpectedException(
-        statusCode: 500,
-        code: 'invalid-supabase-response',
-        message: error.message,
-      );
-    } on Object catch (error) {
-      if (error is Error) {
-        rethrow;
-      }
-
-      throw const ApiNetworkException();
-    }
-  }
-
-  ApiException _mapPostgrestException(PostgrestException error) {
-    final code = _postgrestCode(error);
-    if (code == '42501') {
-      return ApiForbiddenException(message: error.message, code: code);
-    }
-    if (code == '23505' ||
-        code == '23503' ||
-        code == '23514' ||
-        code == '22P02') {
-      return ApiValidationException(message: error.message, code: code);
-    }
-    if (code == 'PGRST116' || code == '406') {
-      return ApiNotFoundException(message: error.message, code: code);
-    }
-    if (code == '401' || code == 'PGRST301') {
-      return ApiUnauthorizedException(message: error.message, code: code);
-    }
-
-    return ApiUnexpectedException(
-      statusCode: 500,
-      code: code,
-      message: error.message,
+    return guardSupabaseOperation<T>(
+      operation: 'walks',
+      action: action,
     );
-  }
-
-  String _postgrestCode(PostgrestException error) {
-    final message = error.message;
-    try {
-      final decoded = jsonDecode(message);
-      if (decoded is Map<String, dynamic>) {
-        final code = decoded['code'] as String?;
-        if (code != null && code.isNotEmpty) {
-          return code;
-        }
-      }
-    } on FormatException {
-      // Supabase can also provide a plain-text message.
-    }
-
-    return error.code ?? 'postgrest-error';
   }
 }

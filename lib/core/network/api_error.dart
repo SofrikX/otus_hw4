@@ -14,6 +14,25 @@ class ApiException implements Exception {
   final String? requestId;
 
   String get userMessage {
+    if (this is ApiValidationException || statusCode == 400) {
+      return 'Проверьте данные и попробуйте еще раз.';
+    }
+    if (this is ApiUnauthorizedException || statusCode == 401) {
+      return 'Войдите в аккаунт, чтобы продолжить.';
+    }
+    if (this is ApiForbiddenException || statusCode == 403) {
+      return 'У вас нет доступа к этому действию.';
+    }
+    if (this is ApiNotFoundException || statusCode == 404) {
+      return 'Не удалось найти нужные данные.';
+    }
+    if (this is ApiNetworkException || code == 'network-error') {
+      return 'Не удалось подключиться к серверу. Проверьте интернет и попробуйте еще раз.';
+    }
+    if (this is ApiServerException || statusCode >= 500) {
+      return 'Сервер временно недоступен. Попробуйте позже.';
+    }
+
     switch (code) {
       case 'validation-error':
         return 'Проверьте данные и попробуйте еще раз.';
@@ -28,9 +47,7 @@ class ApiException implements Exception {
       case 'internal-error':
         return 'Сервер временно недоступен. Попробуйте позже.';
       default:
-        return message.trim().isEmpty
-            ? 'Что-то пошло не так. Попробуйте еще раз.'
-            : message;
+        return 'Что-то пошло не так. Попробуйте еще раз.';
     }
   }
 

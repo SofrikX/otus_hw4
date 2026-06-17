@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/network/api_error.dart';
+import '../../../core/supabase/supabase_error_mapper.dart';
 import '../domain/app_user.dart';
 import '../domain/auth_repository.dart';
 
@@ -33,13 +35,13 @@ class SupabaseAuthRepository implements AuthRepository {
       await _upsertProfile(user);
       return user;
     } on AuthException catch (error) {
-      throw AuthFailure(_friendlySupabaseAuthMessage(error));
+      throw _authFailureFrom(error, operation: 'auth.signIn');
     } on PostgrestException catch (error) {
-      throw AuthFailure(_friendlyProfileMessage(error));
+      throw _profileFailureFrom(error, operation: 'auth.upsertProfile');
     } on AuthFailure {
       rethrow;
-    } on Object {
-      throw const AuthFailure('Нет соединения с сервисом авторизации.');
+    } on Object catch (error) {
+      throw _unknownFailureFrom(error, operation: 'auth.signIn');
     }
   }
 
@@ -65,13 +67,13 @@ class SupabaseAuthRepository implements AuthRepository {
       await _upsertProfile(mappedUser);
       return mappedUser;
     } on AuthException catch (error) {
-      throw AuthFailure(_friendlySupabaseAuthMessage(error));
+      throw _authFailureFrom(error, operation: 'auth.register');
     } on PostgrestException catch (error) {
-      throw AuthFailure(_friendlyProfileMessage(error));
+      throw _profileFailureFrom(error, operation: 'auth.upsertProfile');
     } on AuthFailure {
       rethrow;
-    } on Object {
-      throw const AuthFailure('Нет соединения с сервисом авторизации.');
+    } on Object catch (error) {
+      throw _unknownFailureFrom(error, operation: 'auth.register');
     }
   }
 
@@ -80,9 +82,11 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       await _client.auth.signOut();
     } on AuthException catch (error) {
-      throw AuthFailure(_friendlySupabaseAuthMessage(error));
-    } on Object {
-      throw const AuthFailure('Не удалось выйти. Проверьте соединение.');
+      final mapped = mapSupabaseAuthException(error);
+      logSupabaseError(operation: 'auth.signOut', error: mapped);
+      throw AuthFailure(mapped.userMessage);
+    } on Object catch (error) {
+      throw _unknownFailureFrom(error, operation: 'auth.signOut');
     }
   }
 
@@ -122,39 +126,78 @@ class SupabaseAuthRepository implements AuthRepository {
     });
   }
 
-  String _friendlySupabaseAuthMessage(AuthException error) {
+  AuthFailure _authFailureFrom(
+    AuthException error, {
+    required String operation,
+  }) {
+    final mapped = mapSupabaseAuthException(error);
+    logSupabaseError(operation: operation, error: mapped);
+
     final code = error.code ?? '';
     final message = error.message.toLowerCase();
 
     if (code == 'invalid_credentials' ||
         message.contains('invalid login credentials')) {
-      return 'Email или пароль не подошли.';
+      return const AuthFailure('Email или пароль не подошли.');
     }
     if (code == 'email_exists' ||
         message.contains('already registered') ||
         message.contains('already been registered') ||
         message.contains('user already registered')) {
-      return 'Пользователь с таким email уже есть.';
+      return const AuthFailure('Пользователь с таким email уже есть.');
     }
     if (code == 'weak_password' || message.contains('password')) {
-      return 'Пароль должен быть надежнее.';
+      return const AuthFailure('Пароль должен быть надежнее.');
     }
     if (code == 'validation_failed' || message.contains('email')) {
-      return 'Проверьте формат email.';
+      return const AuthFailure('Проверьте формат email.');
     }
-    if (error.statusCode == null || message.contains('network')) {
-      return 'Нет соединения с сервисом авторизации.';
+    if (mapped is ApiNetworkException) {
+      return const AuthFailure('Нет соединения с сервисом авторизации.');
     }
 
-    return 'Не удалось выполнить вход. Попробуйте еще раз.';
+    return AuthFailure(mapped.userMessage);
   }
 
-  String _friendlyProfileMessage(PostgrestException error) {
-    if (error.code == '42501') {
-      return 'Аккаунт создан, но профиль не удалось сохранить из-за прав доступа.';
+  AuthFailure _profileFailureFrom(
+    PostgrestException error, {
+    required String operation,
+  }) {
+    final mapped = mapSupabasePostgrestException(error);
+    logSupabaseError(operation: operation, error: mapped);
+
+    if (mapped is ApiForbiddenException) {
+      return const AuthFailure(
+        'Аккаунт создан, но профиль не удалось сохранить из-за прав доступа.',
+      );
     }
 
-    return 'Аккаунт создан, но профиль не удалось сохранить.';
+    return const AuthFailure(
+        'Аккаунт создан, но профиль не удалось сохранить.');
+  }
+
+  AuthFailure _unknownFailureFrom(
+    Object error, {
+    required String operation,
+  }) {
+    if (error is Error) {
+      throw error;
+    }
+
+    final mapped = looksLikeNetworkFailure(error)
+        ? const ApiNetworkException()
+        : ApiUnexpectedException(
+            statusCode: 500,
+            code: 'unknown-error',
+            message: error.runtimeType.toString(),
+          );
+    logSupabaseError(operation: operation, error: mapped);
+
+    if (mapped is ApiNetworkException) {
+      return const AuthFailure('Нет соединения с сервисом авторизации.');
+    }
+
+    return AuthFailure(mapped.userMessage);
   }
 }
 

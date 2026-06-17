@@ -430,7 +430,48 @@ Manual checks:
 - join walk;
 - verify denied access for foreign rows through RLS.
 
-## 16. Firebase Prototype History
+## 16. Error Handling and Logging
+
+Frontend использует единый typed error layer на базе `ApiException` из `lib/core/network/api_error.dart`. Для прямых вызовов `supabase_flutter` добавлен общий mapper `lib/core/supabase/supabase_error_mapper.dart`.
+
+Классификация ошибок:
+
+| Category | Source examples | App exception | User-facing message |
+|---|---|---|---|
+| Network error | unreachable Project URL, browser/network failure, retryable Auth fetch | `ApiNetworkException` | `Не удалось подключиться к серверу...` |
+| Unauthorized | missing/invalid session, invalid credentials | `ApiUnauthorizedException` | `Войдите в аккаунт, чтобы продолжить.` |
+| Forbidden / RLS violation | PostgreSQL `42501`, row-level security denial, permission denied | `ApiForbiddenException` | `У вас нет доступа к этому действию.` |
+| Validation error | Postgres `23502`, `23503`, `23505`, `23514`, `22P02`, invalid email/password | `ApiValidationException` | `Проверьте данные и попробуйте еще раз.` |
+| Not found | PostgREST `PGRST116`, 404/406, empty single-row result | `ApiNotFoundException` | `Не удалось найти нужные данные.` |
+| Unknown error | unexpected Supabase/PostgREST response or unexpected Dart exception | `ApiUnexpectedException` | `Что-то пошло не так. Попробуйте еще раз.` |
+
+UI не показывает сырые Supabase/PostgreSQL сообщения. `AsyncContentView` берет `ApiException.userMessage`, а auth forms получают дружелюбный `AuthFailure`.
+
+Debug logging включен только в debug mode через `kDebugMode`. Логи безопасного уровня содержат:
+
+```text
+[PetConnect][Supabase] operation=<feature> status=<status> code=<code> type=<exception-type>
+```
+
+Логи не содержат access token, anon key, service role key, email, display name, id строк, текст постов, комментариев или других пользовательских данных.
+
+## 17. AI-assisted Debugging
+
+Codex использовался для анализа Supabase error flows и тестовых логов:
+
+- найдено дублирование маппинга PostgREST ошибок в feed/pets/walks repositories;
+- найден UX-риск: `ApiValidationException` с PostgreSQL code `23505` мог показать сырое backend-сообщение вместо friendly message;
+- проверено, что RLS denial `42501` классифицируется как forbidden, а не как unknown/server error;
+- после запуска `flutter test` найден тест, который ожидал сырой 502 message; expectation обновлен под новое требование безопасных user-friendly errors.
+
+Рекомендуемый AI-debug workflow:
+
+1. Скопировать только безопасные debug-log строки без токенов и персональных данных.
+2. Добавить контекст операции: auth/feed/pets/walks и ожидаемое действие.
+3. Попросить AI классифицировать ошибку: network, unauthorized, forbidden/RLS, validation, not found или unknown.
+4. Проверить вывод AI через Supabase dashboard logs, SQL/RLS policies и Flutter tests.
+
+## 18. Firebase Prototype History
 
 Firebase не удаляется из истории разработки. Он остается корректно описанным исследованным вариантом:
 
@@ -442,7 +483,7 @@ Firebase не удаляется из истории разработки. Он 
 
 Итоговое решение: для текущего ДЗ production backend - Supabase Free Tier, а Firebase-прототип является частью AI-assisted exploration и не считается выбранным production backend.
 
-## 17. Known Limitations
+## 19. Known Limitations
 
 - Supabase project еще нужно создать.
 - SQL migrations и RLS policies подготовлены в `supabase/migrations/`, но их еще нужно применить к реальному project.
@@ -451,7 +492,7 @@ Firebase не удаляется из истории разработки. Он 
 - Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
 - Реальные Supabase URL и keys не должны появляться в документации или git history.
 
-## 18. AI-assisted Development
+## 20. AI-assisted Development
 
 Основной AI-агент проекта - OpenAI Codex.
 

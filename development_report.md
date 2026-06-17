@@ -836,3 +836,44 @@ flutter test
 - реальные Supabase URL/anon key не добавлялись;
 - hosted Supabase smoke test прогулок остается next step после создания project и применения migrations;
 - создание прогулки реализовано в repository layer, но отдельная UI-форма создания прогулки в этой задаче не добавлялась.
+
+## 19. Supabase error handling, logging and AI debugging
+
+Дата доработки: 17 июня 2026.
+
+Codex проверил обработку ошибок Supabase backend integration в `lib/core/`, `lib/features/auth/`, `lib/features/feed/`, `lib/features/pets/`, `lib/features/walks/`, `docs/supabase_security.md`, `backend_documentation.md` и `README.md`.
+
+Реальные кейсы отладки:
+
+- В feed/pets/walks repositories был повторяющийся PostgREST mapper. Codex вынес общий `guardSupabaseOperation` и единый mapper в `lib/core/supabase/supabase_error_mapper.dart`.
+- RLS denial `42501` из Supabase/PostgreSQL проверен как forbidden case. В тестовом выводе debug-log показывает только безопасные поля: `operation=pets status=403 code=42501 type=ApiForbiddenException`.
+- Найден UX-риск: при PostgreSQL validation codes (`23505`, `23503`, `22P02`) `ApiException.userMessage` мог вернуть raw backend message. Codex изменил `userMessage`, чтобы UI показывал friendly messages по типу/status, а не сырые PostgreSQL тексты.
+- Полный `flutter test` сначала упал на тесте malformed 502 response: тест ожидал raw message `Request failed with status 502.`. После новой политики безопасных сообщений expectation обновлен на `Сервер временно недоступен. Попробуйте позже.`, повторный прогон прошел.
+
+Итоговая классификация:
+
+- network error -> `ApiNetworkException`;
+- unauthorized -> `ApiUnauthorizedException`;
+- forbidden/RLS -> `ApiForbiddenException`;
+- validation -> `ApiValidationException`;
+- not found -> `ApiNotFoundException`;
+- unknown -> `ApiUnexpectedException`.
+
+Логирование:
+
+- включается только в debug mode;
+- не пишет tokens, anon key, service role key, email, имена пользователей, ids строк, текст постов или комментариев;
+- пишет только operation/status/code/type, чтобы эти строки можно было безопасно использовать для AI-assisted debugging.
+
+Проверки:
+
+```bash
+dart format lib/core/network/api_error.dart lib/core/supabase/supabase_error_mapper.dart lib/features/auth/data/supabase_auth_repository.dart lib/features/feed/data/supabase_feed_repository.dart lib/features/pets/data/supabase_pet_repository.dart lib/features/walks/data/supabase_walk_repository.dart test/core/network/api_client_test.dart
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 68 tests passed.

@@ -1857,3 +1857,50 @@ Walks сейчас работают на mock-данных.
 - Добавлены Supabase repository tests и обновлены controller/widget tests.
 - `docs/api_spec.md`, `development_report.md` и `prompts.md` обновлены под walks Supabase data flow.
 - Проверки прошли: `dart format .`, `flutter analyze`, `flutter test test/features/walks`, полный `flutter test` — 68 tests passed.
+
+## Prompt 40 — Supabase error handling and logging
+
+```markdown
+# Role
+Ты Fullstack QA Engineer и Supabase Debugger.
+
+# Task
+Проверь и доработай обработку ошибок и логирование для Supabase backend integration.
+
+# Context
+ДЗ требует обработку сетевых ошибок, ошибок валидации, ошибок доступа, логирование и использование AI для анализа логов.
+
+# Required reading
+Прочитай:
+- lib/core/
+- lib/features/auth/
+- lib/features/feed/
+- lib/features/pets/
+- lib/features/walks/
+- docs/supabase_security.md
+- backend_documentation.md
+- README.md
+
+# Requirements
+1. Frontend должен различать network error, unauthorized, forbidden/RLS violation, validation error, not found, unknown error.
+2. Добавь единый AppException или используй существующий.
+3. UI должен показывать user-friendly messages.
+4. Не скрывай ошибки пустыми catch-блоками.
+5. Добавь debug logging только безопасного уровня без токенов, anon key и персональных данных.
+6. Обнови README troubleshooting.
+7. Обнови backend_documentation.md: error handling, logging, AI-assisted debugging.
+8. Обнови development_report.md: реальные кейсы отладки Supabase.
+9. Обнови prompts.md.
+```
+
+Результат:
+
+- Использован существующий единый `ApiException` layer.
+- Добавлен `lib/core/supabase/supabase_error_mapper.dart` с `guardSupabaseOperation`, Supabase Auth/PostgREST mapper и safe debug logging.
+- Feed/pets/walks Supabase repositories переведены на общий guard вместо дублирующих catch-блоков.
+- Supabase Auth repository теперь логирует безопасные коды и возвращает friendly `AuthFailure`.
+- `ApiException.userMessage` больше не показывает raw backend/PostgreSQL text для validation/server/unknown errors.
+- README расширен troubleshooting cases: wrong `SUPABASE_URL`, wrong `SUPABASE_ANON_KEY`, RLS denied, missing seed, email confirmation и browser/CORS.
+- `backend_documentation.md` дополнен разделами error handling, logging и AI-assisted debugging.
+- `development_report.md` дополнен реальными кейсами отладки Supabase.
+- Проверки прошли: `flutter analyze`, полный `flutter test` — 68 tests passed.
