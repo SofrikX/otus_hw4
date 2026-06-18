@@ -1390,3 +1390,76 @@ rg -n "<old-production-supabase-project-ref>" README.md backend_documentation.md
 ```
 
 Результат: реальный Supabase project URL в tracked documentation не найден.
+
+## 28. Final production E2E verification
+
+Дата проверки: 18 июня 2026.
+
+Роль Codex: QA Engineer и Release Reviewer.
+
+Production inputs:
+
+```text
+Frontend URL: https://cool-duckanoo-d28d04.netlify.app
+Supabase URL: https://fivtpxsjcjirddogngtl.supabase.co
+Supabase status: Healthy
+```
+
+Прочитано перед проверкой:
+
+- `README.md`;
+- `backend_documentation.md`;
+- `docs/frontend_deployment.md`;
+- `docs/supabase_setup.md`;
+- `docs/seed_data.md`;
+- `docs/supabase_security.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `lib/features/`.
+
+Фактический результат:
+
+- Production URL открывается.
+- Flutter Web assets доступны на Netlify.
+- Login screen отображается.
+- Production bundle содержит ожидаемый Supabase project URL и public publishable key.
+- Seed demo users работают через Supabase Auth API:
+  - `demo.alina@petconnect-demo.com`;
+  - `demo.mark@petconnect-demo.com`.
+- Production database не пустая: authenticated REST counts показали данные в profiles, pets, posts, comments, post_likes, walks и walk_participants.
+- Backend REST smoke checks прошли для чтения feed/walks, comment insert, like insert и walk join.
+
+Release blocker:
+
+- После успешного входа через UI приложение переходит на `/`, но экран становится белым.
+- Browser console показывает:
+
+```text
+Null check operator used on a null value
+Cannot read properties of undefined (reading 'init')
+```
+
+- Из-за этого UI checks для feed, create post, like, comment, pet profile, walks и join walk заблокированы в production frontend.
+- Fresh signup также не готов как основной reviewer path: Supabase вернул `over_email_send_rate_limit`, поэтому для проверки нужны seeded demo users, ручное confirmation в Dashboard или временно отключенное email confirmation.
+
+Минимальный fix, примененный локально:
+
+- В `web/index.html` внешний Corbado/passkeys bundle перенесен перед `flutter_bootstrap.js`, чтобы web binding был готов до старта Flutter/Supabase Auth.
+
+Проверки после локального fix:
+
+```bash
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter analyze`: `No issues found!`.
+- `flutter test`: `69 tests passed`.
+
+Оставшийся шаг перед сдачей:
+
+1. Пересобрать Flutter Web release с production Supabase dart-defines.
+2. Задеплоить новый `build/web` на Netlify.
+3. Повторить browser E2E: login, feed, create post, like, comment, pet profile, walks, join walk, mobile и desktop.

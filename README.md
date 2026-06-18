@@ -199,6 +199,59 @@ If Netlify's build environment does not include Flutter SDK, build locally with 
 
 The reviewer should receive a Netlify production URL and be able to open the deployed Flutter Web app in a browser. Real Supabase keys are not committed to the repository; the service role key is never used in the frontend.
 
+## How To Verify Production App
+
+Production frontend URL:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app
+```
+
+Production Supabase project URL:
+
+```text
+https://fivtpxsjcjirddogngtl.supabase.co
+```
+
+Final QA status on 18 June 2026: **not ready for teacher handoff until the frontend is redeployed**.
+
+What passed:
+
+- Netlify URL opens and returns the Flutter Web shell.
+- Login screen renders after reload.
+- Production bundle points to the expected Supabase project URL and uses a public publishable key, not a service role key.
+- Supabase Auth login works for seeded demo users:
+  - `demo.alina@petconnect-demo.com`
+  - `demo.mark@petconnect-demo.com`
+- Production database is not empty. Authenticated REST count checks returned seeded data for profiles, pets, posts, comments, likes, walks and walk participants.
+- Supabase REST smoke checks passed for feed reads, creating a comment, creating a like and joining a walk.
+
+Blocking issue found:
+
+- After successful UI login, the deployed frontend currently turns into a blank white screen.
+- Browser console shows `Null check operator used on a null value` and `Cannot read properties of undefined (reading 'init')` from `main.dart.js`.
+- The likely cause is a web startup race where the external Corbado/passkeys bundle is not ready before Flutter/Supabase Auth web code initializes.
+- Local fix applied in `web/index.html`: load the Corbado/passkeys script before `flutter_bootstrap.js`.
+- Required next step: rebuild and redeploy Netlify from the fixed branch, then repeat the browser E2E scenario.
+
+Reviewer smoke scenario after redeploy:
+
+1. Open `https://cool-duckanoo-d28d04.netlify.app`.
+2. Sign in with `demo.alina@petconnect-demo.com` / `DemoPass123!`.
+3. Confirm the feed loads Supabase posts.
+4. Create a post.
+5. Like a post.
+6. Add a comment.
+7. Open a pet profile.
+8. Open walks and join a walk using `demo.mark@petconnect-demo.com` if Alina is already joined to all walks.
+9. Check mobile and desktop layouts.
+
+Registration troubleshooting:
+
+- Fresh signup currently hit Supabase email sending rate limits during QA: `over_email_send_rate_limit`.
+- For teacher validation, either use the seeded demo users above, confirm created users manually in Supabase Dashboard, or temporarily disable email confirmation for the demo window.
+- If signup shows an email-format message, retry with a normal email domain and check Supabase Auth logs for rate-limit or confirmation errors.
+
 ## Supabase Setup
 
 ### 1. Create Project

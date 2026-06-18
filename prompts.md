@@ -2373,3 +2373,52 @@ Scanner нашел реальное значение в README.md, backend_docum
 - В `netlify.toml` добавлен `SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY"` для публичных Flutter Web client settings.
 - README, `backend_documentation.md` и `docs/frontend_deployment.md` дополнены security note про Netlify secrets scanning.
 - `development_report.md` обновлен разделом `Netlify secrets scanning cleanup`.
+
+## Prompt 53 — Final production E2E release review
+
+```markdown
+# Role
+Ты QA Engineer и Release Reviewer.
+
+# Task
+Проведи финальную end-to-end проверку production версии PetConnect.
+
+# Project inputs
+GitHub repository:
+https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+
+Production frontend URL:
+https://cool-duckanoo-d28d04.netlify.app
+
+Supabase project URL:
+https://fivtpxsjcjirddogngtl.supabase.co
+
+Supabase project status:
+Healthy
+
+# Required reading
+Прочитай README.md, backend_documentation.md, docs/frontend_deployment.md,
+docs/supabase_setup.md, docs/seed_data.md, docs/supabase_security.md,
+development_report.md, prompts.md и lib/features/.
+
+# Manual checks
+Проверь production URL, регистрацию, вход, feed, post, like, comment,
+pet profile, walks, join walk, errors, mobile и desktop layouts.
+
+# Requirements
+Обнови README.md, backend_documentation.md, development_report.md и prompts.md.
+Не добавляй secrets.
+```
+
+Результат:
+
+- Production URL открылся, Flutter Web shell и auth screen доступны.
+- Production bundle проверен: используется Supabase URL `https://fivtpxsjcjirddogngtl.supabase.co` и public publishable key.
+- Регистрация через fresh email заблокирована Supabase email rate limit: `over_email_send_rate_limit`.
+- Seed demo user `demo.alina@petconnect-demo.com` успешно логинится через Supabase Auth API.
+- UI login с demo credentials приводит к переходу на `/`, после чего production frontend падает на белый экран.
+- Browser console показывает `Null check operator used on a null value` и `Cannot read properties of undefined (reading 'init')`.
+- Backend Supabase REST smoke checks прошли: database не пустая, comment insert `201`, like insert `201`, walk join `201`.
+- Локальный минимальный fix применен в `web/index.html`: Corbado/passkeys bundle загружается перед `flutter_bootstrap.js`.
+- После fix выполнены `flutter analyze` и `flutter test`; analyzer без замечаний, `69 tests passed`.
+- README, `backend_documentation.md`, `development_report.md` и `prompts.md` обновлены итогами release review.

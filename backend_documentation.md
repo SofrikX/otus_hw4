@@ -742,6 +742,79 @@ Hosted smoke checks performed:
 
 Automated Flutter tests cover auth, feed, pets, walks, chat, repository mapping and error handling. Full manual browser click-through for fresh sign-up, create post through UI and responsive layouts remains a final human QA step before presentation.
 
+## 14.1. Production E2E Verification - 18 June 2026
+
+Production inputs checked:
+
+```text
+Frontend: https://cool-duckanoo-d28d04.netlify.app
+Supabase: https://fivtpxsjcjirddogngtl.supabase.co
+Supabase project status: Healthy
+```
+
+Files inspected for the release review:
+
+- `README.md`;
+- `backend_documentation.md`;
+- `docs/frontend_deployment.md`;
+- `docs/supabase_setup.md`;
+- `docs/seed_data.md`;
+- `docs/supabase_security.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `lib/features/`.
+
+Manual/browser result:
+
+| Check | Result | Notes |
+|---|---|---|
+| Production frontend URL opens | Passed | Netlify returns `PetConnect` HTML and Flutter assets. |
+| App does not crash at initial load | Partial | Login screen rendered after reload; first load logged a CanvasKit fetch retry error. |
+| User registration | Blocked | Supabase Auth returned `over_email_send_rate_limit`; use seeded demo users or confirm users manually. |
+| User login | Failed in UI, passed in Auth API | UI accepted demo credentials, then frontend crashed to white screen. Direct Auth API login returned `200`. |
+| Feed loads Supabase data | Blocked in UI, passed by REST | Authenticated REST counts show non-empty posts. |
+| Create post | Blocked in UI | Cannot reach feed because of frontend crash after login. |
+| Like post | Blocked in UI, passed by REST | Authenticated REST insert into `post_likes` returned `201` for an unliked post. |
+| Comment | Blocked in UI, passed by REST | Authenticated REST insert into `comments` returned `201`. |
+| Pet screen opens | Blocked in UI | Cannot reach home tabs because of frontend crash after login. |
+| Walks load from Supabase | Blocked in UI, passed by REST | Authenticated REST counts show 3 walks. |
+| Join walk | Blocked in UI, passed by REST | Authenticated REST insert into `walk_participants` returned `201` for Demo Mark. |
+| Friendly errors | Partial | Registration form showed a friendly email message, but the post-login crash is a blank screen. |
+| Mobile layout | Partial | Auth screen renders in a narrow viewport; authenticated app blocked by crash. |
+| Desktop layout | Blocked | Authenticated desktop app blocked by crash. |
+
+Production database was not empty during verification:
+
+| Table | Authenticated REST count |
+|---|---:|
+| `profiles` | 2 |
+| `pets` | 3 |
+| `posts` | 6 |
+| `comments` | 6 before QA comment, then increased |
+| `post_likes` | 5 before QA like, then increased |
+| `walks` | 3 |
+| `walk_participants` | 5 before QA join, then increased |
+
+Blocking frontend issue:
+
+```text
+Error: Null check operator used on a null value
+TypeError: Cannot read properties of undefined (reading 'init')
+```
+
+This happened in the deployed `main.dart.js` immediately after successful login. The likely cause is the external Corbado/passkeys web bundle loading after Flutter bootstrap. A local minimal fix was applied in `web/index.html` by loading the Corbado/passkeys script before `flutter_bootstrap.js`. The production site must be rebuilt and redeployed before teacher handoff.
+
+Required release fix:
+
+```bash
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+```
+
+Then redeploy `build/web` to Netlify and repeat the full browser scenario: login, feed, create post, like, comment, pet profile, walks, join walk, mobile and desktop.
+
 ## 15. AI-Assisted Development
 
 OpenAI Codex was used as the AI coding agent and technical reviewer.
