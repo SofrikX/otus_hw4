@@ -71,7 +71,7 @@ Frontend release target:
 ```text
 GitHub source: https://github.com/SofrikX/otus_hw4/tree/hw5-sb
 Hosting: Netlify Free
-Supabase URL: https://fivtpxsjcjirddogngtl.supabase.co
+Supabase URL: https://<project-ref>.supabase.co
 ```
 
 Netlify is the recommended frontend hosting target because Flutter Web builds to static files, the free tier is enough for an educational public demo, GitHub can be connected for automatic deploys, environment variables can be configured in the Netlify UI, and `build/web` can be uploaded manually as a fallback.
@@ -81,7 +81,7 @@ Build-time configuration for production frontend:
 ```bash
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co \
+  --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
@@ -91,7 +91,7 @@ Build output and Netlify publish directory:
 build/web
 ```
 
-In Netlify, `SUPABASE_URL` and the real `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Service role key, database password and private tokens are not used in the frontend.
+In Netlify, `SUPABASE_URL` and the real `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Because Flutter Web embeds `--dart-define` values into the generated browser bundle, `netlify.toml` also omits these two public client settings from Netlify secrets scanning. Service role key, database password and private tokens are not used in the frontend and must never be added to the omit list.
 
 ## 4. Database Schema
 

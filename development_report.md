@@ -283,7 +283,7 @@ Production frontend получает `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` 
 |---|---|
 | GitHub source | `https://github.com/SofrikX/otus_hw4/tree/hw5-sb` |
 | Hosting | Netlify Free |
-| Backend URL | `https://fivtpxsjcjirddogngtl.supabase.co` |
+| Backend URL | `https://<project-ref>.supabase.co` |
 | Build command | `flutter build web --release` with Supabase `--dart-define` values |
 | Build output | `build/web` |
 
@@ -1350,7 +1350,7 @@ flutter build web --release \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 ```
 
-Фактический локальный build был выполнен против Supabase project URL `https://fivtpxsjcjirddogngtl.supabase.co`; реальный publishable key использовался только в локальной CLI-команде и не записывался в tracked files.
+Фактический локальный build был выполнен против Supabase project URL `https://<project-ref>.supabase.co`; реальный publishable key использовался только в локальной CLI-команде и не записывался в tracked files.
 
 Результат production build:
 
@@ -1370,3 +1370,23 @@ build/web
 
 - Flutter сообщил, что dependency `ua_client_hints_web.dart` использует `dart:html`, поэтому текущая сборка имеет предупреждение для future WebAssembly mode. Обычный JavaScript release build завершился успешно.
 - Flutter показал предупреждение про отсутствующий `packages/cupertino_icons/CupertinoIcons`; текущий release build не упал, но перед финальным UI smoke test стоит убедиться, что приложение не использует Cupertino icon glyphs без зависимости.
+
+## 27. Netlify secrets scanning cleanup
+
+Дата проверки: 18 июня 2026.
+
+Цель: исправить падение Netlify deploy, где secrets scanning находил значение `SUPABASE_URL` в документации и build output.
+
+Решение:
+
+- реальный Supabase project URL заменен в tracked документации на placeholder `https://<project-ref>.supabase.co`;
+- в `netlify.toml` добавлен `SECRETS_SCAN_OMIT_KEYS` для публичных frontend-переменных `SUPABASE_URL` и `SUPABASE_PUBLISHABLE_KEY`;
+- README, backend documentation и frontend deployment docs дополнены пояснением, что эти значения являются public client configuration для Flutter Web, а service role key, database password и private tokens не должны попадать в frontend и omit list.
+
+Проверка:
+
+```bash
+rg -n "<old-production-supabase-project-ref>" README.md backend_documentation.md development_report.md docs/frontend_deployment.md prompts.md
+```
+
+Результат: реальный Supabase project URL в tracked documentation не найден.

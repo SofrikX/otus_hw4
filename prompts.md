@@ -2196,7 +2196,7 @@ Supabase project URL задан в пользовательском контек
 # Project inputs
 - GitHub repository: https://github.com/SofrikX/otus_hw4/tree/hw5-sb
 - Planned frontend hosting: Netlify Free
-- Supabase project URL: https://fivtpxsjcjirddogngtl.supabase.co
+- Supabase project URL: https://<project-ref>.supabase.co
 
 # Requirements
 1. Не менять бизнес-логику приложения.
@@ -2229,7 +2229,7 @@ GitHub repository:
 https://github.com/SofrikX/otus_hw4/tree/hw5-sb
 
 Supabase project URL:
-https://fivtpxsjcjirddogngtl.supabase.co
+https://<project-ref>.supabase.co
 
 Important:
 Не записывай реальный SUPABASE_PUBLISHABLE_KEY в файлы.
@@ -2299,7 +2299,7 @@ Flutter Web build получает Supabase configuration через dart-define
 
 # Project inputs for local command only
 Supabase project URL:
-https://fivtpxsjcjirddogngtl.supabase.co
+https://<project-ref>.supabase.co
 
 Supabase publishable key:
 <production-supabase-publishable-key>
@@ -2350,3 +2350,26 @@ Important:
 - `build/web` подтвержден как ignored artifact и не должен коммититься.
 - README не менялся, потому что существующая build command была корректной.
 - Реальный publishable key использовался только в локальной CLI-команде и не записывался в repository files.
+
+## Prompt 52 — Netlify secrets scanning cleanup
+
+```markdown
+Отвечай на русском.
+
+Netlify deploy падает:
+Secrets scanning found secret env var `SUPABASE_URL`.
+Scanner нашел реальное значение в README.md, backend_documentation.md, development_report.md, docs/frontend_deployment.md и prompts.md.
+
+Нужно исправить репозиторий так, чтобы:
+1. Реальный Supabase project URL не был записан в tracked docs.
+2. Flutter Web deploy на Netlify не падал из-за ожидаемого public client config в build output.
+3. Service role key, database password и private tokens не добавлялись во frontend и не скрывались от scanner.
+4. Документация объясняла это решение.
+```
+
+Результат:
+
+- Реальный Supabase project URL заменен в tracked documentation на `https://<project-ref>.supabase.co`.
+- В `netlify.toml` добавлен `SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY"` для публичных Flutter Web client settings.
+- README, `backend_documentation.md` и `docs/frontend_deployment.md` дополнены security note про Netlify secrets scanning.
+- `development_report.md` обновлен разделом `Netlify secrets scanning cleanup`.

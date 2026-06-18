@@ -133,7 +133,7 @@ https://github.com/SofrikX/otus_hw4/tree/hw5-sb
 Planned Supabase project URL for the production frontend:
 
 ```text
-https://fivtpxsjcjirddogngtl.supabase.co
+https://<project-ref>.supabase.co
 ```
 
 Flutter Web is a good fit for Netlify because the release build is static and can be served from a CDN-like static host without a custom server. Supabase stays responsible for auth, database, storage and RLS-protected API operations.
@@ -145,7 +145,7 @@ The repository contains `netlify.toml` so Netlify can build and publish the Flut
 Configure these variables in Netlify UI, not in repository files:
 
 ```text
-SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co
+SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 ```
 
@@ -157,6 +157,7 @@ Security model for Flutter Web:
 - PetConnect does not rely on the publishable key as a secret. Database and Storage protection comes from Supabase Auth sessions, PostgreSQL RLS policies and Storage policies.
 - Supabase secret keys and service role keys must never be passed through `--dart-define`, configured in Netlify frontend environment variables or committed to the repository.
 - If a secret key or service role key is ever exposed, rotate it in Supabase before continuing deployment.
+- `netlify.toml` omits `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from Netlify secrets scanning because Flutter Web embeds these public client settings into `build/web`. Do not add service role keys or database passwords to this omit list.
 
 ### Build Command
 

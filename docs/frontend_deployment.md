@@ -31,7 +31,7 @@ https://github.com/SofrikX/otus_hw4/tree/hw5-sb
 Planned production Supabase project URL:
 
 ```text
-https://fivtpxsjcjirddogngtl.supabase.co
+https://<project-ref>.supabase.co
 ```
 
 ## Production Architecture
@@ -93,7 +93,7 @@ build/web
 In Netlify UI, configure production environment variables:
 
 ```text
-SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co
+SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
@@ -154,7 +154,7 @@ For Git-based deploys where Flutter SDK is missing, another acceptable option is
 3. Select the branch used for the HW5 submission.
 4. Let Netlify read `netlify.toml`, or configure the same build command manually.
 5. Set the publish directory to `build/web`.
-6. Add `SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co` and the real `SUPABASE_PUBLISHABLE_KEY` in Netlify environment variables.
+6. Add `SUPABASE_URL=https://<project-ref>.supabase.co` and the real `SUPABASE_PUBLISHABLE_KEY` in Netlify environment variables.
 7. Run the deploy.
 8. Open the Netlify production URL and validate the app against the Supabase backend.
 
@@ -178,6 +178,9 @@ Open production URL -> sign in -> load feed -> create pet/post -> like post -> j
 
 - Do not commit real Supabase keys to Git.
 - Do not use service role key in Netlify frontend builds.
+- `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are public Flutter Web client configuration and are embedded into the generated `build/web` bundle by `--dart-define`.
+- `netlify.toml` uses `SECRETS_SCAN_OMIT_KEYS` for those two public keys so Netlify does not fail the deploy after detecting expected public client config in build output.
+- Never add Supabase service role keys, database passwords or private access tokens to `SECRETS_SCAN_OMIT_KEYS`.
 - Do not pass Supabase secret key or service role key through `--dart-define`; Flutter Web bundles are public.
 - The publishable key is public client configuration, but it should still be managed through Netlify environment variables for reproducibility.
 - RLS policies and Storage policies remain the security boundary for user data.
