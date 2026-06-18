@@ -126,11 +126,11 @@ void main() {
             baseUrl: '',
             useSupabaseBackend: true,
             supabaseUrl: 'https://example.supabase.co',
-            supabaseAnonKey: 'anon-key',
+            supabasePublishableKey: 'publishable-key',
           ),
         ),
         supabaseClientProvider.overrideWithValue(
-          SupabaseClient('https://example.supabase.co', 'anon-key'),
+          SupabaseClient('https://example.supabase.co', 'publishable-key'),
         ),
       ],
     );

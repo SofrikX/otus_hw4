@@ -23,6 +23,7 @@
 | `prompts.md` | HW5 + ДЗ 2 | Проверяющий, студент, Codex | Журнал промптов и результатов | После каждой AI-задачи |
 | `submission_checklist.md` | HW5 | Студент | Финальная проверка сдачи | Перед GitHub-публикацией |
 | `docs/supabase_setup.md` | HW5 | Студент, Codex | Создание Supabase project, env, migrations, Flutter run | При подключении Supabase |
+| `docs/frontend_deployment.md` | HW5 | Проверяющий, студент, Codex | Production-развертывание Flutter Web на Netlify Free | При подготовке frontend production URL |
 | `docs/database_schema.md` | HW5 | Codex, студент | PostgreSQL schema, constraints, indexes, Storage buckets | При изменении SQL migrations |
 | `docs/seed_data.md` | HW5 | Codex, студент, проверяющий | Supabase demo seed, Auth UUID replacement, smoke checks | При наполнении Supabase demo data |
 | `docs/api_spec.md` | HW5 | Codex, студент | Supabase auto REST / Flutter client operations | При backend/frontend integration |
@@ -66,6 +67,7 @@
 - `README.md`;
 - `backend_documentation.md`;
 - `docs/supabase_setup.md`;
+- `docs/frontend_deployment.md`;
 - `docs/database_schema.md`;
 - `docs/seed_data.md`;
 - `docs/api_spec.md`;

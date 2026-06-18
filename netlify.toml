@@ -1,0 +1,8 @@
+[build]
+  command = "flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
+  publish = "build/web"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

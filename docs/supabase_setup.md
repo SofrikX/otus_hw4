@@ -13,7 +13,7 @@
 5. Дождитесь, пока project перейдет в ready/active state.
 6. Зафиксируйте для себя project ref, но не коммитьте его вместе с ключами.
 
-В репозитории не хранится реальный Supabase project id, URL, anon key, service role key или database password.
+В репозитории не хранится реальный Supabase project id, URL, publishable key, secret key, service role key или database password.
 
 ## 2. Получить `SUPABASE_URL`
 
@@ -31,18 +31,16 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 
 Не добавляйте к URL `/rest/v1`, пробелы или кавычки.
 
-## 3. Получить `SUPABASE_ANON_KEY`
+## 3. Получить `SUPABASE_PUBLISHABLE_KEY`
 
-В том же разделе Dashboard скопируйте client-side key:
+В том же разделе Dashboard скопируйте client-side `publishable key` в новом формате Supabase API keys.
 
-- `anon public key`; или
-- `publishable key`, если Dashboard показывает новый формат ключей.
-
-В PetConnect переменная называется `SUPABASE_ANON_KEY` в обоих случаях.
+В PetConnect переменная называется `SUPABASE_PUBLISHABLE_KEY`.
 
 Запрещено использовать во Flutter:
 
 - service role key;
+- secret key;
 - database password;
 - JWT secret;
 - personal access token.
@@ -53,7 +51,7 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 
 ```text
 SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_ANON_KEY=<public-client-key>
+SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 USE_SUPABASE_BACKEND=true
 ```
 
@@ -220,7 +218,7 @@ Storage policies должны разрешать чтение authenticated user
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 Fallback для macOS desktop:
@@ -229,7 +227,7 @@ Fallback для macOS desktop:
 flutter run -d macos \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 Реальные значения передаются локально и не добавляются в README, screenshots, commits или issue-тексты.
@@ -295,7 +293,7 @@ Backend checks:
 
 - [ ] Supabase project создан на Free Tier.
 - [ ] `SUPABASE_URL` получен из Dashboard.
-- [ ] `SUPABASE_ANON_KEY` получен из Dashboard как public client key.
+- [ ] `SUPABASE_PUBLISHABLE_KEY` получен из Dashboard как publishable key.
 - [ ] `001_initial_schema.sql` применен без ошибок.
 - [ ] `002_rls_policies.sql` применен без ошибок.
 - [ ] `seed.sql` применен после создания/replacement demo Auth users.

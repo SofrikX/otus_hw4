@@ -4,7 +4,7 @@ PetConnect - Flutter-приложение для владельцев домаш
 
 Текущая сдача относится к ДЗ 5: backend deployment and integration with Frontend. Frontend MVP подключается к Supabase backend через repository layer и Riverpod controllers. Mock repositories сохранены для локального запуска, тестов и постепенной миграции.
 
-README не содержит реальных `SUPABASE_URL`, `SUPABASE_ANON_KEY`, service role key, database password, access token или production user data.
+README не содержит реальных `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, secret key, service role key, database password, access token или production user data.
 
 ## Stack
 
@@ -105,11 +105,79 @@ RLS model:
 More details:
 
 - `backend_documentation.md`
+- `docs/frontend_deployment.md`
 - `docs/supabase_setup.md`
 - `docs/database_schema.md`
 - `docs/supabase_security.md`
 - `docs/api_spec.md`
 - `docs/seed_data.md`
+
+## Netlify Deployment
+
+Production frontend hosting: **Netlify Free**.
+
+PetConnect production deployment is split into two parts:
+
+| Layer | Production target |
+|---|---|
+| Backend | Supabase Auth, PostgreSQL, RLS, Storage and auto REST API |
+| Frontend | Flutter Web static release build |
+| Frontend hosting | Netlify Free |
+
+Flutter Web is a good fit for Netlify because the release build is static and can be served from a CDN-like static host without a custom server. Supabase stays responsible for auth, database, storage and RLS-protected API operations.
+
+The repository contains `netlify.toml` so Netlify can build and publish the Flutter Web release from GitHub.
+
+### Environment Variables In Netlify UI
+
+Configure these variables in Netlify UI, not in repository files:
+
+```text
+SUPABASE_URL=<production-supabase-project-url>
+SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+```
+
+`USE_SUPABASE_BACKEND=true` is passed directly by the build command. The real `SUPABASE_PUBLISHABLE_KEY` must stay in Netlify Environment Variables. Do not commit it to Git.
+
+### Build Command
+
+Netlify build command from `netlify.toml`:
+
+```bash
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=$SUPABASE_URL \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+```
+
+### Publish Directory
+
+Flutter writes the production web build to:
+
+```text
+build/web
+```
+
+Netlify publish directory:
+
+```text
+build/web
+```
+
+### SPA Redirects
+
+Flutter Web uses client-side routing, so Netlify must serve `index.html` for deep links. This rule is included in `netlify.toml`:
+
+```toml
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+If Netlify's build environment does not include Flutter SDK, build locally with the same `flutter build web --release ...` command and deploy the generated `build/web` directory manually through Netlify drag-and-drop.
+
+The reviewer should receive a Netlify production URL and be able to open the deployed Flutter Web app in a browser. Real Supabase keys are not committed to the repository; the service role key is never used in the frontend.
 
 ## Supabase Setup
 
@@ -126,9 +194,9 @@ More details:
 From Supabase Dashboard, copy:
 
 - Project URL as `SUPABASE_URL`;
-- anon public key or publishable key as `SUPABASE_ANON_KEY`.
+- publishable key as `SUPABASE_PUBLISHABLE_KEY`.
 
-Do not use service role key in Flutter.
+The legacy anon key is not used by PetConnect frontend configuration. Do not use a Supabase secret key or service role key in Flutter Web: browser code is public, and these keys can bypass or weaken the intended security model. PetConnect protects user data with Row Level Security policies and authenticated Supabase sessions.
 
 Expected URL format:
 
@@ -256,13 +324,15 @@ flutter create . --platforms=web,android,ios
 Mock mode does not require Supabase credentials:
 
 ```bash
-flutter run -d chrome
+flutter run -d chrome \
+  --dart-define=USE_SUPABASE_BACKEND=false
 ```
 
 macOS fallback:
 
 ```bash
-flutter run -d macos
+flutter run -d macos \
+  --dart-define=USE_SUPABASE_BACKEND=false
 ```
 
 ### Supabase Mode
@@ -273,7 +343,7 @@ Pass real values only locally through `--dart-define` or ignored local env files
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 macOS fallback:
@@ -282,7 +352,7 @@ macOS fallback:
 flutter run -d macos \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 ## End-To-End Check
@@ -348,7 +418,7 @@ https://<project-ref>.supabase.co
 
 Do not append `/rest/v1`, spaces or quotes.
 
-### Wrong `SUPABASE_ANON_KEY`
+### Wrong `SUPABASE_PUBLISHABLE_KEY`
 
 Symptoms:
 
@@ -356,7 +426,7 @@ Symptoms:
 - the app asks to sign in again;
 - Supabase logs show rejected requests.
 
-Copy the anon public key or publishable key from Supabase Dashboard. Never use service role key in Flutter.
+Copy the publishable key from Supabase Dashboard. Never use secret key or service role key in Flutter Web.
 
 ### Empty Data Because Seed Was Not Applied
 

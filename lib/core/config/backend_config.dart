@@ -10,7 +10,7 @@ class BackendConfig {
     this.useFirebaseBackend = false,
     this.useSupabaseBackend = false,
     this.supabaseUrl = '',
-    this.supabaseAnonKey = '',
+    this.supabasePublishableKey = '',
   });
 
   factory BackendConfig.fromEnvironment() {
@@ -23,7 +23,9 @@ class BackendConfig {
         'USE_SUPABASE_BACKEND',
       ),
       supabaseUrl: String.fromEnvironment('SUPABASE_URL'),
-      supabaseAnonKey: String.fromEnvironment('SUPABASE_ANON_KEY'),
+      supabasePublishableKey: String.fromEnvironment(
+        'SUPABASE_PUBLISHABLE_KEY',
+      ),
     );
   }
 
@@ -31,7 +33,7 @@ class BackendConfig {
   final bool useFirebaseBackend;
   final bool useSupabaseBackend;
   final String supabaseUrl;
-  final String supabaseAnonKey;
+  final String supabasePublishableKey;
 
   bool get requiresAuth => useSupabaseBackend || useFirebaseBackend;
 
@@ -67,11 +69,11 @@ class BackendConfig {
     return uri;
   }
 
-  String get requiredSupabaseAnonKey {
-    final trimmedKey = supabaseAnonKey.trim();
+  String get requiredSupabasePublishableKey {
+    final trimmedKey = supabasePublishableKey.trim();
     if (trimmedKey.isEmpty) {
       throw const BackendConfigException(
-        'SUPABASE_ANON_KEY is required when USE_SUPABASE_BACKEND=true.',
+        'SUPABASE_PUBLISHABLE_KEY is required when USE_SUPABASE_BACKEND=true.',
       );
     }
 

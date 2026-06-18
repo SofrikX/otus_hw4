@@ -20,7 +20,7 @@ void main() {
           baseUrl: '',
           useSupabaseBackend: true,
           supabaseUrl: 'http://127.0.0.1:54321',
-          supabaseAnonKey: 'test-anon-key',
+          supabasePublishableKey: 'test-publishable-key',
         ),
         repository: _FakeAuthRepository(),
       ),

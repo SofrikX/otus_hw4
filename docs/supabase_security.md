@@ -24,11 +24,23 @@ RLS включается в `supabase/migrations/002_rls_policies.sql`.
 Запрещено в git:
 
 - реальные `.env`;
+- Supabase secret key;
 - Supabase service role key;
 - database password;
 - JWT secret;
 - personal access token;
 - production user data.
+
+## Client API Keys
+
+Flutter Web uses only public client configuration:
+
+- `SUPABASE_URL`;
+- `SUPABASE_PUBLISHABLE_KEY`.
+
+The publishable key is allowed in browser-side code because RLS policies and the current Supabase Auth session enforce access to user data. Supabase secret keys and service role keys must never be sent to the browser, committed to git, pasted into docs or included in screenshots.
+
+RLS policies are mandatory for every user-data table. Treat the publishable key as an identifier for client access, not as the security boundary.
 
 ## Таблицы с RLS
 

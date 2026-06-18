@@ -14,7 +14,7 @@ REST API base path:
 ${SUPABASE_URL}/rest/v1
 ```
 
-Flutter-клиент должен использовать `SUPABASE_ANON_KEY` как public client key и пользовательскую Supabase Auth session. Service role key запрещен в клиенте.
+Flutter-клиент должен использовать `SUPABASE_PUBLISHABLE_KEY` как Supabase Publishable Key и пользовательскую Supabase Auth session. Supabase secret key и service role key запрещены в клиенте.
 
 ## Auth
 
@@ -106,7 +106,7 @@ REST shape:
 
 ```http
 GET /rest/v1/posts?visibility=eq.public&deleted_at=is.null&order=created_at.desc&limit=20
-apikey: <SUPABASE_ANON_KEY>
+apikey: <SUPABASE_PUBLISHABLE_KEY>
 Authorization: Bearer <user-access-token>
 ```
 
@@ -209,7 +209,7 @@ REST shape:
 
 ```http
 GET /rest/v1/pets?id=eq.<pet-id>&select=id,owner_id,owner_name,name,animal_type,breed,age,description,photo_emoji,created_at
-apikey: <SUPABASE_ANON_KEY>
+apikey: <SUPABASE_PUBLISHABLE_KEY>
 Authorization: Bearer <user-access-token>
 ```
 
@@ -293,7 +293,7 @@ REST shape:
 
 ```http
 GET /rest/v1/walks?status=eq.active&order=scheduled_at.asc&limit=20
-apikey: <SUPABASE_ANON_KEY>
+apikey: <SUPABASE_PUBLISHABLE_KEY>
 Authorization: Bearer <user-access-token>
 ```
 

@@ -45,7 +45,7 @@ Firebase остается в истории как исследованный в
 - Auto REST API / Supabase client используются для MVP operations.
 - PostgreSQL RPC/functions добавлять только когда нужны транзакции, counters или сложная protected write-логика.
 - Service role key нельзя использовать во Flutter-клиенте.
-- Реальные Supabase URL, anon key и service role key не коммитить.
+- Реальные Supabase URL, publishable key и service role key не коммитить.
 - Не утверждать, что Supabase deployed, пока project/migrations не созданы фактически.
 
 ## Правила состояния

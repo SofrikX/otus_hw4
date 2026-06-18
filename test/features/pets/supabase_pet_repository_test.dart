@@ -135,7 +135,7 @@ void main() {
             baseUrl: '',
             useSupabaseBackend: true,
             supabaseUrl: 'https://example.supabase.co',
-            supabaseAnonKey: 'anon-key',
+            supabasePublishableKey: 'publishable-key',
           ),
         ),
         supabaseClientProvider.overrideWithValue(
@@ -166,7 +166,7 @@ void main() {
 SupabaseClient _client(Future<http.Response> Function(http.Request) handler) {
   return SupabaseClient(
     'https://example.supabase.co',
-    'anon-key',
+    'publishable-key',
     httpClient: MockClient(handler),
   );
 }

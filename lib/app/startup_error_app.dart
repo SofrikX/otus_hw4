@@ -56,7 +56,7 @@ class StartupErrorScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Проверьте SUPABASE_URL и SUPABASE_ANON_KEY, затем запустите приложение снова.',
+                    'Проверьте SUPABASE_URL и SUPABASE_PUBLISHABLE_KEY, затем запустите приложение снова.',
                     style: theme.textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 12),

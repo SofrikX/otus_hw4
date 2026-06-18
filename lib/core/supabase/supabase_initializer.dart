@@ -9,6 +9,6 @@ Future<void> initializeSupabaseApp(BackendConfig config) async {
 
   await Supabase.initialize(
     url: config.supabaseUri.toString(),
-    publishableKey: config.requiredSupabaseAnonKey,
+    publishableKey: config.requiredSupabasePublishableKey,
   );
 }
