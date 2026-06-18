@@ -2058,3 +2058,37 @@ Output format
 - Hosted smoke checks прошли: Supabase Auth login, feed/walks read, like, comment, join walk, RLS negative check и Flutter Web Supabase init.
 - Прямой SQL insert в `auth.users` для hosted login оказался ненадежным; рабочий flow — создать demo Auth users через Auth Admin/Dashboard/API, затем применить public seed rows.
 - Реальные Supabase URL, anon key, database password и access token не записывались в tracked files или отчеты.
+
+## Prompt 44 — final backend documentation for Supabase submission
+
+```markdown
+# Role
+Ты Technical Writer и Backend Architect.
+
+# Task
+Подготовь финальный файл backend_documentation.md для сдачи ДЗ с Supabase backend.
+
+# Context
+Формат сдачи требует описание архитектуры, инструкции по развертыванию, описание API endpoints, примеры запросов и описание процесса разработки с AI.
+
+# Required reading
+Прочитай README.md, docs/supabase_setup.md, docs/database_schema.md, docs/supabase_security.md, docs/api_spec.md, docs/seed_data.md, development_report.md, prompts.md, supabase/migrations/ и supabase/seed.sql.
+
+# Requirements
+backend_documentation.md должен содержать цель, выбор Supabase вместо Firebase, архитектуру, schema, migrations, seed, RLS, API operations, examples, deployment, env/secrets, error handling, logging/debugging, frontend integration, testing, AI-assisted development, ограничения MVP и финальный checklist.
+
+# Output format
+1. Summary.
+2. Sections updated.
+3. Files changed.
+4. Diff.
+```
+
+Результат:
+
+- Прочитаны обязательные документы, SQL migrations и seed.
+- `backend_documentation.md` пересобран как финальная сдаваемая документация для преподавателя.
+- Документ синхронизирован с фактическим состоянием Supabase backend: hosted deployment, `003_api_grants.sql`, trigger counters, RLS policies, Storage buckets, seed flow и Supabase Flutter repositories.
+- Добавлены примеры Supabase Flutter SDK и REST requests для required operations.
+- Обновлены `prompts.md` и `development_report.md` как журнал AI-assisted documentation work.
+- Код Flutter, SQL migrations и secrets не менялись.

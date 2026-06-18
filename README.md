@@ -1,204 +1,73 @@
 # PetConnect
 
-PetConnect - Flutter-приложение для владельцев домашних животных. Пользователь может вести социальную ленту питомца, смотреть профили питомцев, присоединяться к прогулкам и работать с базовым чат-сценарием.
+PetConnect - Flutter-приложение для владельцев домашних животных. MVP включает социальную ленту питомцев, профили питомцев, прогулки, присоединение к прогулкам и базовый чат-сценарий.
 
-ДЗ 5 переводит frontend MVP к backend-интеграции. Актуальное архитектурное решение для сдачи - Supabase Free Tier: Supabase Auth, PostgreSQL, Row Level Security, Supabase Storage, auto REST API через PostgREST и Flutter SDK `supabase_flutter`.
+Текущая сдача относится к ДЗ 5: backend deployment and integration with Frontend. Frontend MVP подключается к Supabase backend через repository layer и Riverpod controllers. Mock repositories сохранены для локального запуска, тестов и постепенной миграции.
 
-Firebase-ветка была спроектирована и проверялась как исследованный вариант, потому что Firebase был указан в технической спецификации предыдущего этапа. На этапе подготовки production deployment выяснилось, что Firebase Cloud Functions могут требовать Blaze/pay-as-you-go plan. Для учебного проекта выбран Supabase, так как исходное задание прямо допускает Supabase и этот путь сохраняет бесплатный, воспроизводимый production backend.
+README не содержит реальных `SUPABASE_URL`, `SUPABASE_ANON_KEY`, service role key, database password, access token или production user data.
 
-Hosted Supabase backend развернут и проверен smoke-сценариями через CLI/REST и Flutter Web. Реальные Supabase URL, anon key, database password и access token в репозиторий не добавлены: значения передаются только локально через `.env.deploy` или `--dart-define`.
+## Stack
 
-## Стек
-
-| Часть | Технология |
+| Layer | Technology |
 |---|---|
 | Frontend | Flutter |
 | Language | Dart |
-| State management | Riverpod / flutter_riverpod |
-| Routing | go_router |
+| State management | Riverpod / `flutter_riverpod` |
+| Routing | `go_router` |
 | UI | Material 3 |
 | Auth | Supabase Auth |
-| Database | Supabase PostgreSQL |
-| Security | PostgreSQL Row Level Security |
-| File storage | Supabase Storage |
-| Backend API | Supabase auto REST API / Flutter Supabase client |
-| Local fallback | Mock repositories |
-| Frontend tests | flutter_test, mocktail |
-| Backend validation | SQL migrations, RLS policies, Supabase dashboard/API checks |
+| Database | PostgreSQL |
+| Security | Row Level Security |
+| Storage | Supabase Storage |
+| API | Supabase REST API / Flutter SDK `supabase_flutter` |
+| Tests | `flutter_test`, `mocktail` |
 
-> Current implementation note: Supabase Auth is integrated through `supabase_flutter` for email/password sign up, sign in, sign out, auth state changes and profile upsert. Feed, pets and walks repositories use Supabase tables when `USE_SUPABASE_BACKEND=true`; mock repositories remain the local fallback for tests and offline development.
+## Why Supabase Instead Of Firebase
 
-## Architecture Decision: Firebase to Supabase
+Firebase was researched first because the earlier PetConnect technical specification used Firebase Auth, Firestore, Firebase Storage, Security Rules and Cloud Functions.
 
-Original homework supports Supabase or self-hosted PostgreSQL. PetConnect initially mapped the backend to Firebase to match the earlier technical specification:
+For the final HW5 backend decision, PetConnect uses Supabase Free Tier instead:
 
-- Firebase Auth;
-- Cloud Firestore;
-- Firebase Storage;
-- Cloud Functions;
-- Firebase Security Rules;
-- Firebase Emulator Suite.
+- the original homework allows Supabase as a backend option;
+- Firebase Cloud Functions production deploy can require the Blaze/pay-as-you-go plan;
+- the homework needs a free and reproducible BaaS setup;
+- Supabase gives reviewable SQL migrations, PostgreSQL constraints, Row Level Security and auto REST API;
+- `supabase_flutter` lets the app keep its existing repository-based architecture.
 
-That option was useful for schema, API and repository-layer design, but it is not the chosen production backend for the current homework anymore. The decisive constraint is Firebase Cloud Functions production deployment: it can require Blaze/pay-as-you-go billing, which is undesirable for a free educational handoff.
+Mapping:
 
-Supabase is selected because it:
+| Firebase research branch | Final Supabase backend |
+|---|---|
+| Firebase Auth | Supabase Auth |
+| Cloud Firestore | PostgreSQL tables |
+| Firebase Security Rules | Row Level Security policies |
+| Cloud Functions API | Supabase REST API / Flutter SDK |
+| Firebase Storage | Supabase Storage |
 
-- is explicitly allowed by the homework;
-- provides a free tier suitable for a small educational backend;
-- gives PostgreSQL schema and SQL migrations that are easy to review;
-- implements authorization with RLS instead of a separate rules language;
-- exposes REST endpoints automatically through PostgREST;
-- supports Flutter integration through `supabase_flutter`;
-- avoids Cloud Functions as a required production dependency for the MVP operations.
+## Main Features
 
-## Firebase-to-Supabase Mapping
+- Email/password sign up, sign in and sign out through Supabase Auth in backend mode.
+- Protected routing with `go_router` and Riverpod auth state.
+- Pet social feed with posts, likes and comments.
+- Pet profiles and owner pets.
+- Walk list, walk creation and join/leave flow.
+- Basic chat data model for chat list and messages.
+- Friendly loading, empty, error and success states through controllers/providers.
+- Mock mode for local UI checks and tests without Supabase credentials.
 
-| Previous Firebase component | Current Supabase component | Decision |
-|---|---|---|
-| Firebase Auth | Supabase Auth | Email/password identity source |
-| Cloud Firestore | PostgreSQL tables | Relational schema for users, pets, posts, comments, likes, walks, chats and messages |
-| Firestore Security Rules | Row Level Security policies | Authenticated row-level access with `auth.uid()` |
-| Cloud Functions HTTP API | Supabase auto REST API / Supabase client | MVP operations use database constraints, RLS and client calls |
-| Firebase Storage | Supabase Storage | Pet, post and user images in protected buckets |
-| Firebase Emulator Suite | Supabase local/project validation | Local Supabase CLI can be added later; production-free validation uses SQL/RLS checks |
-
-For operations that need atomic counters, PostgreSQL should use transactions, constraints, RPC functions or triggers only when the simple Supabase client flow is not enough. The current documentation does not claim those database functions are already deployed.
-
-## Основные функции
-
-- Email/password вход, регистрация и выход через backend auth layer.
-- Защищенный routing через `go_router` и Riverpod auth state.
-- Лента постов питомцев с созданием поста, лайками, комментариями и async states.
-- Профили питомцев и экран неизвестного питомца с error-state.
-- Прогулки с присоединением и обновлением счетчика участников.
-- Базовый экран чатов как задел под сообщения.
-- Repository layer: UI работает через controllers/providers, а не напрямую с backend SDK.
-- Local fallback на mock repositories для тестов и постепенной миграции.
-
-## Target Backend Architecture
+## Backend Architecture
 
 ```text
 Flutter UI
   -> Riverpod controllers/providers
   -> repository interfaces
-  -> Supabase or mock repositories
+  -> Supabase or mock repository implementations
   -> supabase_flutter client
   -> Supabase Auth / PostgREST / Storage
   -> PostgreSQL tables protected by RLS
 ```
 
-Целевая схема PostgreSQL:
-
-```text
-profiles
-pets
-posts
-comments
-post_likes
-walks
-walk_participants
-chats
-chat_participants
-messages
-```
-
-Supabase Storage buckets:
-
-```text
-avatars
-pet-photos
-post-images
-```
-
-RLS должна ограничивать доступ через `auth.uid()`: пользователь управляет своим профилем и питомцами, автор управляет своими постами, лайки уникальны по паре user/post, участники видят свои чаты, изображения загружаются только владельцем.
-
-## Supabase Auth Flow
-
-Flutter auth layer:
-
-- `AuthRepository` abstraction lives outside widgets;
-- `SupabaseAuthRepository` uses `Supabase.instance.client.auth`;
-- `AuthController` exposes Riverpod actions for sign in, register and sign out;
-- `authStateProvider` listens to Supabase auth state changes;
-- `SupabaseAuthTokenProvider` returns the current Supabase access token for future Supabase API calls.
-
-Supported operations:
-
-- sign up with email/password;
-- sign in with email/password;
-- sign out;
-- current user;
-- auth state changes;
-- profile upsert into `public.profiles` after sign up/sign in when Supabase session is available.
-
-Routing:
-
-- `USE_SUPABASE_BACKEND=true` protects app routes and redirects anonymous users to `/login`;
-- `/login` and `/register` redirect back to `/` after successful auth state change;
-- mock mode remains available without login so local UI/tests do not require backend credentials.
-
-Handled auth errors:
-
-- invalid credentials -> `Email или пароль не подошли.`;
-- already registered email -> `Пользователь с таким email уже есть.`;
-- network/service failure -> `Нет соединения с сервисом авторизации.`;
-- weak password and invalid email have friendly messages.
-
-Подробнее:
-
-- `backend_documentation.md`
-- `docs/supabase_setup.md`
-- `docs/database_schema.md`
-- `docs/api_spec.md`
-- `docs/supabase_security.md`
-- `docs/current_homework_scope.md`
-- `docs/ai_workflow.md`
-- `development_report.md`
-
-## Supabase Project Setup
-
-Production backend setup is documented in detail in `docs/supabase_setup.md`. Use the checklist there for release verification and do not commit real keys.
-
-### 1. Создать project
-
-1. Откройте Supabase Dashboard.
-2. Создайте новый project на Free Tier.
-3. Выберите регион.
-4. Сохраните database password в password manager, не в репозитории.
-5. Дождитесь готовности project.
-
-### 2. Получить Project URL и anon public key
-
-В Supabase Dashboard откройте project и найдите Connect/API settings:
-
-- Project URL -> `SUPABASE_URL`;
-- anon public key или publishable key -> `SUPABASE_ANON_KEY`.
-
-Service role key не использовать во Flutter и не добавлять в `.env`.
-
-### 3. Настроить локальный env
-
-`.env.example` содержит только placeholders:
-
-```text
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-USE_SUPABASE_BACKEND=true
-```
-
-Реальные значения храните только локально в `.env` или передавайте через `--dart-define`.
-
-### 4. Применить SQL migrations
-
-Через Supabase CLI:
-
-```bash
-supabase login
-supabase link --project-ref <your-project-ref>
-supabase db push
-```
-
-Если CLI еще не настроен, выполните SQL из файла вручную через Dashboard SQL Editor:
+Database source of truth:
 
 ```text
 supabase/migrations/001_initial_schema.sql
@@ -206,101 +75,199 @@ supabase/migrations/002_rls_policies.sql
 supabase/migrations/003_api_grants.sql
 ```
 
-Порядок важен: сначала `001_initial_schema.sql`, затем `002_rls_policies.sql`, затем `003_api_grants.sql`.
+Application tables:
 
-### 5. Применить seed-данные
+- `profiles`
+- `pets`
+- `posts`
+- `comments`
+- `post_likes`
+- `walks`
+- `walk_participants`
+- `chats`
+- `chat_participants`
+- `messages`
 
-Seed-файл:
+Storage buckets:
+
+- `avatars`
+- `pet-photos`
+- `post-images`
+
+RLS model:
+
+- authenticated users can read application data needed for the MVP;
+- users can insert/update/delete only their own profile, pets, posts, likes, comments and walk participation rows;
+- walk creators manage their own walks;
+- chat rows and messages are visible only to chat participants;
+- Storage writes require paths like `<auth.uid()>/<file-name>`.
+
+More details:
+
+- `backend_documentation.md`
+- `docs/supabase_setup.md`
+- `docs/database_schema.md`
+- `docs/supabase_security.md`
+- `docs/api_spec.md`
+- `docs/seed_data.md`
+
+## Supabase Setup
+
+### 1. Create Project
+
+1. Open Supabase Dashboard.
+2. Create a new Free Tier project.
+3. Choose a region.
+4. Save the database password in a password manager, not in the repository.
+5. Wait until the project is ready.
+
+### 2. Get Client Settings
+
+From Supabase Dashboard, copy:
+
+- Project URL as `SUPABASE_URL`;
+- anon public key or publishable key as `SUPABASE_ANON_KEY`.
+
+Do not use service role key in Flutter.
+
+Expected URL format:
+
+```text
+https://<project-ref>.supabase.co
+```
+
+### 3. Enable Auth
+
+Supabase Auth email/password is the target auth provider.
+
+For educational smoke checks, either:
+
+- confirm demo users manually in Dashboard; or
+- temporarily disable email confirmation in Auth settings.
+
+Document the chosen option in the final validation notes. Do not commit real user credentials.
+
+### 4. Run Migrations
+
+Recommended CLI flow:
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+If the CLI is not configured, run the migration files manually in Supabase Dashboard SQL Editor in this exact order:
+
+```text
+supabase/migrations/001_initial_schema.sql
+supabase/migrations/002_rls_policies.sql
+supabase/migrations/003_api_grants.sql
+```
+
+### 5. Run Seed
+
+Seed file:
 
 ```text
 supabase/seed.sql
 ```
 
-Он не содержит реальных пользователей, production data или secrets. Для локального `supabase start` / `supabase db reset` seed создает две минимальные demo rows в `auth.users`, потому что `public.profiles.id` ссылается на `auth.users.id`.
+Local Supabase CLI:
 
-Для hosted Supabase сначала создайте двух demo users через Authentication UI, Auth Admin API или регистрацию в приложении, затем используйте их ids для public demo rows. Прямой SQL insert в `auth.users` оставлен для локального `supabase db reset`.
+```bash
+supabase db reset
+```
+
+For a hosted Supabase project, create two demo Auth users first through Dashboard, Auth Admin API or the app sign-up flow. Then replace the fixed demo UUIDs in public seed rows with the real `auth.users.id` values before running the seed for `public.*` data.
+
+Fixed demo UUIDs in `supabase/seed.sql`:
 
 | Placeholder | Demo UUID |
 |---|---|
 | `DEMO_USER_A_ID` | `11111111-1111-1111-1111-111111111111` |
 | `DEMO_USER_B_ID` | `22222222-2222-2222-2222-222222222222` |
 
-Для локальной проверки через Supabase CLI `supabase db reset` применяет migrations и затем запускает `supabase/seed.sql`:
+Expected demo data after seed:
 
-```bash
-supabase db reset
+| Table | Rows |
+|---|---:|
+| `profiles` | 2 |
+| `pets` | 3 |
+| `posts` | 4 |
+| `comments` | 5 |
+| `post_likes` | 4 |
+| `walks` | 3 |
+| `walk_participants` | 4 |
+| `chats` | 1 |
+| `chat_participants` | 2 |
+| `messages` | 3 |
+
+### 6. Check RLS
+
+Run this SQL check in Dashboard SQL Editor:
+
+```sql
+select
+  schemaname,
+  tablename,
+  rowsecurity
+from pg_tables
+where schemaname = 'public'
+  and tablename in (
+    'profiles',
+    'pets',
+    'posts',
+    'comments',
+    'post_likes',
+    'walks',
+    'walk_participants',
+    'chats',
+    'chat_participants',
+    'messages'
+  )
+order by tablename;
 ```
 
-Локальный demo password для seed users: `DemoPass123!`. Он предназначен только для demo QA.
+Every returned row should have `rowsecurity = true`.
 
-Для hosted project выполните public seed rows через Dashboard SQL Editor или Supabase CLI после замены UUID на ids созданных demo Auth users.
+Also check that private Storage buckets exist:
 
-После применения seed появятся:
+- `avatars`
+- `pet-photos`
+- `post-images`
 
-- 2 demo profiles;
-- 3 pets;
-- 4 feed posts;
-- comments и post_likes;
-- 3 walks и walk_participants;
-- 1 chat и messages.
+## Run The App
 
-Подробности: `docs/seed_data.md`.
-
-### 6. Production verification
-
-Если hosted Supabase project еще не проверен вручную, используйте это как `Manual verification checklist`:
-
-- [ ] Supabase project создан.
-- [ ] Migrations применены.
-- [ ] Seed применен после замены demo Auth UUID.
-- [ ] Таблицы видны в Table Editor.
-- [ ] RLS enabled для application tables.
-- [ ] `SELECT posts` работает для authenticated user.
-- [ ] Sign up/sign in работает в Flutter app.
-- [ ] Create post работает.
-- [ ] Like post работает.
-- [ ] Join walk работает.
-
-## Локальный запуск Flutter
-
-### 1. Установить Flutter-зависимости
+Install dependencies:
 
 ```bash
 flutter pub get
 ```
 
-Если Flutter platform files отсутствуют, создайте их:
+If platform files are missing:
 
 ```bash
 flutter create . --platforms=web,android,ios
 ```
 
-### 2. Запустить приложение на mock repositories
+### Mock Mode
+
+Mock mode does not require Supabase credentials:
 
 ```bash
 flutter run -d chrome
 ```
 
-Fallback для desktop-проверки на macOS:
+macOS fallback:
 
 ```bash
 flutter run -d macos
 ```
 
-### 3. После создания Supabase project
+### Supabase Mode
 
-Добавить реальные значения только через локальные переменные окружения или `--dart-define`, не коммитя их в репозиторий:
-
-Expected command in docs:
-
-```bash
-flutter run -d chrome
---dart-define=USE_SUPABASE_BACKEND=true
---dart-define=SUPABASE_URL=
---dart-define=SUPABASE_ANON_KEY=
-```
-
-Shell-friendly version:
+Pass real values only locally through `--dart-define` or ignored local env files:
 
 ```bash
 flutter run -d chrome \
@@ -309,11 +276,44 @@ flutter run -d chrome \
   --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
-Реальные URL и keys в документации не указываются.
+macOS fallback:
 
-## Запуск тестов
+```bash
+flutter run -d macos \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
+```
 
-После изменений Flutter/Dart:
+## End-To-End Check
+
+Use this scenario after migrations, seed and Auth setup:
+
+1. Start the app in Supabase mode.
+2. Register or sign in with a demo user.
+3. Open the feed and verify seeded posts are visible.
+4. Create a pet for the current user.
+5. Create a post for that pet.
+6. Like a post and verify the like counter changes.
+7. Add a comment and verify the comment counter changes.
+8. Open walks and join an active walk.
+9. Sign in as a second demo user and verify RLS denies editing another user's pet, post or walk.
+
+Useful SQL smoke checks:
+
+```sql
+select count(*) from public.profiles;
+select count(*) from public.pets;
+select count(*) from public.posts;
+select count(*) from public.walks;
+select count(*) from public.messages;
+```
+
+Do not claim production deployment is verified until the project, migrations, seed, Auth flow, RLS checks and Flutter Supabase mode have actually been tested for the submitted environment.
+
+## Tests
+
+Run after Flutter/Dart changes:
 
 ```bash
 dart format .
@@ -321,118 +321,107 @@ flutter analyze
 flutter test
 ```
 
-После добавления Supabase SQL migrations/RLS:
+Run after Supabase SQL/RLS changes when Supabase CLI is configured:
 
 ```bash
 supabase db lint
 supabase db reset
 ```
 
-Если Supabase CLI еще не подключен, проверку SQL/RLS нужно выполнить через Supabase dashboard SQL editor или добавить CLI setup отдельной задачей.
-
-## Release Status
-
-1. Hosted Supabase project создан на Free Tier и linked через Supabase CLI.
-2. `SUPABASE_URL` и public client key получены локально и не добавлены в git.
-3. SQL migrations из `supabase/migrations/` применены к hosted database.
-4. Demo Auth users созданы через Auth flow, public demo rows загружены.
-5. RLS smoke check и PostgREST read/write checks выполнены.
-6. Flutter Web запущен с `USE_SUPABASE_BACKEND=true`.
-7. Оставшиеся ручные UI-проверки: fresh sign up через Flutter UI, create post через feed UI, mobile/desktop click-through.
-8. Firebase dependencies и prototype files удалять только отдельной cleanup-задачей, если они больше не нужны для истории разработки.
+If Supabase CLI is not available, validate migrations and RLS through Supabase Dashboard SQL Editor and document the manual result.
 
 ## Troubleshooting
 
-### Chrome не отображается в `flutter devices`
+### Wrong `SUPABASE_URL`
 
-Проверьте, что Google Chrome установлен и доступен Flutter:
+Symptoms:
+
+- Supabase initialization fails;
+- auth/feed/pets/walks show network errors;
+- requests go to an old or malformed endpoint.
+
+Check that the value is exactly:
+
+```text
+https://<project-ref>.supabase.co
+```
+
+Do not append `/rest/v1`, spaces or quotes.
+
+### Wrong `SUPABASE_ANON_KEY`
+
+Symptoms:
+
+- auth or table requests return unauthorized;
+- the app asks to sign in again;
+- Supabase logs show rejected requests.
+
+Copy the anon public key or publishable key from Supabase Dashboard. Never use service role key in Flutter.
+
+### Empty Data Because Seed Was Not Applied
+
+Symptoms:
+
+- app starts successfully, but feed, pets or walks are empty;
+- SQL `count(*)` checks return `0`.
+
+Apply `supabase/seed.sql`. For hosted Supabase, create demo Auth users first and replace demo UUIDs with their real `auth.users.id`.
+
+### RLS Permission Denied
+
+Symptoms:
+
+- write operations fail with permission errors;
+- PostgREST returns `403`, `42501` or a policy-related error.
+
+Check that:
+
+- the user is authenticated;
+- `owner_id`, `author_id`, `user_id` or `creator_id` equals `auth.uid()`;
+- `002_rls_policies.sql` was applied to the same project;
+- `003_api_grants.sql` was applied after policies.
+
+### Auth Email Confirmation
+
+Symptoms:
+
+- sign up succeeds, but sign in fails;
+- Supabase says the email is not confirmed.
+
+For demo validation, confirm the user in Dashboard or temporarily disable email confirmation in Auth settings.
+
+### Chrome Does Not Appear In `flutter devices`
+
+Run:
 
 ```bash
 flutter devices
 flutter doctor
 ```
 
-Если platform files отсутствуют:
+If web platform files are missing:
 
 ```bash
 flutter create . --platforms=web,android,ios
 ```
 
-### Supabase credentials отсутствуют
-
-Если локальные values недоступны, используйте mock fallback. Не добавляйте реальные URL, anon key или service role key в репозиторий.
-
-### Wrong `SUPABASE_URL`
-
-Симптомы:
-
-- приложение не проходит Supabase initialization;
-- login/feed/pets/walks показывают сетевую ошибку;
-- в debug-log видно только безопасную строку вида `operation=... status=0 code=network-error`.
-
-Проверьте, что URL имеет формат:
-
-```text
-https://<project-ref>.supabase.co
-```
-
-Не добавляйте `/rest/v1`, пробелы или кавычки в значение `SUPABASE_URL`.
-
-### Wrong `SUPABASE_ANON_KEY`
-
-Симптомы:
-
-- вход или запросы к таблицам возвращают unauthorized;
-- приложение показывает `Войдите в аккаунт, чтобы продолжить.`;
-- Supabase dashboard показывает rejected request для неверного client key.
-
-Скопируйте именно anon public key / publishable key из API settings. Не используйте service role key во Flutter и не коммитьте реальные ключи.
-
-### RLS permission denied
-
-Симптомы:
-
-- UI показывает `У вас нет доступа к этому действию.`;
-- debug-log содержит `status=403 code=42501` или код PostgREST, связанный с policy denial.
-
-Проверьте, что пользователь авторизован, `owner_id`/`author_id`/`user_id` совпадает с `auth.uid()`, а migrations с RLS policies применены к текущему Supabase project.
-
-### Empty data because seed not applied
-
-Симптомы:
-
-- приложение запускается без ошибки, но feed/pets/walks пустые;
-- SQL smoke checks возвращают `0` rows.
-
-Примените `supabase/seed.sql`. Для hosted project сначала создайте demo Auth users и замените demo UUID на реальные `auth.users.id`, как описано в `docs/seed_data.md`.
-
-### Email confirmation issue
-
-Симптомы:
-
-- регистрация проходит, но вход не работает;
-- Supabase Auth сообщает, что email не подтвержден.
-
-Для учебного smoke test можно временно отключить email confirmations в Supabase Auth settings или подтвердить demo user через Dashboard. Зафиксируйте выбранный вариант в отчете проверки.
-
-### CORS/browser issue
-
-Для обычного Flutter Web + `supabase_flutter` CORS обычно не требует отдельной настройки: Supabase API поддерживает browser clients. Если browser console показывает CORS/preflight ошибки, проверьте, что используется правильный Project URL, запрос идет к `https://<project-ref>.supabase.co`, а не к локальному/старому Firebase endpoint, и что расширения браузера не блокируют запросы.
-
-### Нужен Firebase emulator
-
-Firebase emulator workflow относится к предыдущей исследованной ветке. Он остается в истории разработки и может помогать понять уже сделанную интеграцию, но не является выбранным production backend для текущей сдачи.
-
 ## AI-Assisted Development
 
-Проект разрабатывался с использованием OpenAI Codex как AI coding agent.
+PetConnect was developed and reviewed with OpenAI Codex as the AI coding agent.
 
-Ключевые артефакты:
+Key AI workflow artifacts:
 
-- `AGENTS.md` - основные правила для Codex в репозитории;
-- `docs/ai_agent_rules.md` - расширенные правила Flutter/backend разработки;
-- `prompts.md` - журнал промптов и результатов;
-- `development_report.md` - отчет о разработке и архитектурном решении;
-- `backend_documentation.md` - описание backend architecture, security model, API и validation.
+- `AGENTS.md` - primary Codex rules for this repository;
+- `docs/ai_agent_rules.md` - extended Flutter/Supabase rules;
+- `prompts.md` - prompt and result log;
+- `development_report.md` - development report, decisions and debugging notes;
+- `backend_documentation.md` - backend architecture, schema, RLS, Storage, API and validation documentation.
 
-Codex использовался для анализа ТЗ, проектирования Firebase-прототипа, проверки ограничения Cloud Functions Blaze plan и документирования перехода на Supabase Free Tier.
+Codex was used for:
+
+- analyzing homework requirements;
+- researching the Firebase path and the Cloud Functions billing constraint;
+- documenting the Firebase-to-Supabase architecture decision;
+- designing PostgreSQL schema, RLS and Storage policies;
+- integrating Supabase through repositories and Riverpod controllers;
+- reviewing validation commands and handoff documentation.

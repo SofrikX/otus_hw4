@@ -1,415 +1,630 @@
-# PetConnect Backend Documentation для ДЗ 5
+# PetConnect Backend Documentation: Supabase Backend for HW5
 
-## 1. Цель
+## 1. Название и цель
 
-PetConnect - Flutter-приложение для владельцев домашних животных. Backend-часть ДЗ 5 описывает переход frontend MVP к Supabase Free Tier как текущему backend-решению для учебного production deployment.
+Документ описывает backend-часть PetConnect для сдачи ДЗ 5: архитектуру, развертывание Supabase, PostgreSQL schema, SQL migrations, Row Level Security, Supabase Storage, API operations, frontend integration, testing и процесс разработки с OpenAI Codex.
 
-Документ фиксирует архитектурное решение, целевую схему данных, модель безопасности, API-подход, Storage, валидацию и production deployment status. Реальные Supabase URL и keys в репозиторий не добавляются.
+PetConnect - Flutter-приложение для владельцев домашних животных. MVP включает социальную ленту питомцев, профили питомцев, прогулки, присоединение к прогулкам и базовый чат-сценарий. Для ДЗ 5 frontend MVP подключается к реальному backend через Supabase Free Tier.
 
-## Production project status
+Документ не содержит реальных `SUPABASE_URL`, `SUPABASE_ANON_KEY`, database password, service role key, JWT secret или access tokens.
 
-| Area | Status | Evidence / next action |
-|---|---|---|
-| Supabase production project | Verified | Hosted project linked through Supabase CLI; project ref, keys and passwords are not committed |
-| Database deployed | Verified | `001_initial_schema.sql`, `002_rls_policies.sql` and `003_api_grants.sql` applied through `supabase db push --linked` |
-| Auth enabled | Verified | Demo Auth login passed against hosted Supabase |
-| RLS enabled | Verified | RLS enabled for application tables; negative cross-user update smoke check left foreign rows unchanged |
-| Storage buckets | Verified locally and defined in migration | `avatars`, `pet-photos`, `post-images` are created by `001_initial_schema.sql` as private buckets |
-| REST API available | Verified | Authenticated PostgREST read/write smoke checks passed for feed, likes, comments and walk joins |
-| Frontend backend mode | Verified | Flutter Web launched with `USE_SUPABASE_BACKEND=true`, local `SUPABASE_URL`, local `SUPABASE_ANON_KEY` and `supabase_flutter` repositories |
+## 2. Почему Supabase выбран вместо Firebase
 
-Secrets are intentionally excluded from this repository. The hosted verification evidence is recorded as command names and outcomes only, without access tokens, database passwords or API keys.
+На предыдущем этапе техническая спецификация PetConnect ориентировалась на Firebase. Поэтому в проекте была исследована Firebase-ветка: Firebase Auth, Firestore, Storage, Security Rules, Cloud Functions и Emulator Suite. Эта работа помогла выделить доменные сущности, repository layer, API operations и security model.
 
-## 2. Architecture Decision: Firebase to Supabase
+На финальном этапе ДЗ 5 backend decision изменен на Supabase Free Tier. Причины:
 
-Оригинальное задание допускает Supabase или self-hosted PostgreSQL. В предыдущих документах PetConnect backend был адаптирован под Firebase, потому что Firebase Auth, Firestore, Storage и Cloud Functions были указаны в технической спецификации из прошлого этапа.
+- исходное задание прямо допускает Supabase как backend option;
+- Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan;
+- учебной сдаче нужен бесплатный и воспроизводимый hosted backend;
+- Supabase дает проверяемые SQL migrations, PostgreSQL constraints, RLS policies и auto REST API;
+- для MVP операций не нужен отдельный платный serverless layer.
 
-Firebase-ветка дала полезный результат:
+Итоговое соответствие:
 
-- были описаны сущности users, pets, posts, comments, likes, walks, chats и messages;
-- был выделен repository layer во Flutter;
-- были спроектированы защищенные операции для лайков, создания постов и присоединения к прогулкам;
-- была проверена идея локального backend workflow через emulators.
+| Firebase prototype | Final Supabase backend |
+|---|---|
+| Firebase Auth | Supabase Auth |
+| Cloud Firestore | Supabase PostgreSQL |
+| Firebase Security Rules | PostgreSQL Row Level Security |
+| Cloud Functions HTTP API | Supabase auto REST API / Flutter SDK |
+| Firebase Storage | Supabase Storage |
+| Firebase Emulator Suite | Supabase CLI / hosted smoke checks |
 
-На этапе подготовки production deployment обнаружено ограничение: Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan. Для учебного проекта это ухудшает воспроизводимость и противоречит цели бесплатной сдачи.
-
-Поэтому текущий backend-стек ДЗ 5 переводится на Supabase Free Tier:
-
-- Supabase Auth;
-- PostgreSQL database;
-- Row Level Security;
-- Supabase Storage;
-- auto REST API через PostgREST;
-- Flutter SDK через `supabase_flutter`.
-
-Это не откат, а осознанное архитектурное решение: Supabase соответствует исходному заданию, сохраняет бесплатный production backend и дает проверяемую SQL/RLS-модель.
-
-## 3. Firebase-to-Supabase Mapping
-
-| Firebase-прототип | Supabase-решение | Что меняется |
-|---|---|---|
-| Firebase Auth | Supabase Auth | Источник `uid` переносится в `auth.users`, Flutter получает session через Supabase client |
-| Cloud Firestore | PostgreSQL | Документы и подколлекции становятся таблицами и связями |
-| Firestore Security Rules | Row Level Security | Доступ описывается SQL policies через `auth.uid()` |
-| Cloud Functions API | Supabase auto REST API / Supabase client | MVP operations идут через PostgREST и SDK; RPC добавляется только при необходимости транзакционной логики |
-| Firebase Storage | Supabase Storage | Buckets и policies заменяют Firebase Storage paths/rules |
-| Firebase Emulator Suite | Supabase project/local validation | Для локальной разработки можно добавить Supabase CLI; production-free backend держится на Free Tier |
-
-## 4. Target Architecture
+## 3. Архитектура
 
 ```text
 Flutter UI
   -> Riverpod controllers/providers
   -> repository interfaces
-  -> Supabase or mock repositories
-  -> supabase_flutter
+  -> Supabase repositories or mock repositories
+  -> supabase_flutter client
   -> Supabase Auth / PostgREST / Storage
   -> PostgreSQL tables protected by RLS
 ```
 
-UI не должен обращаться к Supabase напрямую. Экраны работают через Riverpod controllers/providers, которые используют repository interfaces. Mock repositories сохраняются для тестов, local fallback и безопасной постепенной миграции.
+Компоненты:
 
-## 5. Target PostgreSQL Schema
+- **Flutter frontend**: UI построен на Flutter, Material 3, `go_router` и Riverpod. Экраны не обращаются к Supabase напрямую.
+- **Application layer**: Riverpod controllers/providers вызывают repository interfaces.
+- **Repository layer**: Supabase implementations используются при `USE_SUPABASE_BACKEND=true`; mock repositories остаются для тестов и fallback.
+- **Supabase Auth**: email/password sign up, sign in, sign out, session restore и `auth.uid()` для RLS.
+- **PostgreSQL**: relational schema для profiles, pets, posts, comments, likes, walks, walk participants, chats и messages.
+- **Row Level Security**: все application tables защищены RLS policies для роли `authenticated`.
+- **Supabase Storage**: private buckets для аватаров, фото питомцев и изображений постов.
+- **Supabase REST API / Flutter SDK**: операции выполняются через `supabase_flutter`, а Supabase автоматически предоставляет REST endpoints через PostgREST.
+
+Hosted Supabase deployment был проверен 17 июня 2026: migrations применены, RLS включен, Auth login прошел, authenticated REST smoke checks прошли для feed, walks, like, comment, walk join и negative RLS update.
+
+## 4. Database Schema
+
+Источник истины: `supabase/migrations/001_initial_schema.sql`.
+
+| Table | Назначение |
+|---|---|
+| `profiles` | Профили пользователей, связанные с `auth.users` |
+| `pets` | Питомцы пользователей |
+| `posts` | Публикации в социальной ленте |
+| `comments` | Комментарии к публикациям |
+| `post_likes` | Лайки пользователей к постам |
+| `walks` | Прогулки и встречи |
+| `walk_participants` | Участники прогулок |
+| `chats` | Метаданные чатов |
+| `chat_participants` | Участники чатов |
+| `messages` | Сообщения в чатах |
 
 ### profiles
 
-Публичный профиль пользователя, связанный с `auth.users.id`.
+`profiles.id` ссылается на `auth.users(id)` и совпадает с Supabase Auth user id.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Совпадает с `auth.users.id` |
-| `display_name` | `text not null` | Имя пользователя |
-| `email` | `text` | Email для собственного профиля |
-| `avatar_url` | `text` | Ссылка на изображение |
-| `bio` | `text` | Описание |
-| `city` | `text` | Город |
-| `created_at` | `timestamptz` | Дата создания |
-| `updated_at` | `timestamptz` | Дата обновления |
+Ключевые поля: `id`, `display_name`, `email`, `avatar_url`, `bio`, `city`, `created_at`, `updated_at`.
+
+Ограничения:
+
+- `display_name`: 1-80 символов;
+- `bio`: до 500 символов;
+- `city`: до 120 символов.
 
 ### pets
 
-Профили питомцев.
+Ключевые поля: `id`, `owner_id`, `owner_name`, `name`, `animal_type`, `breed`, `age`, `description`, `photo_url`, `photo_emoji`, `created_at`, `updated_at`.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор питомца |
-| `owner_id` | `uuid references profiles(id)` | Владелец |
-| `owner_name` | `text` | Денормализованное имя владельца для карточек |
-| `name` | `text not null` | Имя питомца |
-| `animal_type` | `text not null` | Вид животного |
-| `breed` | `text` | Порода |
-| `age` | `int` | Возраст |
-| `description` | `text` | Описание |
-| `photo_url` | `text` | Фото |
-| `photo_emoji` | `text` | Fallback-эмодзи |
-| `created_at` | `timestamptz` | Дата создания |
-| `updated_at` | `timestamptz` | Дата обновления |
+Ограничения:
+
+- `owner_id` -> `profiles.id`;
+- `animal_type` in `dog`, `cat`, `other`;
+- `name`: 1-50 символов;
+- `age`: 0-30.
 
 ### posts
 
-Публикации в социальной ленте.
+Ключевые поля: `id`, `author_id`, `author_name`, `pet_id`, `pet_name`, `pet_photo_url`, `pet_emoji`, `text`, `image_urls`, `image_emoji`, `likes_count`, `comments_count`, `visibility`, `created_at`, `updated_at`, `deleted_at`.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор поста |
-| `author_id` | `uuid references profiles(id)` | Автор |
-| `author_name` | `text` | Имя автора для ленты |
-| `pet_id` | `uuid references pets(id)` | Питомец |
-| `pet_name` | `text` | Имя питомца для ленты |
-| `pet_photo_url` | `text` | Фото питомца |
-| `pet_emoji` | `text` | Fallback-эмодзи |
-| `text` | `text` | Текст поста |
-| `image_urls` | `text[]` | Изображения |
-| `image_emoji` | `text` | Fallback-изображение |
-| `likes_count` | `int default 0` | Счетчик лайков |
-| `comments_count` | `int default 0` | Счетчик комментариев |
-| `visibility` | `text default 'public'` | Видимость |
-| `created_at` | `timestamptz` | Дата создания |
-| `updated_at` | `timestamptz` | Дата обновления |
-| `deleted_at` | `timestamptz` | Soft delete |
+Ограничения:
 
-### post_likes
-
-Уникальный лайк пользователя к посту.
-
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор лайка |
-| `post_id` | `uuid references posts(id)` | Пост |
-| `user_id` | `uuid references profiles(id)` | Пользователь |
-| `created_at` | `timestamptz` | Дата лайка |
-
-Unique: `(post_id, user_id)`.
+- `author_id` -> `profiles.id`;
+- `pet_id` -> `pets.id`;
+- `text`: до 1000 символов;
+- `visibility` in `public`, `private`;
+- `likes_count` и `comments_count` неотрицательные.
 
 ### comments
 
-Комментарии к постам.
+Ключевые поля: `id`, `post_id`, `author_id`, `author_name`, `author_avatar_url`, `text`, `created_at`, `updated_at`, `deleted_at`.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор комментария |
-| `post_id` | `uuid references posts(id)` | Пост |
-| `author_id` | `uuid references profiles(id)` | Автор |
-| `author_name` | `text` | Имя автора |
-| `author_avatar_url` | `text` | Аватар автора |
-| `text` | `text not null` | Комментарий |
-| `created_at` | `timestamptz` | Дата создания |
-| `updated_at` | `timestamptz` | Дата обновления |
-| `deleted_at` | `timestamptz` | Soft delete |
+Ограничения:
+
+- `post_id` -> `posts.id`;
+- `author_id` -> `profiles.id`;
+- `text`: 1-500 символов.
+
+### post_likes
+
+Ключевые поля: `id`, `post_id`, `user_id`, `created_at`.
+
+Ограничения:
+
+- `post_id` -> `posts.id`;
+- `user_id` -> `profiles.id`;
+- unique `(post_id, user_id)`.
 
 ### walks
 
-Прогулки и встречи владельцев.
+Ключевые поля: `id`, `creator_id`, `organizer_name`, `title`, `place`, `latitude`, `longitude`, `scheduled_at`, `description`, `participants_count`, `status`, `created_at`, `updated_at`.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор прогулки |
-| `creator_id` | `uuid references profiles(id)` | Организатор |
-| `organizer_name` | `text` | Имя организатора |
-| `title` | `text not null` | Название |
-| `place` | `text not null` | Место |
-| `latitude` | `double precision` | Широта |
-| `longitude` | `double precision` | Долгота |
-| `scheduled_at` | `timestamptz not null` | Дата и время |
-| `description` | `text` | Описание |
-| `participants_count` | `int default 0` | Счетчик участников |
-| `status` | `text default 'active'` | Статус |
-| `created_at` | `timestamptz` | Дата создания |
-| `updated_at` | `timestamptz` | Дата обновления |
+Ограничения:
+
+- `creator_id` -> `profiles.id`;
+- `title`: 1-120 символов;
+- `place`: 1-160 символов;
+- `status` in `active`, `cancelled`, `completed`;
+- `participants_count` неотрицательный.
 
 ### walk_participants
 
-Участники прогулок.
+Ключевые поля: `id`, `walk_id`, `user_id`, `created_at`.
 
-| Поле | Тип | Назначение |
-|---|---|---|
-| `id` | `uuid primary key` | Идентификатор участия |
-| `walk_id` | `uuid references walks(id)` | Прогулка |
-| `user_id` | `uuid references profiles(id)` | Участник |
-| `created_at` | `timestamptz` | Дата присоединения |
+Ограничения:
 
-Unique: `(walk_id, user_id)`.
+- `walk_id` -> `walks.id`;
+- `user_id` -> `profiles.id`;
+- unique `(walk_id, user_id)`.
 
 ### chats, chat_participants, messages
 
-Чаты проектируются отдельными таблицами:
+`chats` хранит последние сообщения и timestamps. `chat_participants` хранит участников, companion metadata и `unread_count`. `messages` хранит сообщения чата.
 
-- `chats`: `id`, `last_message_text`, `last_message_sender_id`, `last_message_at`, `created_at`, `updated_at`;
-- `chat_participants`: `chat_id`, `user_id`, `companion_name`, `pet_name`, `unread_count`;
-- `messages`: `id`, `chat_id`, `sender_id`, `sender_name`, `text`, `status`, `created_at`, `updated_at`.
+Ключевое security-правило: чат и сообщения доступны только участникам через функцию `public.is_chat_participant(chat_id)`.
 
-RLS для чатов должна разрешать чтение и запись только участникам.
+## 5. SQL Migrations
 
-## 6. Security Model
+Migrations находятся в `supabase/migrations/`.
 
-Security model строится на Supabase Auth, PostgreSQL Row Level Security и Storage policies. Табличные RLS policies находятся в `supabase/migrations/002_rls_policies.sql`.
-
-Базовые правила:
-
-- `profiles`: authenticated users читают профили; пользователь создает и обновляет только свой профиль;
-- `pets`: authenticated users читают питомцев; владелец создает, изменяет и удаляет своих питомцев;
-- `posts`: authenticated users читают неудаленные посты; автор создает, изменяет и удаляет свои посты;
-- `comments`: authenticated users читают неудаленные комментарии; автор создает и удаляет свои комментарии;
-- `post_likes`: authenticated users читают лайки; пользователь создает и удаляет только свой лайк;
-- `walks`: authenticated users читают прогулки; creator создает, изменяет и удаляет свои прогулки;
-- `walk_participants`: authenticated users читают участников; пользователь присоединяет и удаляет только себя;
-- `chats/messages`: доступ только участникам чата; прямое создание чата клиентом не открыто до отдельной RPC/серверной операции.
-
-Пример политики:
-
-```sql
-create policy "Users update own profile"
-on profiles
-for update
-using (id = auth.uid())
-with check (id = auth.uid());
-```
-
-Публичного anon-read доступа к application tables нет. Все read policies используют роль `authenticated`.
-
-## 7. API Operations
-
-Supabase автоматически предоставляет REST API через PostgREST. Flutter-приложение может выполнять операции через `supabase_flutter`, не добавляя отдельный Cloud Functions слой.
-
-Минимальные операции ДЗ:
-
-| Операция | Supabase implementation |
+| File | Назначение |
 |---|---|
-| Создать профиль питомца | `insert` в `pets` с RLS `owner_id = auth.uid()` |
-| Создать пост | `insert` в `posts` с RLS `author_id = auth.uid()` |
-| Поставить/снять лайк | `insert/delete` в `post_likes`, счетчик обновлять через view/RPC/trigger при необходимости |
-| Получить ленту | `select` из `posts` с сортировкой `created_at desc` |
-| Получить прогулки | `select` из `walks` со статусом `active` |
-| Присоединиться к прогулке | `insert` в `walk_participants`, счетчик обновлять транзакционно при необходимости |
+| `001_initial_schema.sql` | Tables, constraints, indexes, trigger functions, counter triggers, Storage buckets and Storage policies |
+| `002_rls_policies.sql` | RLS enablement and policies for application tables |
+| `003_api_grants.sql` | Grants for `authenticated` role so PostgREST can access tables while RLS still filters rows |
 
-Если обычного REST/SDK flow недостаточно для атомарных counters, добавить PostgreSQL function/RPC, например `toggle_post_like(post_id uuid)` или `join_walk(walk_id uuid)`. Такие RPC должны быть отдельной migration и покрываться RLS/security review. В текущей документации не утверждается, что RPC уже создана.
+Важные детали migration `001_initial_schema.sql`:
 
-## 8. Storage
+- включает extension `pgcrypto`;
+- создает application tables;
+- создает indexes для feed, owner pets, walks, comments, likes and chat queries;
+- создает `set_updated_at()` trigger для `updated_at`;
+- создает trigger counters:
+  - `recount_post_likes()` обновляет `posts.likes_count`;
+  - `recount_comments()` обновляет `posts.comments_count`;
+  - `recount_walk_participants()` обновляет `walks.participants_count`;
+- создает private Storage buckets `avatars`, `pet-photos`, `post-images`.
 
-Целевые buckets:
-
-| Bucket | Назначение |
-|---|---|
-| `avatars` | Аватары пользователей |
-| `pet-photos` | Фото питомцев |
-| `post-images` | Изображения постов |
-
-Storage policies:
-
-- читать изображения могут авторизованные пользователи;
-- загружать и удалять файл может владелец соответствующего пути;
-- MIME type должен быть изображением;
-- размер файла ограничивается настройками bucket/project;
-- service role key нельзя использовать во Flutter-клиенте и нельзя коммитить.
-
-## 9. Supabase Project Setup
-
-### Dashboard steps
-
-1. Создать Supabase project на Free Tier.
-2. Открыть project после завершения provisioning.
-3. В Connect/API settings скопировать Project URL как `SUPABASE_URL`.
-4. Скопировать anon public key или publishable key как `SUPABASE_ANON_KEY`.
-5. Не копировать service role key в Flutter, `.env.example`, README или screenshots.
-6. Открыть SQL Editor и применить `supabase/migrations/001_initial_schema.sql`.
-7. Применить `supabase/migrations/002_rls_policies.sql`.
-8. Создать двух demo Auth users перед seed, если нужен наполненный demo backend.
-9. Заменить demo UUID в `supabase/seed.sql` на реальные `auth.users.id`.
-10. Выполнить seed через SQL Editor.
-11. Проверить таблицы, RLS policies, Storage buckets и seed rows.
-
-### CLI steps
-
-Если Supabase CLI настроен:
+Migrations применяются в порядке:
 
 ```bash
-supabase login
-supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Локальная проверка:
-
-```bash
-supabase db lint
-supabase db reset
-```
-
-`supabase db push` применяет SQL migrations к linked project. `supabase db reset` используется для локальной базы и применяет `supabase/seed.sql`. Локальный seed создает две минимальные demo rows в `auth.users`, потому что `public.profiles.id` зависит от `auth.users.id`.
-
-## 10. Seed Data
-
-Файл `supabase/seed.sql` содержит demo-данные для проверки PetConnect:
-
-| Entity | Count |
-|---|---:|
-| Demo profiles | 2 |
-| Pets | 3 |
-| Posts | 4 |
-| Comments | 5 |
-| Post likes | 4 |
-| Walks | 3 |
-| Walk participants | 4 |
-| Chats | 1 |
-| Chat participants | 2 |
-| Messages | 3 |
-
-Seed не создает реальных production users и не хранит реальные персональные данные. Для локальной и hosted demo-проверки он добавляет demo Auth users с emails на домене `petconnect-demo.com`, demo password `DemoPass123!` и matching `auth.identities` rows. Ограничение связано со схемой: `public.profiles.id` является foreign key на `auth.users.id`, а Supabase Auth login требует не только `auth.users`, но и identity rows.
-
-Для hosted Supabase project нужно:
-
-1. Создать двух demo-пользователей через Supabase Auth UI или через регистрацию в приложении.
-2. Скопировать их `auth.users.id`.
-3. Заменить в `supabase/seed.sql` demo UUID `11111111-1111-1111-1111-111111111111` и `22222222-2222-2222-2222-222222222222`.
-4. Выполнить seed через Dashboard SQL Editor или `psql`.
-
-Фиксированные UUID в файле предназначены для локальной проверки. Блок `insert into auth.users ...` использует `on conflict (id) do nothing`, но для hosted project предпочтительнее создавать пользователей через Supabase Auth UI или приложение. Подробная инструкция: `docs/seed_data.md`.
-
-## 11. Local Configuration
-
-Файл `.env.example` содержит только безопасные placeholders:
+или вручную через Supabase SQL Editor:
 
 ```text
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
+001_initial_schema.sql
+002_rls_policies.sql
+003_api_grants.sql
+```
+
+## 6. Seed Data
+
+Seed-файл: `supabase/seed.sql`.
+
+Назначение seed:
+
+- дать проверяемые demo rows для feed, pets, walks и chats;
+- не использовать production data;
+- не хранить secrets;
+- обеспечить smoke checks после migrations.
+
+Seed создает:
+
+| Table | Rows |
+|---|---:|
+| `profiles` | 2 |
+| `pets` | 3 |
+| `posts` | 4 |
+| `comments` | 5 |
+| `post_likes` | 4 |
+| `walks` | 3 |
+| `walk_participants` | 4 |
+| `chats` | 1 |
+| `chat_participants` | 2 |
+| `messages` | 3 |
+
+Для локального Supabase CLI seed создает deterministic demo Auth users и demo identities. Для hosted Supabase безопаснее создать demo users через Authentication UI, Auth Admin API или регистрацию в приложении, затем заменить demo UUID в public seed rows на реальные `auth.users.id`.
+
+Demo UUID из файла:
+
+| Placeholder | Demo UUID |
+|---|---|
+| `DEMO_USER_A_ID` | `11111111-1111-1111-1111-111111111111` |
+| `DEMO_USER_B_ID` | `22222222-2222-2222-2222-222222222222` |
+
+Локальный seed password `DemoPass123!` предназначен только для demo QA и не является production secret.
+
+## 7. RLS Policies
+
+RLS включен для всех application tables:
+
+- `profiles`;
+- `pets`;
+- `posts`;
+- `comments`;
+- `post_likes`;
+- `walks`;
+- `walk_participants`;
+- `chats`;
+- `chat_participants`;
+- `messages`.
+
+Policies:
+
+| Table | Read | Write |
+|---|---|---|
+| `profiles` | authenticated users read profiles | user inserts/updates only own profile |
+| `pets` | authenticated users read pets | owner inserts/updates/deletes own pets |
+| `posts` | authenticated users read non-deleted posts | author inserts/updates/deletes own posts |
+| `comments` | authenticated users read non-deleted comments | author inserts/deletes own comments |
+| `post_likes` | authenticated users read likes | user inserts/deletes only own like |
+| `walks` | authenticated users read walks | creator inserts/updates/deletes own walks |
+| `walk_participants` | authenticated users read participants | user joins/leaves only as self |
+| `chats` | only chat participants read/update | client direct chat creation is not open |
+| `chat_participants` | participants read own chats | participant updates/deletes own participant row |
+| `messages` | only chat participants read | participant inserts messages; sender updates/deletes own messages |
+
+Пример реализованной policy:
+
+```sql
+create policy "post_likes_insert_own"
+on public.post_likes for insert to authenticated
+with check (user_id = auth.uid());
+```
+
+Anonymous users do not get read/write access to application data. Service role key bypasses RLS and is not used in Flutter.
+
+## 8. API Operations
+
+Base REST URL:
+
+```text
+${SUPABASE_URL}/rest/v1
+```
+
+Required headers for REST examples:
+
+```http
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <user-access-token>
+Content-Type: application/json
+```
+
+The Flutter app uses `supabase_flutter`; REST examples show the same operations exposed by PostgREST.
+
+### SELECT posts
+
+Flutter:
+
+```dart
+await supabase
+    .from('posts')
+    .select('id,pet_id,pet_name,author_name,pet_emoji,image_emoji,text,created_at,likes_count,comments_count')
+    .eq('visibility', 'public')
+    .isFilter('deleted_at', null)
+    .order('created_at', ascending: false)
+    .limit(20);
+```
+
+REST:
+
+```http
+GET /rest/v1/posts?visibility=eq.public&deleted_at=is.null&order=created_at.desc&limit=20
+```
+
+### INSERT posts
+
+Flutter:
+
+```dart
+await supabase.from('posts').insert({
+  'author_id': userId,
+  'author_name': authorName,
+  'pet_id': petId,
+  'pet_name': petName,
+  'pet_emoji': petEmoji,
+  'text': text,
+  'image_urls': imageUrls,
+  'image_emoji': imageEmoji,
+}).select().single();
+```
+
+RLS requires `author_id = auth.uid()`.
+
+REST:
+
+```http
+POST /rest/v1/posts?select=*
+Prefer: return=representation
+
+{
+  "author_id": "<current-user-id>",
+  "author_name": "Demo Alina",
+  "pet_id": "<pet-id>",
+  "pet_name": "Bruno",
+  "pet_emoji": "dog",
+  "text": "Morning route was approved.",
+  "image_urls": [],
+  "image_emoji": "park"
+}
+```
+
+### INSERT/DELETE post_likes
+
+Like:
+
+```dart
+await supabase.from('post_likes').insert({
+  'post_id': postId,
+  'user_id': userId,
+});
+```
+
+Unlike:
+
+```dart
+await supabase
+    .from('post_likes')
+    .delete()
+    .eq('post_id', postId)
+    .eq('user_id', userId);
+```
+
+RLS requires `user_id = auth.uid()`. Unique `(post_id, user_id)` prevents duplicate likes. Trigger `recount_post_likes()` updates `posts.likes_count`.
+
+REST:
+
+```http
+POST /rest/v1/post_likes
+
+{
+  "post_id": "<post-id>",
+  "user_id": "<current-user-id>"
+}
+```
+
+```http
+DELETE /rest/v1/post_likes?post_id=eq.<post-id>&user_id=eq.<current-user-id>
+```
+
+### SELECT walks
+
+Flutter:
+
+```dart
+await supabase
+    .from('walks')
+    .select('id,organizer_name,title,place,scheduled_at,description,participants_count')
+    .eq('status', 'active')
+    .order('scheduled_at', ascending: true)
+    .limit(20);
+```
+
+REST:
+
+```http
+GET /rest/v1/walks?status=eq.active&order=scheduled_at.asc&limit=20
+```
+
+### INSERT walk_participants
+
+Flutter:
+
+```dart
+await supabase.from('walk_participants').insert({
+  'walk_id': walkId,
+  'user_id': userId,
+});
+```
+
+RLS requires `user_id = auth.uid()`. Unique `(walk_id, user_id)` prevents duplicate join. Trigger `recount_walk_participants()` updates `walks.participants_count`.
+
+REST:
+
+```http
+POST /rest/v1/walk_participants
+
+{
+  "walk_id": "<walk-id>",
+  "user_id": "<current-user-id>"
+}
+```
+
+### SELECT pets
+
+Flutter:
+
+```dart
+await supabase
+    .from('pets')
+    .select('id,owner_id,owner_name,name,animal_type,breed,age,description,photo_emoji,created_at')
+    .order('created_at', ascending: false)
+    .limit(50);
+```
+
+By id:
+
+```dart
+await supabase
+    .from('pets')
+    .select('id,owner_id,owner_name,name,animal_type,breed,age,description,photo_emoji,created_at')
+    .eq('id', petId)
+    .maybeSingle();
+```
+
+REST:
+
+```http
+GET /rest/v1/pets?select=id,owner_id,owner_name,name,animal_type,breed,age,description,photo_emoji,created_at&order=created_at.desc&limit=50
+```
+
+### INSERT comments
+
+Flutter:
+
+```dart
+await supabase.from('comments').insert({
+  'post_id': postId,
+  'author_id': userId,
+  'author_name': authorName,
+  'text': text,
+}).select('text').single();
+```
+
+RLS requires `author_id = auth.uid()`. Trigger `recount_comments()` updates `posts.comments_count`.
+
+REST:
+
+```http
+POST /rest/v1/comments?select=text
+Prefer: return=representation
+
+{
+  "post_id": "<post-id>",
+  "author_id": "<current-user-id>",
+  "author_name": "Demo Mark",
+  "text": "Looks like a good route."
+}
+```
+
+## 9. Deployment Instructions
+
+### 1. Create Supabase project
+
+1. Open Supabase Dashboard.
+2. Create a Free Tier project.
+3. Save database password in a password manager, not in git.
+4. Copy Project URL and anon/publishable public key.
+
+### 2. Configure local environment
+
+Use local `.env`, `.env.deploy` or `--dart-define`. Do not commit real values.
+
+```text
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=<public-client-key>
 USE_SUPABASE_BACKEND=true
 ```
 
-Реальные значения задаются локально через `.env` или через `--dart-define`.
+### 3. Apply migrations
 
-Expected Flutter command:
+Supabase CLI:
 
 ```bash
-flutter run -d chrome
---dart-define=USE_SUPABASE_BACKEND=true
---dart-define=SUPABASE_URL=
---dart-define=SUPABASE_ANON_KEY=
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push --linked --dry-run
+supabase db push --linked
 ```
 
-Shell-friendly variant:
+Manual fallback through Dashboard SQL Editor:
+
+```text
+supabase/migrations/001_initial_schema.sql
+supabase/migrations/002_rls_policies.sql
+supabase/migrations/003_api_grants.sql
+```
+
+### 4. Apply seed data
+
+Local CLI:
+
+```bash
+supabase db reset
+```
+
+Hosted project:
+
+1. Create demo users through Supabase Auth UI, Auth Admin API or app registration.
+2. Replace demo UUIDs in public seed rows with real `auth.users.id`.
+3. Run the prepared SQL through SQL Editor, `supabase db query` or `psql`.
+
+### 5. Run Flutter with Supabase backend
 
 ```bash
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_ANON_KEY=<your-public-client-key>
+  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
-## 12. Production Backend URL
+## 10. Environment Variables and Secret Protection
 
-Production backend URL для PetConnect - это Supabase Project URL:
+Allowed in git:
+
+- `.env.example` with empty placeholders;
+- SQL migrations;
+- RLS policies;
+- documentation without real credentials.
+
+Forbidden in git:
+
+- real `.env` or `.env.deploy`;
+- service role key;
+- database password;
+- JWT secret;
+- Supabase access token;
+- production user data.
+
+Client-side Flutter uses only `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The anon/publishable key is public by design, but real project values are still kept out of repository artifacts. Service role key is never used in Flutter because it bypasses RLS.
+
+## 11. Error Handling
+
+Supabase errors are mapped in repositories to typed app errors and friendly UI messages.
+
+| Source | Application meaning |
+|---|---|
+| Missing/invalid Supabase config | Startup error screen with setup hint |
+| `401` / missing session | User must sign in |
+| `403` / RLS denial / PostgreSQL `42501` | Permission denied |
+| Unique violation `23505` | Duplicate like or already joined walk |
+| Constraint violation | Invalid field values |
+| Network failure | Connection issue, retry possible |
+| Not found | Empty or not-found state |
+| Unexpected error | Generic friendly error |
+
+The UI keeps loading, error, empty and success states through Riverpod controllers. Repository exceptions are not shown as raw stack traces.
+
+## 12. Logging and Debugging
+
+Debugging approach:
+
+- log safe operation names, status codes and Supabase/PostgREST error codes;
+- do not log access tokens, anon keys, service role keys or database passwords;
+- use `supabase db lint` and `supabase db reset` for local SQL validation;
+- use SQL smoke checks for row counts, RLS enabled flags, Storage buckets and counter triggers;
+- use two test users for negative RLS checks.
+
+Real debugging case from hosted deployment:
+
+- Problem: authenticated PostgREST writes returned `403`.
+- Cause: RLS policies existed, but table privileges for role `authenticated` were missing.
+- Fix: added `supabase/migrations/003_api_grants.sql`.
+- Result: authenticated REST reads/writes worked while RLS continued to enforce row-level access.
+
+## 13. Frontend Integration
+
+Flutter integration follows feature-first Clean Architecture principles:
 
 ```text
-https://<project-ref>.supabase.co
+lib/features/<feature>/
+  domain/
+  data/
+  application/
+  presentation/
 ```
 
-REST API доступен по:
+Implemented Supabase integrations:
 
-```text
-https://<project-ref>.supabase.co/rest/v1
-```
+- `SupabaseAuthRepository`: sign up, sign in, sign out, auth state, profile upsert;
+- `SupabaseFeedRepository`: select posts, create post, like/unlike, add comment;
+- `SupabasePetRepository`: select pets, get pet by id, owner pets, create pet;
+- `SupabaseWalkRepository`: select walks, create walk, join walk, leave walk.
 
-В репозитории не указывается реальный `<project-ref>`. Проверяющий или владелец project подставляет свои значения локально.
+Routing behavior:
 
-## 13. Environment and Secrets
+- `USE_SUPABASE_BACKEND=true` enables Supabase initialization and protected routes;
+- anonymous users are redirected to auth screens;
+- mock mode remains available without backend credentials.
 
-В репозитории допустимы только placeholders:
+## 14. Testing
 
-```text
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-USE_SUPABASE_BACKEND=true
-```
-
-Нельзя коммитить:
-
-- реальные `.env`;
-- Supabase service role key;
-- JWT secrets;
-- production database password;
-- приватные токены CI.
-
-Anon key допустим для клиентских приложений по модели Supabase, но в учебном репозитории реальные значения все равно лучше не фиксировать.
-
-## 14. Frontend Integration Plan
-
-Текущий Flutter UI работает через repository layer и не обращается к Supabase напрямую.
-
-Фактическое состояние интеграции:
-
-1. Supabase Auth integration выполнена через `supabase_flutter`.
-2. Supabase initializer добавлен в `lib/core/supabase`.
-3. Auth repository layer выбирает `SupabaseAuthRepository` при `USE_SUPABASE_BACKEND=true`, Firebase legacy repository при `USE_FIREBASE_BACKEND=true` и mock repository в local mode.
-4. После sign up/sign in Supabase repository выполняет upsert профиля в `public.profiles`, если есть authenticated session.
-5. Feed repository использует Supabase для `posts`, `post_likes` и `comments` в backend mode.
-6. Pets repository использует Supabase для списка питомцев, профиля питомца и создания питомца в backend mode.
-7. Walks repository использует Supabase для списка прогулок, создания прогулки, join и leave в backend mode.
-8. Mock implementations сохранены для tests/fallback.
-9. Legacy Firebase prototype files остаются только как история предыдущей исследованной ветки.
-
-## 15. Validation
-
-Flutter:
+Frontend validation commands:
 
 ```bash
 dart format .
@@ -417,143 +632,76 @@ flutter analyze
 flutter test
 ```
 
-Supabase after project setup:
+Supabase local validation:
 
 ```bash
 supabase db lint
 supabase db reset
 ```
 
-Seed smoke checks:
+Launch validation:
 
-```sql
-select count(*) from public.profiles;
-select count(*) from public.pets;
-select count(*) from public.posts;
-select count(*) from public.comments;
-select count(*) from public.post_likes;
-select count(*) from public.walks;
-select count(*) from public.walk_participants;
-select count(*) from public.chats;
-select count(*) from public.messages;
+```bash
+flutter run -d chrome \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
-Manual checks:
+Hosted smoke checks performed:
 
-- registration/login through Supabase Auth;
-- create pet;
-- create post;
-- toggle like;
-- load feed;
-- load walks;
-- join walk;
-- verify denied access for foreign rows through RLS.
+| Scenario | Result |
+|---|---|
+| Supabase Auth login | Passed |
+| Load feed from Supabase | Passed |
+| Load walks from Supabase | Passed |
+| Like post | Passed |
+| Add comment | Passed |
+| Join walk | Passed |
+| RLS: User B cannot mutate User A rows | Passed |
+| Flutter Web Supabase initialization | Passed |
 
-## 15.1. Production verification
+Automated Flutter tests cover auth, feed, pets, walks, chat, repository mapping and error handling. Full manual browser click-through for fresh sign-up, create post through UI and responsive layouts remains a final human QA step before presentation.
 
-Hosted Supabase verification выполнен 17 июня 2026.
+## 15. AI-Assisted Development
 
-Backend deployment evidence:
+OpenAI Codex was used as the AI coding agent and technical reviewer.
 
-- Supabase CLI авторизован локально без сохранения access token в репозиторий.
-- Hosted project linked через `supabase link`.
-- `supabase db push --linked --dry-run` выполнен перед deploy.
-- `supabase db push --linked` применил migrations, включая `003_api_grants.sql`.
-- Demo Auth users созданы через Auth API/Admin flow, public demo rows загружены из seed SQL.
-- Hosted sign in прошел для demo user.
-- Authenticated REST read вернул seeded posts и walks.
-- Authenticated REST writes прошли для like, comment и join walk.
-- RLS negative smoke check подтвердил, что User B не изменяет rows User A.
-- Flutter Web запущен с `USE_SUPABASE_BACKEND=true` и локальными Supabase values.
+AI-assisted workflow:
 
-Reference query for manual re-check:
+- **Проектирование БД через Codex**: Codex mapped PetConnect user stories to PostgreSQL tables, relations, constraints and indexes.
+- **Генерация SQL migrations через Codex**: Codex created `001_initial_schema.sql` with tables, triggers, indexes and Storage buckets.
+- **Генерация RLS policies через Codex**: Codex created `002_rls_policies.sql` with authenticated row-level policies.
+- **Отладка RLS через Codex**: Codex diagnosed hosted `403` PostgREST writes and added `003_api_grants.sql` while keeping RLS as the row-level guard.
+- **Seed data через Codex**: Codex prepared idempotent `supabase/seed.sql` for demo profiles, pets, posts, comments, likes, walks and chats.
+- **Интеграция Flutter через Codex**: Codex added Supabase Auth, feed, pets and walks repositories behind existing Riverpod providers.
+- **Error handling через Codex**: Codex centralized Supabase error mapping and added safe debug logging.
+- **Документирование через Codex**: Codex maintained README, setup docs, schema docs, security docs, API spec, development report and prompts journal.
 
-```sql
-select id, pet_name, author_name, text, likes_count, comments_count
-from public.posts
-where deleted_at is null
-order by created_at desc
-limit 5;
-```
+All AI-generated changes were checked against project rules: no secrets in repository, no paid services, no direct Supabase calls from widgets, mock fallback preserved.
 
-Remaining manual UI checks before final homework recording:
+## 16. Известные ограничения MVP
 
-- Sign up through Flutter UI with a fresh email.
-- Create post through the feed UI.
-- Mobile and desktop click-through in browser viewports.
+- Image upload UI for avatars, pet photos and post images is prepared at Storage policy level but not fully exposed as a polished end-user flow.
+- Chat read/message policies exist, but client-side chat creation is intentionally not open without a trusted RPC or server operation.
+- Feed, pets and walks use denormalized display fields such as `author_name`, `pet_name` and `owner_name`; future production work can add stricter server-side consistency.
+- Fresh sign-up and create-post browser click-through should be repeated by the student with local hosted credentials before final demo.
+- The app remains an MVP: moderation, notifications, search, pagination UX and production observability are outside the current homework scope.
 
-## 16. Error Handling and Logging
+## 17. Финальный Checklist
 
-Frontend использует единый typed error layer на базе `ApiException` из `lib/core/network/api_error.dart`. Для прямых вызовов `supabase_flutter` добавлен общий mapper `lib/core/supabase/supabase_error_mapper.dart`.
-
-Классификация ошибок:
-
-| Category | Source examples | App exception | User-facing message |
-|---|---|---|---|
-| Network error | unreachable Project URL, browser/network failure, retryable Auth fetch | `ApiNetworkException` | `Не удалось подключиться к серверу...` |
-| Unauthorized | missing/invalid session, invalid credentials | `ApiUnauthorizedException` | `Войдите в аккаунт, чтобы продолжить.` |
-| Forbidden / RLS violation | PostgreSQL `42501`, row-level security denial, permission denied | `ApiForbiddenException` | `У вас нет доступа к этому действию.` |
-| Validation error | Postgres `23502`, `23503`, `23505`, `23514`, `22P02`, invalid email/password | `ApiValidationException` | `Проверьте данные и попробуйте еще раз.` |
-| Not found | PostgREST `PGRST116`, 404/406, empty single-row result | `ApiNotFoundException` | `Не удалось найти нужные данные.` |
-| Unknown error | unexpected Supabase/PostgREST response or unexpected Dart exception | `ApiUnexpectedException` | `Что-то пошло не так. Попробуйте еще раз.` |
-
-UI не показывает сырые Supabase/PostgreSQL сообщения. `AsyncContentView` берет `ApiException.userMessage`, а auth forms получают дружелюбный `AuthFailure`.
-
-Debug logging включен только в debug mode через `kDebugMode`. Логи безопасного уровня содержат:
-
-```text
-[PetConnect][Supabase] operation=<feature> status=<status> code=<code> type=<exception-type>
-```
-
-Логи не содержат access token, anon key, service role key, email, display name, id строк, текст постов, комментариев или других пользовательских данных.
-
-## 17. AI-assisted Debugging
-
-Codex использовался для анализа Supabase error flows и тестовых логов:
-
-- найдено дублирование маппинга PostgREST ошибок в feed/pets/walks repositories;
-- найден UX-риск: `ApiValidationException` с PostgreSQL code `23505` мог показать сырое backend-сообщение вместо friendly message;
-- проверено, что RLS denial `42501` классифицируется как forbidden, а не как unknown/server error;
-- после запуска `flutter test` найден тест, который ожидал сырой 502 message; expectation обновлен под новое требование безопасных user-friendly errors.
-
-Рекомендуемый AI-debug workflow:
-
-1. Скопировать только безопасные debug-log строки без токенов и персональных данных.
-2. Добавить контекст операции: auth/feed/pets/walks и ожидаемое действие.
-3. Попросить AI классифицировать ошибку: network, unauthorized, forbidden/RLS, validation, not found или unknown.
-4. Проверить вывод AI через Supabase dashboard logs, SQL/RLS policies и Flutter tests.
-
-## 18. Firebase Prototype History
-
-Firebase не удаляется из истории разработки. Он остается корректно описанным исследованным вариантом:
-
-- Firebase Auth был выбран в раннем ТЗ;
-- Firestore schema помогла выделить сущности и связи;
-- Cloud Functions API помог сформулировать операции feed/pets/walks;
-- Emulator Suite позволил локально проверить frontend-backend contract;
-- ограничение Blaze/pay-as-you-go для production Cloud Functions стало причиной архитектурного разворота.
-
-Итоговое решение: для текущего ДЗ production backend - Supabase Free Tier, а Firebase-прототип является частью AI-assisted exploration и не считается выбранным production backend.
-
-## 19. Known Limitations
-
-- Hosted Supabase smoke test зафиксирован в `development_report.md`, но без публикации реальных URL/keys/passwords.
-- Sign up и create post были проверены на backend/API уровне частично; полный UI click-through остается manual browser step.
-- Для hosted seed надежнее создавать demo Auth users через Supabase Auth Dashboard/Admin API, а public demo rows загружать после этого.
-- Supabase Auth, feed, pets и walks repositories подготовлены для `USE_SUPABASE_BACKEND=true`; mock fallback остается для локальной разработки и tests.
-- Существующие Firebase prototype files могут оставаться до отдельной технической миграции.
-- Реальные Supabase URL и keys не должны появляться в документации или git history.
-
-## 20. AI-assisted Development
-
-Основной AI-агент проекта - OpenAI Codex.
-
-Codex использовался для:
-
-- анализа исходного задания и предыдущего Firebase ТЗ;
-- проектирования Firebase-прототипа;
-- выявления production deployment риска Cloud Functions Blaze plan;
-- выбора Supabase как бесплатного backend для текущего ДЗ;
-- документирования mapping Firebase -> Supabase;
-- создания Supabase seed data для проверяемого demo backend;
-- фиксации hosted deployment evidence без публикации secrets.
+- [x] Supabase selected as final backend instead of Firebase.
+- [x] Architecture documented: Flutter, Supabase Auth, PostgreSQL, RLS, Storage, REST API / Flutter SDK.
+- [x] Database schema documented.
+- [x] SQL migrations added and described.
+- [x] Seed data added and described.
+- [x] RLS policies added and described.
+- [x] Required API operations documented with request examples.
+- [x] Deployment instructions documented.
+- [x] Environment variables and secret protection documented.
+- [x] Error handling documented.
+- [x] Logging/debugging documented.
+- [x] Frontend integration documented.
+- [x] Testing commands and hosted smoke results documented.
+- [x] AI-assisted development process documented.
+- [x] Known MVP limitations documented as final scope notes.

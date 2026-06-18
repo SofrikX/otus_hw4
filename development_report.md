@@ -1162,3 +1162,31 @@ Remaining risks:
 - Mobile/desktop responsiveness should be rechecked in a live browser after final deployment credentials are set locally.
 
 No secrets were added to tracked files.
+
+## 24. Final backend documentation for submission
+
+Цель: подготовить `backend_documentation.md` как финальный backend-документ для сдачи ДЗ 5 с Supabase backend.
+
+Codex выступил в роли Technical Writer и Backend Architect. Перед правкой были прочитаны:
+
+- `docs/documents_index.md`;
+- `README.md`;
+- `docs/supabase_setup.md`;
+- `docs/database_schema.md`;
+- `docs/supabase_security.md`;
+- `docs/api_spec.md`;
+- `docs/seed_data.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `supabase/migrations/001_initial_schema.sql`;
+- `supabase/migrations/002_rls_policies.sql`;
+- `supabase/migrations/003_api_grants.sql`;
+- `supabase/seed.sql`.
+
+Что обновлено:
+
+- `backend_documentation.md` пересобран как самостоятельная финальная документация для преподавателя.
+- В документ включены архитектура, Firebase-to-Supabase decision, database schema, migrations, seed data, RLS policies, Storage, API operations, examples, deployment, env/secrets, error handling, logging/debugging, frontend integration, testing, AI-assisted development, known MVP limitations и final checklist.
+- Документация синхронизирована с фактическим hosted Supabase status: migrations применены, RLS включен, `003_api_grants.sql` добавлен для PostgREST grants, Auth/feed/walks/like/comment/join smoke checks пройдены.
+
+Код Flutter, SQL migrations и Supabase secrets на этом шаге не менялись. Автоматические тесты не запускались, потому что изменение относится только к документации.
