@@ -1296,3 +1296,77 @@ Codex выступил в роли Technical Writer и Backend Architect. Пер
 Проверки:
 
 План проверки: выполнить required search check из задачи, `dart format .`, `flutter analyze` и `flutter test`.
+
+## 26. Production Flutter Web build against Supabase
+
+Дата проверки: 18 июня 2026.
+
+Цель: провести production build Flutter Web приложения PetConnect против hosted Supabase backend и подтвердить, что release artifact собирается в `build/web`.
+
+Перед запуском Codex прочитал и проверил:
+
+- `README.md`;
+- `docs/frontend_deployment.md`;
+- `backend_documentation.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `pubspec.yaml`;
+- `web/`;
+- `lib/`;
+- project routing docs: `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`.
+
+Команды и результаты:
+
+```bash
+flutter pub get
+```
+
+Результат: зависимости получены успешно.
+
+```bash
+dart format .
+```
+
+Результат: `Formatted 77 files (0 changed)`.
+
+```bash
+flutter analyze
+```
+
+Результат: `No issues found!`.
+
+```bash
+flutter test
+```
+
+Результат: полный тестовый набор прошел, `69 tests passed`.
+
+Production build command, documented with placeholders:
+
+```bash
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+```
+
+Фактический локальный build был выполнен против Supabase project URL `https://fivtpxsjcjirddogngtl.supabase.co`; реальный publishable key использовался только в локальной CLI-команде и не записывался в tracked files.
+
+Результат production build:
+
+```text
+✓ Built build/web
+```
+
+Build output:
+
+```text
+build/web
+```
+
+`build/web` подтвержден как ignored artifact через `.gitignore`, поэтому он не должен попадать в commit. README и deployment docs уже содержали корректную placeholder-команду, поэтому дополнительная правка README не потребовалась.
+
+Замечания build output:
+
+- Flutter сообщил, что dependency `ua_client_hints_web.dart` использует `dart:html`, поэтому текущая сборка имеет предупреждение для future WebAssembly mode. Обычный JavaScript release build завершился успешно.
+- Flutter показал предупреждение про отсутствующий `packages/cupertino_icons/CupertinoIcons`; текущий release build не упал, но перед финальным UI smoke test стоит убедиться, что приложение не использует Cupertino icon glyphs без зависимости.

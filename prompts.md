@@ -2287,3 +2287,66 @@ Flutter Web build получает Supabase configuration через dart-define
 - Flutter config читает Supabase values через `String.fromEnvironment`, а `Supabase.initialize` получает только `publishableKey`.
 - Service role key, `SUPABASE_SERVICE` и `sb_secret_` в tracked frontend/config files не обнаружены.
 - README и `docs/frontend_deployment.md` усилены пояснением, что publishable key публичен в Flutter Web bundle, а безопасность обеспечивают Supabase Auth, RLS и Storage policies.
+
+## Prompt 51 — production Flutter Web build against Supabase
+
+```markdown
+# Role
+Ты Flutter Web QA Engineer.
+
+# Task
+Проведи production build Flutter Web приложения PetConnect против Supabase backend.
+
+# Project inputs for local command only
+Supabase project URL:
+https://fivtpxsjcjirddogngtl.supabase.co
+
+Supabase publishable key:
+<production-supabase-publishable-key>
+
+Important:
+Используй Supabase publishable key только для локальной команды build/run.
+Не записывай реальный key в README.md, backend_documentation.md, prompts.md, docs, .env.example, netlify.toml или исходный код.
+
+# Required reading
+Прочитай:
+- README.md
+- docs/frontend_deployment.md
+- backend_documentation.md
+- development_report.md
+- prompts.md
+- pubspec.yaml
+- web/
+- lib/
+
+# Commands to run
+Выполни:
+- flutter pub get
+- dart format .
+- flutter analyze
+- flutter test
+- flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=[ВСТАВИТЬ_SUPABASE_PROJECT_URL] --dart-define=SUPABASE_PUBLISHABLE_KEY=[ВСТАВИТЬ_SUPABASE_PUBLISHABLE_KEY]
+
+# Requirements
+1. Если build успешен, зафиксируй:
+   - build output: build/web;
+   - command used, но в документации с placeholders, не с реальным ключом;
+   - target backend: Supabase.
+2. Если build падает, исправь минимально.
+3. Не коммить build/web, если он не должен быть в git.
+4. Обнови development_report.md.
+5. Обнови prompts.md.
+6. Обнови README, если команда запуска/сборки была неточной.
+7. Не записывай реальные Supabase keys в docs.
+```
+
+Результат:
+
+- Прочитаны required files и project routing docs.
+- Выполнены `flutter pub get`, `dart format .`, `flutter analyze`, `flutter test`.
+- Проверки прошли: format без изменений, analyzer без замечаний, полный тестовый набор `69 tests passed`.
+- Production build против Supabase backend выполнен успешно командой `flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=<production-supabase-project-url> --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>`.
+- Build result: `✓ Built build/web`.
+- `build/web` подтвержден как ignored artifact и не должен коммититься.
+- README не менялся, потому что существующая build command была корректной.
+- Реальный publishable key использовался только в локальной CLI-команде и не записывался в repository files.
