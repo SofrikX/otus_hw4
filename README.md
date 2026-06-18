@@ -4,7 +4,7 @@ PetConnect - Flutter-приложение для владельцев домаш
 
 Текущая сдача относится к ДЗ 5: backend deployment and integration with Frontend. Frontend MVP подключается к Supabase backend через repository layer и Riverpod controllers. Mock repositories сохранены для локального запуска, тестов и постепенной миграции.
 
-README не содержит реальных `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, secret key, service role key, database password, access token или production user data.
+README может содержать публичный Supabase Project URL для production frontend, но не содержит реальных `SUPABASE_PUBLISHABLE_KEY`, secret key, service role key, database password, access token или production user data.
 
 ## Stack
 
@@ -124,16 +124,28 @@ PetConnect production deployment is split into two parts:
 | Frontend | Flutter Web static release build |
 | Frontend hosting | Netlify Free |
 
+Planned production repository/branch:
+
+```text
+https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+```
+
+Planned Supabase project URL for the production frontend:
+
+```text
+https://fivtpxsjcjirddogngtl.supabase.co
+```
+
 Flutter Web is a good fit for Netlify because the release build is static and can be served from a CDN-like static host without a custom server. Supabase stays responsible for auth, database, storage and RLS-protected API operations.
 
-The repository contains `netlify.toml` so Netlify can build and publish the Flutter Web release from GitHub.
+The repository contains `netlify.toml` so Netlify can build and publish the Flutter Web release from GitHub. If Git-based build is unavailable because the Netlify image does not include Flutter SDK, the fallback is a local `flutter build web --release` and manual upload of `build/web` in Netlify.
 
 ### Environment Variables In Netlify UI
 
 Configure these variables in Netlify UI, not in repository files:
 
 ```text
-SUPABASE_URL=<production-supabase-project-url>
+SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 ```
 

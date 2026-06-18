@@ -6,7 +6,7 @@
 
 PetConnect - Flutter-приложение для владельцев домашних животных. MVP включает социальную ленту питомцев, профили питомцев, прогулки, присоединение к прогулкам и базовый чат-сценарий. Для ДЗ 5 frontend MVP подключается к реальному backend через Supabase Free Tier.
 
-Документ не содержит реальных `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, secret key, database password, service role key, JWT secret или access tokens.
+Документ может содержать публичный Supabase Project URL для production frontend, но не содержит реальных `SUPABASE_PUBLISHABLE_KEY`, secret key, database password, service role key, JWT secret или access tokens.
 
 ## 2. Почему Supabase выбран вместо Firebase
 
@@ -66,12 +66,22 @@ Production deployment split:
 | Frontend | Flutter Web static release build |
 | Frontend hosting | Netlify Free |
 
+Frontend release target:
+
+```text
+GitHub source: https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+Hosting: Netlify Free
+Supabase URL: https://fivtpxsjcjirddogngtl.supabase.co
+```
+
+Netlify is the recommended frontend hosting target because Flutter Web builds to static files, the free tier is enough for an educational public demo, GitHub can be connected for automatic deploys, environment variables can be configured in the Netlify UI, and `build/web` can be uploaded manually as a fallback.
+
 Build-time configuration for production frontend:
 
 ```bash
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
@@ -81,7 +91,7 @@ Build output and Netlify publish directory:
 build/web
 ```
 
-In Netlify, real `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Service role key, database password and private tokens are not used in the frontend.
+In Netlify, `SUPABASE_URL` and the real `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Service role key, database password and private tokens are not used in the frontend.
 
 ## 4. Database Schema
 

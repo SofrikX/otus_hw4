@@ -2183,3 +2183,77 @@ Supabase project URL задан в пользовательском контек
 - `netlify.toml` и deployment docs используют `--dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY`.
 - README и security docs явно запрещают Supabase secret key/service role key во Flutter Web и фиксируют RLS как security boundary.
 - Реальный publishable key из задания не записывался в repository files.
+
+## Prompt 48 — актуализация production deployment plan
+
+```markdown
+# Role
+Ты Release Engineer, Flutter Web Developer и OpenAI Codex AI coding agent.
+
+# Task
+Добавь в проект план production-развертывания Flutter Web приложения PetConnect.
+
+# Project inputs
+- GitHub repository: https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+- Planned frontend hosting: Netlify Free
+- Supabase project URL: https://fivtpxsjcjirddogngtl.supabase.co
+
+# Requirements
+1. Не менять бизнес-логику приложения.
+2. Объяснить Netlify Free как static hosting для Flutter Web.
+3. Описать frontend = Flutter Web static build, hosting = Netlify, backend = Supabase.
+4. Описать `flutter build web --release` и output `build/web`.
+5. Обновить README, backend documentation, development report, prompts and frontend deployment docs.
+6. Не добавлять реальные Supabase keys.
+```
+
+Результат:
+
+- Прочитаны required files: README, backend docs, development report, prompts, Supabase setup/security/API docs, `pubspec.yaml`, `web/`, `lib/core/config/`, `lib/core/supabase/`, `lib/app/`.
+- `docs/frontend_deployment.md` уточнен под GitHub branch `hw5-sb`, Netlify Free, Supabase project URL, Netlify environment variables and manual `build/web` fallback.
+- `README.md` и `backend_documentation.md` синхронизированы с frontend production architecture and build-time Supabase configuration.
+- `development_report.md` получил отдельную запись о frontend production target.
+- Flutter business logic, UI, migrations and real Supabase keys не менялись.
+
+## Prompt 49 — Netlify production deployment configuration refresh
+
+```markdown
+# Role
+Ты Flutter Web Release Engineer и Netlify Deployment Specialist.
+
+# Task
+Добавь конфигурацию Netlify для production-развертывания Flutter Web приложения PetConnect.
+
+# Project inputs
+GitHub repository:
+https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+
+Supabase project URL:
+https://fivtpxsjcjirddogngtl.supabase.co
+
+Important:
+Не записывай реальный SUPABASE_PUBLISHABLE_KEY в файлы.
+Netlify должен получать SUPABASE_URL и SUPABASE_PUBLISHABLE_KEY через Environment Variables в UI.
+
+# Requirements
+1. Создай `netlify.toml`.
+2. Настрой build command для Flutter Web.
+3. Publish directory: `build/web`.
+4. Добавь redirect rule для SPA: `/* -> /index.html 200`.
+5. Build command должен использовать Netlify environment variables `SUPABASE_URL` и `SUPABASE_PUBLISHABLE_KEY`.
+6. Flutter build command должен передавать:
+   - `--dart-define=USE_SUPABASE_BACKEND=true`
+   - `--dart-define=SUPABASE_URL=$SUPABASE_URL`
+   - `--dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY`
+7. Не хардкодь реальные Supabase values.
+8. Обнови README, docs/frontend_deployment.md, backend_documentation.md, development_report.md и prompts.md.
+9. Документация должна содержать manual drag-and-drop fallback, если Netlify build environment не содержит Flutter SDK.
+```
+
+Результат:
+
+- Подтвержден `netlify.toml` с production Flutter Web build command, publish directory `build/web` и SPA redirect на `/index.html`.
+- Проверены README, `docs/frontend_deployment.md`, `backend_documentation.md`, `development_report.md`, `pubspec.yaml`, `web/index.html`, `lib/core/config/` и `lib/core/supabase/`.
+- Документация содержит GitHub branch `hw5-sb`, production Supabase URL, Netlify Environment Variables, build command, publish directory, SPA redirects и manual deploy fallback.
+- `prompts.md` дополнен этой записью с актуальными project inputs и результатом.
+- Реальный `SUPABASE_PUBLISHABLE_KEY` не записывался в repository files.

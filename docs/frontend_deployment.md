@@ -6,7 +6,7 @@ This document describes the planned production deployment for the PetConnect Flu
 
 Backend deployment remains Supabase. Frontend deployment is a static Flutter Web build hosted on Netlify Free so the reviewer can open PetConnect through a production URL.
 
-No real `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, Supabase secret key, service role key, database password or private token should be committed to the repository.
+The public Supabase Project URL can be documented for the production frontend. No real `SUPABASE_PUBLISHABLE_KEY`, Supabase secret key, service role key, database password or private token should be committed to the repository.
 
 ## Recommended Hosting
 
@@ -16,9 +16,23 @@ Netlify is a good fit for PetConnect because:
 
 - Flutter Web produces static files that do not require a custom server;
 - Netlify Free can host static educational projects without paid backend infrastructure;
+- GitHub can be connected for automatic production deploys from the HW5 branch;
 - deploy settings are simple: one build command and one publish directory;
 - environment variables can be stored in Netlify UI instead of the repository;
+- `build/web` can be uploaded manually as a fallback if Git-based build is blocked;
 - Supabase remains the backend, so Netlify only serves the frontend assets.
+
+Planned GitHub source:
+
+```text
+https://github.com/SofrikX/otus_hw4/tree/hw5-sb
+```
+
+Planned production Supabase project URL:
+
+```text
+https://fivtpxsjcjirddogngtl.supabase.co
+```
 
 ## Production Architecture
 
@@ -79,7 +93,7 @@ build/web
 In Netlify UI, configure production environment variables:
 
 ```text
-SUPABASE_URL=<production-supabase-project-url>
+SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
@@ -140,7 +154,7 @@ For Git-based deploys where Flutter SDK is missing, another acceptable option is
 3. Select the branch used for the HW5 submission.
 4. Let Netlify read `netlify.toml`, or configure the same build command manually.
 5. Set the publish directory to `build/web`.
-6. Add the Supabase public client settings in Netlify environment variables.
+6. Add `SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co` and the real `SUPABASE_PUBLISHABLE_KEY` in Netlify environment variables.
 7. Run the deploy.
 8. Open the Netlify production URL and validate the app against the Supabase backend.
 
