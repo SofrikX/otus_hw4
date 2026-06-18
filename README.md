@@ -151,6 +151,13 @@ SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 
 `USE_SUPABASE_BACKEND=true` is passed directly by the build command. The real `SUPABASE_PUBLISHABLE_KEY` must stay in Netlify Environment Variables. Do not commit it to Git.
 
+Security model for Flutter Web:
+
+- `SUPABASE_PUBLISHABLE_KEY` is public client configuration and can be embedded into the browser bundle.
+- PetConnect does not rely on the publishable key as a secret. Database and Storage protection comes from Supabase Auth sessions, PostgreSQL RLS policies and Storage policies.
+- Supabase secret keys and service role keys must never be passed through `--dart-define`, configured in Netlify frontend environment variables or committed to the repository.
+- If a secret key or service role key is ever exposed, rotate it in Supabase before continuing deployment.
+
 ### Build Command
 
 Netlify build command from `netlify.toml`:

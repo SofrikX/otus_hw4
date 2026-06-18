@@ -178,8 +178,10 @@ Open production URL -> sign in -> load feed -> create pet/post -> like post -> j
 
 - Do not commit real Supabase keys to Git.
 - Do not use service role key in Netlify frontend builds.
+- Do not pass Supabase secret key or service role key through `--dart-define`; Flutter Web bundles are public.
 - The publishable key is public client configuration, but it should still be managed through Netlify environment variables for reproducibility.
-- RLS remains the security boundary for user data.
+- RLS policies and Storage policies remain the security boundary for user data.
+- PetConnect uses `SUPABASE_PUBLISHABLE_KEY`; legacy `SUPABASE_ANON_KEY` is not part of the Flutter Web deployment contract.
 - If a key is accidentally committed, rotate it in Supabase before final submission.
 
 ## Remaining Production Tasks

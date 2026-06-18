@@ -15,6 +15,7 @@ build/
 .env
 .env.*
 !.env.example
+# Keep real Supabase deployment env files local only.
 .firebaserc
 serviceAccount.json
 *-service-account.json
