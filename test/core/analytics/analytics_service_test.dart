@@ -1,11 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petconnect/core/analytics/analytics_event.dart';
 import 'package:petconnect/core/analytics/analytics_service.dart';
+import 'package:petconnect/core/logging/app_logger.dart';
 import 'package:petconnect/core/network/api_error.dart';
 
 void main() {
   test('disabled analytics does not dispatch events', () async {
     final calls = <_AnalyticsCall>[];
+    final logs = <String>[];
     final service = AnalyticsService(
       config: const AnalyticsConfig(
         enabled: false,
@@ -27,11 +29,20 @@ void main() {
           ),
         );
       },
+      logger: AppLogger(
+        component: 'analytics-test',
+        debugPrinter: (message, {wrapWidth}) {
+          if (message != null) {
+            logs.add(message);
+          }
+        },
+      ),
     );
 
     await service.track(AnalyticsEvent.appOpen);
 
     expect(calls, isEmpty);
+    expect(logs, isEmpty);
   });
 
   test('enabled analytics dispatches sanitized event params', () async {

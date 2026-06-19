@@ -1713,7 +1713,7 @@ Security:
 - Supabase initialization логирует начало/успех без URL/key values;
 - Supabase errors логируются как `supabase_request_error` с operation, status code, error code и exception type;
 - AuthController логирует `auth_success` и `auth_failure` без email/password/user id;
-- AnalyticsService логирует `analytics_disabled` и `analytics_dispatch_error`;
+- AnalyticsService логирует `analytics_not_configured` и `analytics_dispatch_error`;
 - Netlify `/api/health` logs дополнительно санитизируются и остаются JSON logs;
 - создан `docs/logging.md` со strategy, examples, what not to log, Netlify/Supabase log inspection и AI prompt templates;
 - добавлены тесты `test/core/logging/app_logger_test.dart`.
@@ -1731,3 +1731,65 @@ Security:
 - реальные tokens/logs с персональными данными не добавлялись;
 - документация использует synthetic examples;
 - AI prompts прямо запрещают запрашивать JWT, email, user id, Netlify token, Supabase keys и database password.
+
+## 35. Flutter Web performance optimization перед финальной сдачей
+
+Дата изменения: 19 июня 2026.
+
+Цель: выполнить безопасную оптимизацию Flutter Web перед финальной сдачей без переписывания архитектуры.
+
+Роль Codex: Flutter Web Performance Engineer.
+
+Перед изменениями прочитаны:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `pubspec.yaml`;
+- `lib/`;
+- `web/`;
+- `README.md`;
+- `integration_documentation.md`;
+- `development_report.md`;
+- `prompts.md`.
+
+AI performance recommendations:
+
+- держать release build с tree-shaking и не отключать tree-shaken Material icons;
+- не грузить analytics SDK до фактического enabled event;
+- не писать verbose `info` logs в production Flutter Web;
+- не логировать каждое отключенное analytics event;
+- убрать Riverpod consumers из статических виджетов, которые не читают providers;
+- пока реальные Storage images не выведены в UI, оставить emoji/placeholders; при добавлении изображений использовать thumbnails, constrained dimensions и lazy lists;
+- не удалять Corbado/passkeys web bundle без отдельной auth-проверки, потому что текущая документация фиксирует его как workaround для Supabase Auth web startup.
+
+Applied optimizations:
+
+- `AppLogger` теперь пропускает `info` logs в Flutter release mode, сохраняя `warning` и `error`.
+- `AnalyticsService` больше не пишет `analytics_disabled` на каждое событие, когда analytics выключена. Если analytics включена, но provider/id не настроены, пишется warning `analytics_not_configured`.
+- `PetStoriesStrip` переведен с `ConsumerWidget` на `StatelessWidget`, потому что виджет не использует `ref` и не должен подписываться на Riverpod.
+- Тест analytics обновлен: disabled analytics не dispatch events и не пишет debug logs.
+
+Validation:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false
+```
+
+Результат:
+
+```text
+dart format .: passed, 84 files checked, 0 changed
+flutter analyze: passed, No issues found
+flutter test: passed, 77 tests
+flutter build web --release: passed, build/web created
+build/web: 41M
+build/web/main.dart.js: 2.7M
+MaterialIcons tree-shaken by 99.3%
+```
+
+Non-blocking notes:
+
+- wasm dry run сообщает о transitive dependency с `dart:html`; обычная JS Flutter Web release-сборка успешна;
+- предупреждение о CupertinoIcons не блокирует сборку, PetConnect использует Material icons и `uses-material-design: true`.

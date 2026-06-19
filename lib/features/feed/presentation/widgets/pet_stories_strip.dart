@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/data/mock_data.dart';
 
-class PetStoriesStrip extends ConsumerWidget {
+class PetStoriesStrip extends StatelessWidget {
   const PetStoriesStrip({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(

@@ -2921,3 +2921,69 @@ CI/CD уже должен запускать Flutter checks и deploy.
 - Сохранены Flutter gates: `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test`, `flutter build web --release`.
 - Обновлены `security_audit.md`, `integration_documentation.md`, `README.md` и `prompts.md`.
 - Реальные secrets не добавлялись.
+
+## Prompt 62 — Flutter Web Performance Optimization
+
+```markdown
+# Role
+Ты Flutter Web Performance Engineer.
+
+# Task
+Проведи оптимизацию производительности PetConnect перед финальной сдачей.
+
+# Context
+ДЗ требует тестирование и оптимизацию.
+Нужно использовать AI для предложений по оптимизации и применить безопасные улучшения.
+
+# Required reading
+Прочитай:
+- pubspec.yaml
+- lib/
+- web/
+- README.md
+- integration_documentation.md
+- development_report.md
+
+# Requirements
+1. Проанализируй Flutter Web performance risks:
+   - bundle size;
+   - unnecessary rebuilds;
+   - image loading;
+   - excessive logging;
+   - analytics overhead.
+2. Не переписывай архитектуру полностью.
+3. Примени только безопасные улучшения:
+   - const constructors where appropriate;
+   - reduce unnecessary rebuilds;
+   - avoid logging in production if verbose;
+   - lazy analytics initialization if needed.
+4. Проверь:
+   - flutter analyze;
+   - flutter test;
+   - flutter build web --release.
+5. Обнови development_report.md:
+   - AI performance recommendations;
+   - applied optimizations.
+6. Обнови integration_documentation.md:
+   - performance notes.
+7. Обнови prompts.md.
+
+# Output format
+1. Summary.
+2. Recommendations.
+3. Applied optimizations.
+4. Files changed.
+5. Commands to run.
+6. Diff.
+```
+
+Результат:
+
+- Проведен аудит `pubspec.yaml`, `lib/`, `web/`, `README.md`, `integration_documentation.md`, `development_report.md`, `prompts.md` и проектных правил.
+- Bundle risk: release build успешен, `build/web/main.dart.js` около 2.7 MB, `build/web` около 41 MB, Material icons tree-shaken на 99.3%.
+- Image risk: текущий MVP использует emoji/placeholders вместо сетевых изображений; для будущих Supabase Storage images зафиксирована рекомендация thumbnails/constrained dimensions/lazy lists.
+- Logging risk: `AppLogger.info` теперь отключен в Flutter release mode, warnings/errors сохранены.
+- Analytics risk: отключенная analytics больше не пишет log на каждое dropped event; ленивый Yandex Metrica loader сохранен.
+- Rebuild risk: `PetStoriesStrip` переведен с `ConsumerWidget` на `StatelessWidget`.
+- Обновлены `development_report.md`, `integration_documentation.md` и `prompts.md`.
+- Проверки прошли: `dart format .`, `flutter analyze`, `flutter test` (77 tests), `flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false`.

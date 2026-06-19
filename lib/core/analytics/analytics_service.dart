@@ -67,18 +67,19 @@ class AnalyticsService {
     AnalyticsEvent event, {
     Map<String, Object?> params = const {},
   }) async {
-    final safeParams = _safeParams(params);
     if (!config.isReady) {
-      _logger.info(
-        'analytics_disabled',
-        message:
-            'Analytics event was not dispatched because analytics is disabled or not configured.',
-        details: {
-          'event': event.name,
-          'provider_configured': config.provider.trim().isNotEmpty,
-          'analytics_id_configured': config.analyticsId.trim().isNotEmpty,
-        },
-      );
+      if (config.enabled) {
+        _logger.warning(
+          'analytics_not_configured',
+          message:
+              'Analytics event was not dispatched because analytics is not configured.',
+          details: {
+            'event': event.name,
+            'provider_configured': config.provider.trim().isNotEmpty,
+            'analytics_id_configured': config.analyticsId.trim().isNotEmpty,
+          },
+        );
+      }
       return;
     }
 
@@ -87,7 +88,7 @@ class AnalyticsService {
         provider: config.provider.trim().toLowerCase(),
         analyticsId: config.analyticsId.trim(),
         eventName: event.name,
-        params: safeParams,
+        params: _safeParams(params),
       );
     } on Object catch (error) {
       _logger.error(

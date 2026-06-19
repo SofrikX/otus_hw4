@@ -64,6 +64,10 @@ class AppLogger {
     String? message,
     Map<String, Object?> details = const {},
   }) {
+    if (level == AppLogLevel.info && kReleaseMode) {
+      return;
+    }
+
     final payload = <String, Object?>{
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'level': level.name,

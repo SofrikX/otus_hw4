@@ -299,7 +299,7 @@ Logged application events:
 | Startup | `app_startup`, `app_startup_completed`, `app_startup_failed` |
 | Supabase | `supabase_initialization_started`, `supabase_initialization_completed`, `supabase_request_error` |
 | Auth | `auth_success`, `auth_failure` |
-| Analytics | `analytics_disabled`, `analytics_dispatch_error` |
+| Analytics | `analytics_not_configured`, `analytics_dispatch_error` |
 | Health check | `health_check` JSON logs with `check`, `httpStatus`, `durationMs` and health status |
 
 Privacy and safety:
@@ -377,3 +377,45 @@ flutter build web --release \
 ```
 
 Use real Supabase values only through local ignored env files or shell environment. Do not paste them into documentation.
+
+## Flutter Web Performance Notes
+
+Performance review date: 19 июня 2026.
+
+AI recommendations before final handoff:
+
+- keep Flutter Web release builds tree-shaken and do not disable icon tree-shaking;
+- keep analytics lazy: Yandex Metrica must load only after an enabled event is dispatched with configured provider/id;
+- avoid verbose production logging from Flutter Web, especially startup and disabled-analytics events;
+- avoid unnecessary Riverpod consumers in static UI widgets;
+- keep current emoji/placeholders cheap until the image upload UI is exposed; when real Storage images are added, use constrained dimensions, thumbnails and lazy list rendering;
+- keep the external Corbado/passkeys script pinned and loaded before Flutter because it is part of the current web auth workaround, but treat it as a startup/network risk to revisit after auth validation.
+
+Applied safe optimizations:
+
+- `AppLogger` now skips `info` logs in Flutter release mode while preserving `warning` and `error` diagnostics.
+- Disabled analytics no longer emits an `analytics_disabled` log for every dropped event. If analytics is explicitly enabled but incomplete, it logs `analytics_not_configured` as a warning.
+- `PetStoriesStrip` was changed from `ConsumerWidget` to `StatelessWidget` because it does not read providers.
+- Analytics remains lazy in `web/index.html`: `https://mc.yandex.ru/metrika/tag.js` is inserted only by `petconnectTrackAnalytics` after Flutter dispatches an enabled event.
+
+Validation results:
+
+```text
+dart format .: passed, 84 files checked, 0 changed
+flutter analyze: passed, No issues found
+flutter test: passed, 77 tests
+flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false: passed
+```
+
+Release build observations:
+
+```text
+build/web: 41M
+build/web/main.dart.js: 2.7M
+MaterialIcons tree-shaken from 1,645,184 bytes to 11,376 bytes
+```
+
+Non-blocking build notes:
+
+- Flutter reported wasm dry-run incompatibility from a transitive web dependency using `dart:html`; the normal JavaScript Flutter Web release build still succeeded.
+- Flutter reported that CupertinoIcons font was referenced in dependency metadata but not bundled; PetConnect uses Material icons and `uses-material-design: true`, so the release build remained successful.
