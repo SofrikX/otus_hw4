@@ -53,6 +53,20 @@ GitHub / Netlify scanning notes:
 - `netlify.toml` intentionally omits only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from Netlify secret scanning because Flutter Web embeds public client configuration.
 - Never add service role keys, database passwords, JWT secrets or private tokens to Netlify `SECRETS_SCAN_OMIT_KEYS`.
 
+## 2.1 CI Security Checks
+
+GitHub Actions now includes a dedicated `security-audit` job in `.github/workflows/ci_cd.yml`. The build/test/deploy job depends on it through `needs: security-audit`, so production deployment is blocked when a security gate fails.
+
+CI security gates:
+
+- `Secret scanning grep gate` searches executable and configuration surfaces for blocked Supabase secret markers.
+- `Block real env files and macOS metadata` fails on real `.env*` files, except `.env.example`, and on `.DS_Store`.
+- `Dart dependency check` runs `flutter pub outdated`.
+- `npm dependency audit for historical Functions package` runs `npm ci` and `npm audit --audit-level=moderate` when `functions/package-lock.json` exists.
+- The build job still runs `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test` and `flutter build web --release`.
+
+The grep gate intentionally scans runtime/configuration paths rather than documentation prose. This allows audit documents to name forbidden markers as examples while still blocking accidental use in Flutter code, Supabase files, Netlify Functions, GitHub Actions and deployment config.
+
 ## 3. Findings
 
 | ID | Severity | Area | Finding | Status |
@@ -211,4 +225,3 @@ Historical Firebase Functions logs request method/path/query, UID and resource I
 - Consider removing historical Firebase Functions from production deployment scope or clearly marking it as archived if it is not needed for HW5/HW6.
 - Plan Flutter dependency upgrades separately; `flutter pub outdated` shows several major-version updates that may require code changes.
 - Keep local `.env.deploy` private and rotate any value immediately if it is accidentally pasted into docs, screenshots or commits.
-

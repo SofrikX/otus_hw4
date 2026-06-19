@@ -2864,3 +2864,60 @@ Important:
 - Добавлены AI-шаблоны анализа: auth error, RLS permission denied, Netlify deploy failure, Supabase API error, analytics event missing.
 - Обновлены `integration_documentation.md`, `development_report.md` и `prompts.md`.
 - Добавлен `test/core/logging/app_logger_test.dart` для проверки JSON формата и фильтрации secrets/PII.
+
+## Prompt 61 — CI/CD Security Gates
+
+```markdown
+# Role
+Ты DevSecOps Engineer.
+
+# Task
+Усиль CI/CD pipeline проверками безопасности.
+
+# Context
+CI/CD уже должен запускать Flutter checks и deploy.
+Нужно добавить security gates.
+
+# Required reading
+Прочитай:
+- .github/workflows/
+- security_audit.md
+- README.md
+- integration_documentation.md
+- pubspec.yaml
+- netlify.toml
+
+# Requirements
+1. Обнови GitHub Actions workflow.
+2. Добавь проверки:
+   - secret scanning grep step;
+   - dependency check commands;
+   - flutter analyze;
+   - flutter test;
+   - build web.
+3. Если используешь external GitHub Action для secret scanning, выбирай стабильный вариант и не усложняй.
+4. Pipeline должен fail, если найдены:
+   - Supabase secret key marker;
+   - Supabase service role marker;
+   - Supabase service env marker;
+   - реальные .env файлы;
+   - .DS_Store.
+5. Добавь отдельный job или step `security-audit`.
+6. Обнови security_audit.md:
+   - CI security checks.
+7. Обнови integration_documentation.md.
+8. Обнови README.md.
+9. Обнови prompts.md.
+10. Не добавляй реальные secrets.
+```
+
+Результат:
+
+- В `.github/workflows/ci_cd.yml` добавлен отдельный job `security-audit`.
+- `build-test-deploy` теперь зависит от `security-audit`, поэтому deploy на Netlify не стартует при провале security gates.
+- Добавлен grep gate для runtime/configuration файлов без внешнего action.
+- Добавлен file hygiene gate для реальных `.env*` файлов, кроме `.env.example`, и `.DS_Store`.
+- Добавлены dependency checks: `flutter pub outdated`, `npm ci`, `npm audit --audit-level=moderate`.
+- Сохранены Flutter gates: `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test`, `flutter build web --release`.
+- Обновлены `security_audit.md`, `integration_documentation.md`, `README.md` и `prompts.md`.
+- Реальные secrets не добавлялись.

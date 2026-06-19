@@ -71,15 +71,35 @@ Triggers:
 
 Pipeline stages:
 
-1. Checkout repository with `actions/checkout`.
-2. Install Flutter stable with `subosito/flutter-action`.
-3. Restore Flutter cache through the setup action.
-4. Run `flutter pub get`.
-5. Run `dart format --set-exit-if-changed .`.
-6. Run `flutter analyze`.
-7. Run `flutter test`.
-8. Build Flutter Web release with Supabase dart-defines.
-9. Deploy `build/web` to Netlify only on `push` to `main`.
+1. Run `security-audit` before build/deploy.
+2. Checkout repository with `actions/checkout`.
+3. Install Flutter stable with `subosito/flutter-action`.
+4. Restore Flutter cache through the setup action.
+5. Run `flutter pub get`.
+6. Run secret scanning grep and repository hygiene gates.
+7. Run dependency checks.
+8. Run `dart format --set-exit-if-changed .`.
+9. Run `flutter analyze`.
+10. Run `flutter test`.
+11. Build Flutter Web release with Supabase dart-defines.
+12. Deploy `build/web` to Netlify only on `push` to `main`.
+
+Security audit gates:
+
+```bash
+flutter pub outdated
+npm ci
+npm audit --audit-level=moderate
+```
+
+The grep gate fails when blocked Supabase secret markers are found in executable/configuration surfaces such as `.github`, `lib`, `web`, `supabase`, `netlify`, `functions` package files and deployment config. Documentation files can mention forbidden marker names as examples, but real secret values must never be pasted there.
+
+The file hygiene gate fails when the CI workspace contains:
+
+- real `.env*` files except `.env.example`;
+- `.DS_Store` files.
+
+The `build-test-deploy` job has `needs: security-audit`, so Netlify deployment cannot start until these checks pass.
 
 Build command:
 

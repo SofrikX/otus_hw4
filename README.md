@@ -271,10 +271,20 @@ Pipeline triggers:
 - `pull_request`: runs validation and Flutter Web release build;
 - `push` to `main`: runs the same validation/build steps, then deploys `build/web` to Netlify production.
 
+Security gate:
+
+- separate `security-audit` job runs before build/test/deploy;
+- grep gate fails on blocked secret markers in executable and configuration files;
+- file gate fails when real `.env*` files, except `.env.example`, or `.DS_Store` files are present;
+- dependency checks run `flutter pub outdated` and `npm audit --audit-level=moderate` for the historical Functions package when `functions/package-lock.json` exists.
+
 Checks performed by CI:
 
 ```bash
 flutter pub get
+flutter pub outdated
+npm ci
+npm audit --audit-level=moderate
 dart format --set-exit-if-changed .
 flutter analyze
 flutter test
@@ -640,8 +650,11 @@ Run before final handoff and after dependency, CI/CD, Supabase or deployment cha
 ```bash
 flutter pub outdated
 flutter analyze
-grep -RIn "sb_secret_\|service_role\|SUPABASE_SERVICE\|SUPABASE_ANON_KEY\|sk_live\|AIza\|password=" . --exclude-dir=.git --exclude=pubspec.lock || true
-git ls-files | rg '(^|/)\.env($|\.)|\.env'
+git grep -n -E "sb_secret_|service_role|SUPABASE_SERVICE" -- \
+  .github lib web supabase netlify netlify.toml pubspec.yaml pubspec.lock \
+  functions/package.json functions/package-lock.json functions/src
+find . -path ./.git -prune -o -name '.env*' ! -name '.env.example' -print
+find . -path ./.git -prune -o -name '.DS_Store' -print
 supabase db lint
 ```
 
@@ -649,7 +662,8 @@ If `functions/package.json` is present, also run:
 
 ```bash
 cd functions
-npm audit
+npm ci
+npm audit --audit-level=moderate
 npm run build
 ```
 

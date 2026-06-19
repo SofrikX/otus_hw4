@@ -14,9 +14,104 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security-audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Secret scanning grep gate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          secret_token="sb""_secret""_"
+          role_token="service""_role"
+          supabase_service_token="SUPABASE""_SERVICE"
+          blocked_pattern="${secret_token}|${role_token}|${supabase_service_token}"
+
+          scan_paths=(
+            ".github"
+            "lib"
+            "web"
+            "supabase"
+            "netlify"
+            "functions/package.json"
+            "functions/package-lock.json"
+            "functions/src"
+            "netlify.toml"
+            "pubspec.yaml"
+            "pubspec.lock"
+          )
+
+          existing_paths=()
+          for path in "${scan_paths[@]}"; do
+            if [ -e "$path" ]; then
+              existing_paths+=("$path")
+            fi
+          done
+
+          if [ "${#existing_paths[@]}" -gt 0 ] && grep -RInE "$blocked_pattern" "${existing_paths[@]}"; then
+            echo "Blocked secret marker found in executable/configuration files."
+            exit 1
+          fi
+
+      - name: Block real env files and macOS metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          env_matches="$(find . \
+            -path ./.git -prune -o \
+            -path ./build -prune -o \
+            -path ./.dart_tool -prune -o \
+            -path ./functions/node_modules -prune -o \
+            -name '.env*' ! -name '.env.example' -print)"
+
+          if [ -n "$env_matches" ]; then
+            echo "Real environment files are not allowed in CI workspace:"
+            echo "$env_matches"
+            exit 1
+          fi
+
+          ds_store_matches="$(find . \
+            -path ./.git -prune -o \
+            -path ./build -prune -o \
+            -path ./.dart_tool -prune -o \
+            -path ./functions/node_modules -prune -o \
+            -name '.DS_Store' -print)"
+
+          if [ -n "$ds_store_matches" ]; then
+            echo ".DS_Store files are not allowed:"
+            echo "$ds_store_matches"
+            exit 1
+          fi
+
+      - name: Dart dependency check
+        run: flutter pub outdated
+
+      - name: npm dependency audit for historical Functions package
+        if: hashFiles('functions/package-lock.json') != ''
+        working-directory: functions
+        run: |
+          npm ci
+          npm audit --audit-level=moderate
+
   build-test-deploy:
     name: Build, test and deploy Flutter Web
     runs-on: ubuntu-latest
+    needs: security-audit
 
     steps:
       - name: Checkout repository
