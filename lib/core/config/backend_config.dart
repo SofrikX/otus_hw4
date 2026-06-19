@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final backendConfigProvider = Provider<BackendConfig>((ref) {
@@ -90,6 +91,11 @@ class BackendConfig {
   }
 
   Uri get supabaseAuthRedirectUri {
+    final webOriginUri = _currentWebOriginUri();
+    if (webOriginUri != null) {
+      return webOriginUri;
+    }
+
     final trimmedUrl = supabaseAuthRedirectUrl.trim();
     final uri = Uri.tryParse(trimmedUrl);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
@@ -99,6 +105,25 @@ class BackendConfig {
     }
 
     return uri;
+  }
+
+  Uri? _currentWebOriginUri() {
+    if (!kIsWeb) {
+      return null;
+    }
+
+    final base = Uri.base;
+    if ((base.scheme != 'https' && base.scheme != 'http') ||
+        base.host.isEmpty) {
+      return null;
+    }
+
+    return Uri(
+      scheme: base.scheme,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+      path: '/',
+    );
   }
 }
 

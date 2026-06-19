@@ -1808,3 +1808,5 @@ Non-blocking notes:
 - localhost redirect URLs оставлены только для local development.
 
 Ручной production шаг: в Supabase Dashboard `Authentication` -> `URL Configuration` установить Site URL `https://cool-duckanoo-d28d04.netlify.app/`, добавить этот exact Redirect URL, затем пересобрать и переопубликовать Flutter Web bundle.
+
+Follow-up hardening: `BackendConfig.supabaseAuthRedirectUri` теперь для Flutter Web вычисляет redirect из текущего browser origin через `Uri.base` и нормализует путь в `/`. На Netlify это дает `https://cool-duckanoo-d28d04.netlify.app/` независимо от случайного local build-time значения. Для non-web платформ остается configured `SUPABASE_AUTH_REDIRECT_URL`.

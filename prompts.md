@@ -3001,3 +3001,10 @@ CI/CD уже должен запускать Flutter checks и deploy.
 - `.github/workflows/ci_cd.yml` обновлен: GitHub Actions Flutter Web build явно передает тот же production redirect URL.
 - README, backend documentation, Supabase setup documentation, integration documentation и development report дополнены troubleshooting notes.
 - Ручной production fix: Supabase Dashboard -> Authentication -> URL Configuration -> Site URL должен быть `https://cool-duckanoo-d28d04.netlify.app/`, Redirect URLs должны включать этот URL, затем нужен rebuild/redeploy frontend.
+
+Follow-up после повторного localhost callback:
+
+- Проверен production bundle на Netlify: он уже содержал `https://cool-duckanoo-d28d04.netlify.app/` и `redirect_to`.
+- Supabase hosted authorize endpoint с явным `redirect_to=https://cool-duckanoo-d28d04.netlify.app/` возвращает 302 в Google и сохраняет этот `redirect_to`.
+- `BackendConfig.supabaseAuthRedirectUri` усилен: во Flutter Web redirect теперь берется из текущего browser origin (`Uri.base`) и нормализуется в `/`, чтобы Netlify runtime не зависел от ошибочного localhost env.
+- Локальный release build проверен: `build/web/main.dart.js` содержит Netlify URL и не содержит `localhost:3000` по OAuth redirect search.
