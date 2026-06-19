@@ -1463,3 +1463,56 @@ flutter test
 1. Пересобрать Flutter Web release с production Supabase dart-defines.
 2. Задеплоить новый `build/web` на Netlify.
 3. Повторить browser E2E: login, feed, create post, like, comment, pet profile, walks, join walk, mobile и desktop.
+
+## 29. HW6 GitHub Actions CI/CD
+
+Дата изменения: 19 июня 2026.
+
+Цель: подготовить PetConnect к ДЗ "Настройка CI/CD и интеграция сервисов" через GitHub Actions pipeline для Flutter Web и Netlify deployment.
+
+Роль Codex: DevOps Engineer и GitHub Actions Specialist.
+
+Перед изменениями прочитаны:
+
+- `README.md`;
+- `netlify.toml`;
+- `pubspec.yaml`;
+- `test/`;
+- `.gitignore`;
+- `docs/frontend_deployment.md`;
+- текущие `development_report.md` и `prompts.md`.
+
+Что добавлено:
+
+- `.github/workflows/ci_cd.yml` с запуском на `pull_request` и `push` в `main`;
+- Flutter stable setup через `subosito/flutter-action`;
+- Flutter cache через setup action;
+- этапы `flutter pub get`, `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test`;
+- release build Flutter Web с `USE_SUPABASE_BACKEND=true`, `SUPABASE_URL` и `SUPABASE_PUBLISHABLE_KEY` из GitHub repository secrets;
+- production deploy в Netlify через `npx netlify-cli deploy --prod --dir=build/web` только на `push` в `main`;
+- `integration_documentation.md` с разделом CI/CD;
+- README section с описанием pipeline, secrets и проверок.
+
+GitHub repository secrets, которые нужно настроить вручную:
+
+```text
+NETLIFY_AUTH_TOKEN
+NETLIFY_SITE_ID
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+```
+
+Реальные значения secrets в репозиторий не добавлялись. `build/web` остается ignored artifact и не должен коммититься.
+
+Локальная проверка для parity с CI:
+
+```bash
+flutter pub get
+dart format --set-exit-if-changed .
+flutter analyze
+flutter test
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+```

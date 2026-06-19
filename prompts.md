@@ -2422,3 +2422,210 @@ pet profile, walks, join walk, errors, mobile и desktop layouts.
 - Локальный минимальный fix применен в `web/index.html`: Corbado/passkeys bundle загружается перед `flutter_bootstrap.js`.
 - После fix выполнены `flutter analyze` и `flutter test`; analyzer без замечаний, `69 tests passed`.
 - README, `backend_documentation.md`, `development_report.md` и `prompts.md` обновлены итогами release review.
+
+## Prompt 54 — HW6 CI/CD and service integrations planning
+
+```markdown
+# Role
+Ты OpenAI Codex, AI coding agent, DevOps Engineer и Flutter/Supabase Release Architect.
+
+# Task
+Подготовь проект PetConnect к выполнению ДЗ «Настройка CI/CD и интеграция сервисов».
+
+# Context
+PetConnect уже реализован как Flutter Web приложение с Supabase backend и Netlify deployment.
+
+Текущий стек:
+- Flutter Web
+- Dart
+- Riverpod
+- go_router
+- Material 3
+- Supabase Auth
+- Supabase PostgreSQL
+- RLS policies
+- Supabase Storage
+- Netlify hosting
+- OpenAI Codex как AI-агент разработки
+
+Новое ДЗ требует:
+1. CI/CD pipeline.
+2. Security audit.
+3. OAuth2 integration.
+4. Analytics integration.
+5. Monitoring.
+6. Logging.
+7. Testing and optimization.
+8. Documentation:
+   - integration_documentation.md
+   - security_audit.md
+
+# Project inputs
+GitHub repo:
+https://github.com/SofrikX/otus_hw4/tree/hw6
+
+Production frontend:
+https://cool-duckanoo-d28d04.netlify.app
+
+Supabase project URL:
+https://fivtpxsjcjirddogngtl.supabase.co
+
+# Required reading
+Прочитай:
+- README.md
+- backend_documentation.md
+- development_report.md
+- prompts.md
+- AGENTS.md
+- pubspec.yaml
+- netlify.toml
+- supabase/
+- lib/
+- test/
+- docs/
+
+# Requirements
+1. Не меняй код на первом шаге.
+2. Составь план выполнения ДЗ на базе текущего проекта.
+3. Подтверди, какие части уже реализованы:
+   - Netlify deployment;
+   - Supabase backend;
+   - auth через email/password;
+   - RLS;
+   - документация;
+   - AI workflow.
+4. Определи, что нужно добавить:
+   - GitHub Actions CI/CD;
+   - Google OAuth через Supabase Auth;
+   - analytics;
+   - health check;
+   - logging;
+   - security audit;
+   - integration_documentation.md;
+   - security_audit.md.
+5. Платежи отметить как optional и не реализовывать, если они не требуются продуктом.
+6. Предложи структуру новых файлов.
+7. Обнови prompts.md, добавив этот prompt.
+8. Не добавляй реальные secrets.
+
+# Output format
+1. Current status.
+2. Homework gap analysis.
+3. Proposed integrations.
+4. Files to create.
+5. Risks.
+6. Next Codex task.
+```
+
+Результат:
+
+- Выполнен первый planning pass без изменений Flutter-кода, Supabase migrations или Netlify config.
+- Прочитаны проектные правила, README, backend documentation, development report, prompts, pubspec, Netlify config, Supabase migrations, срез `lib/`, `test/` и `docs/`.
+- Подтверждено, что база HW5 уже содержит Netlify deployment config, Supabase backend, email/password auth, RLS, Storage policies, тесты, документацию и AI workflow.
+- Для HW6 определены gaps: GitHub Actions CI/CD, Google OAuth через Supabase Auth, privacy-friendly analytics, health check, structured logging/monitoring, security audit и новые документы `integration_documentation.md`, `security_audit.md`.
+- Реальные secrets не добавлялись.
+
+## Prompt 55 — GitHub Actions CI/CD for Flutter Web and Netlify
+
+```markdown
+# Role
+Ты DevOps Engineer и GitHub Actions Specialist.
+
+# Task
+Создай CI/CD pipeline для Flutter Web проекта PetConnect.
+
+# Context
+Приложение уже деплоится на Netlify.
+Нужно настроить GitHub Actions pipeline, который при push в main:
+- устанавливает Flutter;
+- загружает зависимости;
+- проверяет форматирование;
+- запускает analyze;
+- запускает tests;
+- собирает Flutter Web release;
+- деплоит на Netlify.
+
+# Project inputs
+GitHub repo:
+https://github.com/SofrikX/otus_hw4/tree/hw6
+
+Netlify production site:
+https://cool-duckanoo-d28d04.netlify.app/
+
+# Required reading
+Прочитай:
+- README.md
+- netlify.toml
+- pubspec.yaml
+- test/
+- .gitignore
+- docs/frontend_deployment.md, если есть
+
+# Requirements
+1. Создай GitHub Actions workflow:
+   - `.github/workflows/ci_cd.yml`
+2. Pipeline должен запускаться:
+   - on pull_request;
+   - on push to main.
+3. Этапы:
+   - checkout;
+   - setup Flutter stable;
+   - flutter pub get;
+   - dart format --set-exit-if-changed .;
+   - flutter analyze;
+   - flutter test;
+   - flutter build web --release with dart-defines;
+   - deploy to Netlify only on push to main.
+4. Используй GitHub repository secrets:
+   - NETLIFY_AUTH_TOKEN;
+   - NETLIFY_SITE_ID;
+   - SUPABASE_URL;
+   - SUPABASE_PUBLISHABLE_KEY.
+5. Не записывай значения secrets в workflow.
+6. Добавь caching, если это безопасно и не усложняет workflow.
+7. Обнови README.md:
+   - как работает CI/CD;
+   - какие secrets нужно добавить;
+   - что проверяет pipeline.
+8. Создай или обнови `integration_documentation.md`:
+   - раздел CI/CD.
+9. Обнови development_report.md:
+   - AI использован для генерации CI/CD.
+10. Обнови prompts.md.
+
+# Expected build command
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
+# Deploy
+Используй Netlify CLI или официальный подход через npm/npx.
+Deploy должен использовать:
+- NETLIFY_AUTH_TOKEN
+- NETLIFY_SITE_ID
+- build/web
+
+# Restrictions
+1. Не коммить build/web.
+2. Не добавляй реальные secrets.
+3. Не отключай tests ради зеленого pipeline.
+
+# Output format
+1. Summary.
+2. Workflow created.
+3. Required GitHub secrets.
+4. Files changed.
+5. Commands to test locally.
+6. Diff.
+```
+
+Результат:
+
+- Создан `.github/workflows/ci_cd.yml`.
+- Workflow запускается на `pull_request` и `push` в `main`.
+- Pipeline устанавливает Flutter stable, использует cache, выполняет `flutter pub get`, format check, analyze, tests и Flutter Web release build.
+- Deploy to Netlify выполняется только на `push` в `main` через `npx netlify-cli deploy --prod --dir=build/web`.
+- Workflow ссылается только на GitHub repository secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
+- README, `integration_documentation.md` и `development_report.md` обновлены.
+- Реальные secrets и `build/web` не добавлялись.

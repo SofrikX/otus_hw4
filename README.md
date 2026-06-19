@@ -199,6 +199,53 @@ If Netlify's build environment does not include Flutter SDK, build locally with 
 
 The reviewer should receive a Netlify production URL and be able to open the deployed Flutter Web app in a browser. Real Supabase keys are not committed to the repository; the service role key is never used in the frontend.
 
+## CI/CD Pipeline
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/ci_cd.yml
+```
+
+Pipeline triggers:
+
+- `pull_request`: runs validation and Flutter Web release build;
+- `push` to `main`: runs the same validation/build steps, then deploys `build/web` to Netlify production.
+
+Checks performed by CI:
+
+```bash
+flutter pub get
+dart format --set-exit-if-changed .
+flutter analyze
+flutter test
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+```
+
+Deploy command on `push` to `main`:
+
+```bash
+npx --yes netlify-cli@latest deploy \
+  --prod \
+  --dir=build/web \
+  --site="$NETLIFY_SITE_ID" \
+  --auth="$NETLIFY_AUTH_TOKEN"
+```
+
+Required GitHub repository secrets:
+
+| Secret | Purpose |
+|---|---|
+| `NETLIFY_AUTH_TOKEN` | Netlify CLI authentication for production deploy |
+| `NETLIFY_SITE_ID` | Target Netlify site id |
+| `SUPABASE_URL` | Public Supabase project URL passed to Flutter Web build |
+| `SUPABASE_PUBLISHABLE_KEY` | Public Supabase publishable key passed to Flutter Web build |
+
+Do not commit real secret values. `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are public Flutter Web client configuration, but they still belong in GitHub/Netlify environment settings for reproducible builds. Supabase service role key, database password and private tokens must not be added to GitHub Actions secrets for frontend deployment.
+
 ## How To Verify Production App
 
 Production frontend URL:
