@@ -12,6 +12,7 @@ Current production stack:
 | Backend | Supabase Auth, PostgreSQL, RLS, Storage and auto REST API |
 | Hosting | Netlify |
 | CI/CD | GitHub Actions |
+| Analytics | Yandex Metrica |
 | AI development agent | OpenAI Codex |
 
 ## Google OAuth Through Supabase Auth
@@ -86,7 +87,10 @@ Build command:
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
+  --dart-define=ANALYTICS_ENABLED=${{ vars.ANALYTICS_ENABLED }} \
+  --dart-define=ANALYTICS_PROVIDER=${{ vars.ANALYTICS_PROVIDER }} \
+  --dart-define=ANALYTICS_ID=${{ vars.ANALYTICS_ID }}
 ```
 
 Deploy command:
@@ -111,6 +115,74 @@ Add these values in GitHub repository settings under Actions secrets:
 | `SUPABASE_PUBLISHABLE_KEY` | Flutter Web release build | Public client config, managed as CI env |
 
 Do not add Supabase service role key, database password, JWT secret or private access tokens to the frontend CI/CD workflow.
+
+## Analytics Setup
+
+PetConnect Flutter Web uses Yandex Metrica for product analytics.
+
+Provider:
+
+```text
+yandex_metrica
+```
+
+Production counter id:
+
+```text
+109987921
+```
+
+Production frontend URL:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+```
+
+The Flutter app reads analytics configuration from build-time `dart-define` values:
+
+```bash
+flutter build web --release \
+  --dart-define=USE_SUPABASE_BACKEND=true \
+  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key> \
+  --dart-define=ANALYTICS_ENABLED=true \
+  --dart-define=ANALYTICS_PROVIDER=yandex_metrica \
+  --dart-define=ANALYTICS_ID=109987921
+```
+
+Set these as Netlify environment variables or GitHub repository variables:
+
+| Variable | Value |
+|---|---|
+| `ANALYTICS_ENABLED` | `true` for production tracking, `false` for local/no-op builds |
+| `ANALYTICS_PROVIDER` | `yandex_metrica` |
+| `ANALYTICS_ID` | `109987921` |
+
+`web/index.html` contains a small loader function named `petconnectTrackAnalytics`. It does not hardcode the counter id. The Flutter analytics service calls this function only when analytics is enabled and the provider/id are configured. The loader then initializes Yandex Metrica and sends `reachGoal` events.
+
+Implemented events:
+
+| Event | Trigger | Parameters |
+|---|---|---|
+| `app_open` | Flutter app starts | none |
+| `sign_up_started` | Registration controller starts sign-up | none |
+| `sign_in_success` | Email, post-sign-up or Google sign-in succeeds | `method` |
+| `feed_opened` | Feed screen is opened | none |
+| `post_created` | Post creation succeeds | `text_length`, `has_image` |
+| `post_liked` | A post is successfully liked | none |
+| `comment_added` | Comment creation succeeds | `text_length` |
+| `walk_joined` | User successfully joins a walk | none |
+| `auth_error` | Auth operation fails | `operation`, `error_type`, optional `status_code`, `error_code` |
+| `backend_error` | Feed, post, comment, like or walk backend operation fails | `operation`, `error_type`, optional `status_code`, `error_code` |
+
+Privacy notes:
+
+- Analytics events do not include email.
+- Analytics events do not include raw user id, pet id, post id, walk id or comment id.
+- Tokens, passwords, Supabase keys and OAuth secrets are never sent to analytics.
+- Post and comment text is not sent; only coarse text length buckets such as `short`, `medium` or `long` are used.
+- The analytics service drops parameters with sensitive key names such as `email`, `user_id`, `token`, `password` and `secret`.
+- When `ANALYTICS_ENABLED=false`, events are ignored in production mode and only locally logged in debug mode.
 
 ## Netlify Integration
 
@@ -184,7 +256,8 @@ flutter test
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<production-supabase-project-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key> \
+  --dart-define=ANALYTICS_ENABLED=false
 ```
 
 Use real Supabase values only through local ignored env files or shell environment. Do not paste them into documentation.

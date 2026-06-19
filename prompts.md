@@ -2710,3 +2710,41 @@ Update README.md, integration_documentation.md, development_report.md and prompt
 - Тесты обновлены: Google кнопка отображается, controller вызывает repository OAuth method, Google OAuth error показывается в UI.
 - README, `backend_documentation.md`, `docs/supabase_setup.md`, `integration_documentation.md`, `development_report.md` и `prompts.md` обновлены.
 - Google Client Secret не добавлялся в код или документацию; он должен храниться только в Supabase Dashboard и Google Cloud Console.
+
+## Prompt 58 — Yandex Metrica Analytics for Flutter Web
+
+```markdown
+# Role
+Ты Flutter Web Analytics Engineer и Product Analyst.
+
+# Task
+Интегрируй аналитику в PetConnect Flutter Web.
+
+# Context
+ДЗ требует интеграцию аналитики и настройку событий.
+Нужно добавить аналитику на frontend и задокументировать события.
+
+# Project inputs
+Analytics provider:
+Yandex Metrica
+
+Yandex Metrica counter ID:
+109987921
+
+Production frontend URL:
+https://cool-duckanoo-d28d04.netlify.app/
+
+Important:
+Не ломай Flutter Web build.
+Не отправляй персональные данные в analytics events.
+```
+
+Результат:
+
+- Добавлен analytics layer в `lib/core/analytics/`.
+- Analytics config задается через `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `ANALYTICS_ID`.
+- `web/index.html` получил loader для Yandex Metrica без hardcoded counter id.
+- Реализованы события `app_open`, `sign_up_started`, `sign_in_success`, `feed_opened`, `post_created`, `post_liked`, `comment_added`, `walk_joined`, `auth_error`, `backend_error`.
+- События не отправляют email, raw user id, токены, тексты постов/комментариев или секреты.
+- README, `integration_documentation.md`, `development_report.md` и `prompts.md` обновлены.
+- Добавлены тесты `test/core/analytics/analytics_service_test.dart`.

@@ -148,9 +148,12 @@ Configure these variables in Netlify UI, not in repository files:
 ```text
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+ANALYTICS_ENABLED=true
+ANALYTICS_PROVIDER=yandex_metrica
+ANALYTICS_ID=109987921
 ```
 
-`USE_SUPABASE_BACKEND=true` is passed directly by the build command. The real `SUPABASE_PUBLISHABLE_KEY` must stay in Netlify Environment Variables. Do not commit it to Git.
+`USE_SUPABASE_BACKEND=true` is passed directly by the build command. The real `SUPABASE_PUBLISHABLE_KEY` must stay in Netlify Environment Variables. Do not commit it to Git. Analytics values are public browser configuration; keep them in Netlify variables so production and local builds can enable or disable tracking independently.
 
 Security model for Flutter Web:
 
@@ -159,6 +162,7 @@ Security model for Flutter Web:
 - Supabase secret keys and service role keys must never be passed through `--dart-define`, configured in Netlify frontend environment variables or committed to the repository.
 - If a secret key or service role key is ever exposed, rotate it in Supabase before continuing deployment.
 - `netlify.toml` omits `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from Netlify secrets scanning because Flutter Web embeds these public client settings into `build/web`. Do not add service role keys or database passwords to this omit list.
+- Yandex Metrica receives only event names and coarse non-personal parameters. Do not add email, raw user id, tokens, post text, comment text or profile data to analytics params.
 
 ### Build Command
 
@@ -168,8 +172,35 @@ Netlify build command from `netlify.toml`:
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=$SUPABASE_URL \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY \
+  --dart-define=ANALYTICS_ENABLED=$ANALYTICS_ENABLED \
+  --dart-define=ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER \
+  --dart-define=ANALYTICS_ID=$ANALYTICS_ID
 ```
+
+### Analytics Configuration
+
+PetConnect Flutter Web uses Yandex Metrica for product analytics. The production counter id is `109987921`, but the app reads it only from `--dart-define=ANALYTICS_ID`.
+
+Local disabled run:
+
+```bash
+flutter run -d chrome \
+  --dart-define=USE_SUPABASE_BACKEND=false \
+  --dart-define=ANALYTICS_ENABLED=false
+```
+
+Local enabled run:
+
+```bash
+flutter run -d chrome \
+  --dart-define=USE_SUPABASE_BACKEND=false \
+  --dart-define=ANALYTICS_ENABLED=true \
+  --dart-define=ANALYTICS_PROVIDER=yandex_metrica \
+  --dart-define=ANALYTICS_ID=109987921
+```
+
+`web/index.html` contains a small Yandex Metrica loader function. It does not hardcode the counter id and loads `https://mc.yandex.ru/metrika/tag.js` only after Flutter sends an enabled analytics event.
 
 ### Publish Directory
 
@@ -223,7 +254,10 @@ flutter test
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
+  --dart-define=ANALYTICS_ENABLED=${{ vars.ANALYTICS_ENABLED }} \
+  --dart-define=ANALYTICS_PROVIDER=${{ vars.ANALYTICS_PROVIDER }} \
+  --dart-define=ANALYTICS_ID=${{ vars.ANALYTICS_ID }}
 ```
 
 Deploy command on `push` to `main`:
@@ -244,6 +278,14 @@ Required GitHub repository secrets:
 | `NETLIFY_SITE_ID` | Target Netlify site id |
 | `SUPABASE_URL` | Public Supabase project URL passed to Flutter Web build |
 | `SUPABASE_PUBLISHABLE_KEY` | Public Supabase publishable key passed to Flutter Web build |
+
+Required GitHub repository variables:
+
+| Variable | Purpose |
+|---|---|
+| `ANALYTICS_ENABLED` | Enables or disables frontend analytics, usually `true` in production and `false` in local smoke builds |
+| `ANALYTICS_PROVIDER` | Analytics provider id, currently `yandex_metrica` |
+| `ANALYTICS_ID` | Public Yandex Metrica counter id, currently `109987921` |
 
 Do not commit real secret values. `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are public Flutter Web client configuration, but they still belong in GitHub/Netlify environment settings for reproducible builds. Supabase service role key, database password and private tokens must not be added to GitHub Actions secrets for frontend deployment.
 

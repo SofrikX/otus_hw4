@@ -10,6 +10,51 @@
 </head>
 <body>
   <script src="https://github.com/corbado/flutter-passkeys/releases/download/2.4.0/bundle.js" type="application/javascript"></script>
+  <script>
+    (function () {
+      window.petconnectTrackAnalytics = function (provider, counterId, eventName, paramsJson) {
+        if (provider !== 'yandex_metrica' || !counterId || !eventName) {
+          return;
+        }
+
+        var numericCounterId = Number(counterId);
+        if (!Number.isFinite(numericCounterId)) {
+          return;
+        }
+
+        window.ym = window.ym || function () {
+          (window.ym.a = window.ym.a || []).push(arguments);
+        };
+        window.ym.l = window.ym.l || new Date().getTime();
+
+        if (!window.petconnectMetricaScriptLoaded) {
+          window.petconnectMetricaScriptLoaded = true;
+          var script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://mc.yandex.ru/metrika/tag.js';
+          var firstScript = document.getElementsByTagName('script')[0];
+          firstScript.parentNode.insertBefore(script, firstScript);
+          window.ym(numericCounterId, 'init', {
+            clickmap: true,
+            trackLinks: true,
+            accurateTrackBounce: true,
+            webvisor: false
+          });
+        }
+
+        var params = {};
+        if (paramsJson) {
+          try {
+            params = JSON.parse(paramsJson);
+          } catch (_) {
+            params = {};
+          }
+        }
+
+        window.ym(numericCounterId, 'reachGoal', eventName, params);
+      };
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

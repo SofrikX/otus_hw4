@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/analytics/analytics_event.dart';
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/config/backend_config.dart';
 import '../../../core/data/mock_data.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
@@ -24,6 +26,7 @@ final feedControllerProvider =
     StateNotifierProvider<FeedController, AsyncValue<List<PetPost>>>((ref) {
   final controller = FeedController(
     repository: ref.watch(feedRepositoryProvider),
+    analytics: ref.watch(analyticsServiceProvider),
     loadOnStart: ref.watch(backendConfigProvider).useSupabaseBackend,
   );
 
@@ -33,10 +36,12 @@ final feedControllerProvider =
 class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   FeedController({
     FeedRepository? repository,
+    AnalyticsService? analytics,
     AsyncValue<List<PetPost>>? initialState,
     List<PetPost>? initialPosts,
     bool loadOnStart = false,
   })  : _posts = _resolveInitialPosts(initialState, initialPosts),
+        _analytics = analytics,
         _repository = repository ??
             MockFeedRepository(
               initialPosts: _resolveInitialPosts(initialState, initialPosts),
@@ -52,15 +57,22 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
 
   List<PetPost> _posts;
   final FeedRepository _repository;
+  final AnalyticsService? _analytics;
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
 
-    state = await AsyncValue.guard(() async {
+    try {
       final posts = await _repository.fetchPosts();
       _posts = List<PetPost>.unmodifiable(posts);
-      return _posts;
-    });
+      state = AsyncValue.data(_posts);
+    } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'feed_refresh',
+        error: error,
+      );
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   void toggleLike(String postId) {
@@ -127,6 +139,12 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
           authorName: author?.displayName ?? author?.email,
         ),
       );
+      await _analytics?.track(
+        AnalyticsEvent.commentAdded,
+        params: {
+          'text_length': AnalyticsService.textLengthBucket(trimmedText),
+        },
+      );
 
       final syncedPosts = state.asData?.value;
       if (syncedPosts == null) {
@@ -146,6 +164,10 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
         }).toList(growable: false),
       );
     } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'comment_add',
+        error: error,
+      );
       state = AsyncValue.error(error, stackTrace);
       Error.throwWithStackTrace(error, stackTrace);
     }
@@ -167,17 +189,33 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       throw StateError('Сначала добавьте питомца для публикации.');
     }
 
-    final createdPost = await _repository.createPost(
-      CreatePostInput(
-        authorId: author.id,
-        authorName: author.displayName ?? author.email ?? 'Владелец',
-        petId: pet.petId,
-        petName: pet.petName,
-        petEmoji: pet.petEmoji,
-        imageEmoji: '📷',
-        text: trimmedText,
-      ),
-    );
+    late final PetPost createdPost;
+    try {
+      createdPost = await _repository.createPost(
+        CreatePostInput(
+          authorId: author.id,
+          authorName: author.displayName ?? author.email ?? 'Владелец',
+          petId: pet.petId,
+          petName: pet.petName,
+          petEmoji: pet.petEmoji,
+          imageEmoji: '📷',
+          text: trimmedText,
+        ),
+      );
+      await _analytics?.track(
+        AnalyticsEvent.postCreated,
+        params: {
+          'text_length': AnalyticsService.textLengthBucket(trimmedText),
+          'has_image': false,
+        },
+      );
+    } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'post_create',
+        error: error,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
 
     _setPosts([createdPost, ...posts]);
   }
@@ -199,6 +237,10 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   Future<void> _syncLike(String postId) async {
     try {
       final result = await _repository.toggleLike(postId);
+      if (result.isLiked) {
+        await _analytics?.track(AnalyticsEvent.postLiked);
+      }
+
       final posts = state.asData?.value;
       if (posts == null) {
         return;
@@ -217,6 +259,10 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
         }).toList(growable: false),
       );
     } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'post_like_toggle',
+        error: error,
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }

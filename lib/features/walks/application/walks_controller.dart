@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/analytics/analytics_event.dart';
+import '../../../core/analytics/analytics_service.dart';
 import '../../../core/config/backend_config.dart';
 import '../../../core/data/mock_data.dart';
 import '../../../core/network/api_client.dart';
@@ -30,6 +32,7 @@ final walksControllerProvider =
   final config = ref.watch(backendConfigProvider);
   return WalksController(
     repository: ref.watch(walksRepositoryProvider),
+    analytics: ref.watch(analyticsServiceProvider),
     loadOnStart: config.useSupabaseBackend || config.useFirebaseBackend,
   );
 });
@@ -44,9 +47,11 @@ enum WalkJoinStatus {
 class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
   WalksController({
     WalksRepository? repository,
+    AnalyticsService? analytics,
     AsyncValue<List<Walk>>? initialState,
     bool loadOnStart = false,
-  })  : _repository = repository ??
+  })  : _analytics = analytics,
+        _repository = repository ??
             MockWalksRepository(
               initialWalks: _resolveInitialWalks(initialState),
             ),
@@ -58,6 +63,7 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
   }
 
   final WalksRepository _repository;
+  final AnalyticsService? _analytics;
 
   static List<Walk> _resolveInitialWalks(
     AsyncValue<List<Walk>>? initialState,
@@ -68,10 +74,16 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
 
-    state = await AsyncValue.guard(() async {
+    try {
       final walks = await _repository.fetchWalks();
-      return List<Walk>.unmodifiable(walks);
-    });
+      state = AsyncValue.data(List<Walk>.unmodifiable(walks));
+    } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'walks_refresh',
+        error: error,
+      );
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<WalkJoinStatus> joinWalk(String walkId) async {
@@ -99,10 +111,17 @@ class WalksController extends StateNotifier<AsyncValue<List<Walk>>> {
     try {
       final result = await _repository.joinWalk(walkId);
       _applyJoinResult(result);
+      if (!result.alreadyJoined && result.isJoined) {
+        await _analytics?.track(AnalyticsEvent.walkJoined);
+      }
       return result.alreadyJoined
           ? WalkJoinStatus.alreadyJoined
           : WalkJoinStatus.joined;
     } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'walk_join',
+        error: error,
+      );
       state = AsyncValue.error(error, stackTrace);
       return WalkJoinStatus.failed;
     }

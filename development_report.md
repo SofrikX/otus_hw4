@@ -1614,3 +1614,39 @@ supabase db lint
 - добавлена проверка, что кнопка Google OAuth отображается;
 - добавлена проверка, что `AuthController.signInWithGoogle()` вызывает repository method;
 - добавлена проверка error state для Google OAuth.
+
+## 32. Frontend analytics через Yandex Metrica
+
+Дата изменения: 19 июня 2026.
+
+Цель: добавить frontend analytics для Flutter Web без поломки web build и без передачи персональных данных.
+
+Роль Codex: Flutter Web Analytics Engineer и Product Analyst.
+
+AI использован для выбора событий по ключевым продуктовым воронкам PetConnect: открытие приложения, регистрация, успешный вход, открытие ленты, создание поста, лайк, комментарий, присоединение к прогулке, auth error и backend error.
+
+Перед изменениями прочитаны:
+
+- `web/index.html`;
+- `lib/app/`, `lib/core/`, `lib/features/feed/`, `lib/features/auth/`, `lib/features/walks/`;
+- `README.md`;
+- `integration_documentation.md`;
+- `backend_documentation.md`;
+- project routing docs from `docs/`.
+
+Что изменено:
+
+- добавлен `lib/core/analytics/analytics_service.dart` с конфигурацией через `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `ANALYTICS_ID`;
+- добавлен `AnalyticsEvent` со списком событий;
+- добавлен web dispatcher со stub fallback для тестов и не-web окружений;
+- `web/index.html` получил безопасный Yandex Metrica loader без hardcoded counter id;
+- `AuthController`, `FeedController`, `WalksController`, `PetConnectApp` и `FeedScreen` отправляют analytics events через application layer;
+- `netlify.toml` и GitHub Actions build command передают analytics dart-defines;
+- README и integration docs описывают настройку, события и privacy notes;
+- добавлены тесты analytics service для disabled fallback, sanitized params и backend error event.
+
+Privacy:
+
+- email, raw user id, tokens, passwords, post/comment text and secrets не отправляются;
+- текстовые поля передаются только как coarse length buckets;
+- service фильтрует чувствительные ключи параметров перед отправкой.

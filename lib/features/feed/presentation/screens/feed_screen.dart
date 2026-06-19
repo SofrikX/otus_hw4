@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/analytics/analytics_event.dart';
+import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../auth/presentation/auth_controller.dart';
@@ -8,11 +10,24 @@ import '../../application/feed_controller.dart';
 import '../widgets/pet_stories_strip.dart';
 import '../widgets/post_card.dart';
 
-class FeedScreen extends ConsumerWidget {
+class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FeedScreen> createState() => _FeedScreenState();
+}
+
+class _FeedScreenState extends ConsumerState<FeedScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(analyticsServiceProvider).track(AnalyticsEvent.feedOpened),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final postsValue = ref.watch(feedControllerProvider);
     final controller = ref.read(feedControllerProvider.notifier);
 

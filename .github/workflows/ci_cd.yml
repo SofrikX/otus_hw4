@@ -47,11 +47,17 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          ANALYTICS_ENABLED: ${{ vars.ANALYTICS_ENABLED || 'false' }}
+          ANALYTICS_PROVIDER: ${{ vars.ANALYTICS_PROVIDER || 'yandex_metrica' }}
+          ANALYTICS_ID: ${{ vars.ANALYTICS_ID || '' }}
         run: |
           flutter build web --release \
             --dart-define=USE_SUPABASE_BACKEND=true \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=ANALYTICS_ENABLED="$ANALYTICS_ENABLED" \
+            --dart-define=ANALYTICS_PROVIDER="$ANALYTICS_PROVIDER" \
+            --dart-define=ANALYTICS_ID="$ANALYTICS_ID"
 
       - name: Deploy to Netlify
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
