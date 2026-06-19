@@ -82,7 +82,8 @@ Build-time configuration for production frontend:
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/
 ```
 
 Build output and Netlify publish directory:
@@ -91,7 +92,7 @@ Build output and Netlify publish directory:
 build/web
 ```
 
-In Netlify, `SUPABASE_URL` and the real `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Because Flutter Web embeds `--dart-define` values into the generated browser bundle, `netlify.toml` also omits these two public client settings from Netlify secrets scanning. Service role key, database password and private tokens are not used in the frontend and must never be added to the omit list.
+In Netlify, `SUPABASE_URL` and the real `SUPABASE_PUBLISHABLE_KEY` should be stored as environment variables and passed into the build command as `--dart-define`. The production OAuth redirect URL is public and is passed explicitly as `SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/`. The repository includes `netlify.toml` with the production Flutter Web build command, `build/web` publish directory and SPA redirect rule from `/*` to `/index.html` with status `200`. Because Flutter Web embeds `--dart-define` values into the generated browser bundle, `netlify.toml` also omits these two public client settings from Netlify secrets scanning. Service role key, database password and private tokens are not used in the frontend and must never be added to the omit list.
 
 ## 4. Database Schema
 
@@ -614,6 +615,12 @@ https://<project-ref>.supabase.co/auth/v1/callback
 ```
 
 The Client Secret must not be committed, documented as a real value, passed through `--dart-define`, added to Netlify or GitHub Actions frontend secrets, or logged.
+
+Production redirect guardrails:
+
+- production build must use `SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/`;
+- local `http://localhost:3000/` is allowed only for local development;
+- if Google returns to `http://localhost:3000/?code=...` from production, Supabase Dashboard Site URL or the deployed build configuration is still pointing at localhost and must be corrected before redeploy.
 
 OAuth application flow:
 

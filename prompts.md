@@ -2987,3 +2987,17 @@ CI/CD уже должен запускать Flutter checks и deploy.
 - Rebuild risk: `PetStoriesStrip` переведен с `ConsumerWidget` на `StatelessWidget`.
 - Обновлены `development_report.md`, `integration_documentation.md` и `prompts.md`.
 - Проверки прошли: `dart format .`, `flutter analyze`, `flutter test` (77 tests), `flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false`.
+
+## Prompt 63 — Fix production Google OAuth redirect
+
+```markdown
+После авторизации через гугл редиректит на http://localhost:3000/?code=33d43d3a-e348-4277-afc6-5b8fcc1bf2bb, это явно не прод решение
+```
+
+Результат:
+
+- Подтверждено, что production OAuth callback на localhost недопустим.
+- `netlify.toml` обновлен: production build явно передает `SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/`.
+- `.github/workflows/ci_cd.yml` обновлен: GitHub Actions Flutter Web build явно передает тот же production redirect URL.
+- README, backend documentation, Supabase setup documentation, integration documentation и development report дополнены troubleshooting notes.
+- Ручной production fix: Supabase Dashboard -> Authentication -> URL Configuration -> Site URL должен быть `https://cool-duckanoo-d28d04.netlify.app/`, Redirect URLs должны включать этот URL, затем нужен rebuild/redeploy frontend.

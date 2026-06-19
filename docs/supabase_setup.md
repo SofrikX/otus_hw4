@@ -271,6 +271,13 @@ https://<project-ref>.supabase.co/auth/v1/callback
 
 3. Не переносите Client Secret в Flutter, Netlify, GitHub Actions или tracked docs.
 
+Production troubleshooting:
+
+- если Google OAuth возвращает на `http://localhost:3000/?code=...` из production, значит Supabase Dashboard Site URL или production build все еще указывает на localhost;
+- Site URL должен быть `https://cool-duckanoo-d28d04.netlify.app/`;
+- production build должен передавать `SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/` или использовать production default;
+- после исправления нужен rebuild/redeploy Flutter Web bundle.
+
 ## 10. Проверить Supabase CLI перед hosted deploy
 
 Локальная проверка перед cloud push:

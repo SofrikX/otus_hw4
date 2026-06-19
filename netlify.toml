@@ -1,5 +1,5 @@
 [build]
-  command = "flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY --dart-define=ANALYTICS_ENABLED=$ANALYTICS_ENABLED --dart-define=ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER --dart-define=ANALYTICS_ID=$ANALYTICS_ID"
+  command = "flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/ --dart-define=ANALYTICS_ENABLED=$ANALYTICS_ENABLED --dart-define=ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER --dart-define=ANALYTICS_ID=$ANALYTICS_ID"
   publish = "build/web"
 
 [build.environment]

@@ -142,6 +142,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_AUTH_REDIRECT_URL: https://cool-duckanoo-d28d04.netlify.app/
           ANALYTICS_ENABLED: ${{ vars.ANALYTICS_ENABLED || 'false' }}
           ANALYTICS_PROVIDER: ${{ vars.ANALYTICS_PROVIDER || 'yandex_metrica' }}
           ANALYTICS_ID: ${{ vars.ANALYTICS_ID || '' }}
@@ -150,6 +151,7 @@ jobs:
             --dart-define=USE_SUPABASE_BACKEND=true \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=SUPABASE_AUTH_REDIRECT_URL="$SUPABASE_AUTH_REDIRECT_URL" \
             --dart-define=ANALYTICS_ENABLED="$ANALYTICS_ENABLED" \
             --dart-define=ANALYTICS_PROVIDER="$ANALYTICS_PROVIDER" \
             --dart-define=ANALYTICS_ID="$ANALYTICS_ID"

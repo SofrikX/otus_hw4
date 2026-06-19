@@ -174,6 +174,7 @@ flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=$SUPABASE_URL \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/ \
   --dart-define=ANALYTICS_ENABLED=$ANALYTICS_ENABLED \
   --dart-define=ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER \
   --dart-define=ANALYTICS_ID=$ANALYTICS_ID
@@ -596,7 +597,16 @@ For production builds, `SUPABASE_AUTH_REDIRECT_URL` defaults to:
 https://cool-duckanoo-d28d04.netlify.app/
 ```
 
+Production Netlify/GitHub Actions builds also pass this URL explicitly. Do not set `SUPABASE_AUTH_REDIRECT_URL` to `localhost` in Netlify or GitHub production build settings.
+
 Flutter does not need the Google OAuth Client ID or Client Secret. It calls Supabase Auth with `OAuthProvider.google`; Supabase owns the provider configuration and redirects back to the allowed URL.
+
+If Google OAuth returns to `http://localhost:3000/?code=...` in production, fix the Supabase Dashboard Auth settings and redeploy the frontend:
+
+1. `Authentication` -> `URL Configuration` -> Site URL must be `https://cool-duckanoo-d28d04.netlify.app/`.
+2. Redirect URLs must include `https://cool-duckanoo-d28d04.netlify.app/`.
+3. Netlify/GitHub production build must pass `SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/` or use the app default.
+4. Rebuild and redeploy the Flutter Web bundle.
 
 ## End-To-End Check
 

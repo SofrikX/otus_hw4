@@ -1793,3 +1793,18 @@ Non-blocking notes:
 
 - wasm dry run сообщает о transitive dependency с `dart:html`; обычная JS Flutter Web release-сборка успешна;
 - предупреждение о CupertinoIcons не блокирует сборку, PetConnect использует Material icons и `uses-material-design: true`.
+
+## 36. Production Google OAuth redirect fix
+
+Дата изменения: 19 июня 2026.
+
+Проблема: после авторизации через Google callback возвращал пользователя на `http://localhost:3000/?code=...`, что не является production-ready поведением для Netlify deployment.
+
+Исправление:
+
+- `netlify.toml` теперь явно передает `--dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/`;
+- GitHub Actions release build передает тот же production redirect URL;
+- README, backend docs, Supabase setup docs и integration docs дополнены troubleshooting rule для случая callback на localhost;
+- localhost redirect URLs оставлены только для local development.
+
+Ручной production шаг: в Supabase Dashboard `Authentication` -> `URL Configuration` установить Site URL `https://cool-duckanoo-d28d04.netlify.app/`, добавить этот exact Redirect URL, затем пересобрать и переопубликовать Flutter Web bundle.

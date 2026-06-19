@@ -55,6 +55,7 @@ Security notes:
 - Google Client Secret is not committed to git, added to docs, passed through `--dart-define`, or stored in Netlify/GitHub frontend secrets.
 - Production redirect URL must match the Netlify URL exactly.
 - Localhost redirect URL is used only for development.
+- A production callback to `http://localhost:3000/?code=...` means Supabase Dashboard Site URL or the deployed Flutter build still points at localhost. Set the Site URL and production `SUPABASE_AUTH_REDIRECT_URL` to the Netlify URL, rebuild, and redeploy.
 
 ## CI/CD
 
@@ -108,6 +109,7 @@ flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/ \
   --dart-define=ANALYTICS_ENABLED=${{ vars.ANALYTICS_ENABLED }} \
   --dart-define=ANALYTICS_PROVIDER=${{ vars.ANALYTICS_PROVIDER }} \
   --dart-define=ANALYTICS_ID=${{ vars.ANALYTICS_ID }}
