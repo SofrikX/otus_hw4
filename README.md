@@ -520,6 +520,28 @@ supabase db reset
 
 If Supabase CLI is not available, validate migrations and RLS through Supabase Dashboard SQL Editor and document the manual result.
 
+## Security Audit Commands
+
+Run before final handoff and after dependency, CI/CD, Supabase or deployment changes:
+
+```bash
+flutter pub outdated
+flutter analyze
+grep -RIn "sb_secret_\|service_role\|SUPABASE_SERVICE\|SUPABASE_ANON_KEY\|sk_live\|AIza\|password=" . --exclude-dir=.git --exclude=pubspec.lock || true
+git ls-files | rg '(^|/)\.env($|\.)|\.env'
+supabase db lint
+```
+
+If `functions/package.json` is present, also run:
+
+```bash
+cd functions
+npm audit
+npm run build
+```
+
+Keep GitHub secret scanning and Netlify secret scanning enabled. `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are public Flutter Web client configuration, but service role keys, `sb_secret_` keys, database passwords, JWT secrets and private tokens must never be committed or passed into the frontend build.
+
 ## Troubleshooting
 
 ### Wrong `SUPABASE_URL`

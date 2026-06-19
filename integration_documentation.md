@@ -95,6 +95,42 @@ The repository also keeps `netlify.toml` for Netlify-compatible build settings a
 - `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are embedded into Flutter Web output by design; Supabase RLS and Storage policies remain the user-data security boundary.
 - Netlify deploy uses `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` only inside the deploy step.
 
+## Security Audit Summary
+
+Full audit artifact:
+
+```text
+security_audit.md
+```
+
+Audit coverage:
+
+- hardcoded secrets and tracked `.env` files;
+- Supabase service role / `sb_secret_` exposure;
+- publishable key usage in frontend-only configuration;
+- RLS enablement and policy quality;
+- OAuth redirect URL configuration;
+- Flutter Web XSS and external script risks;
+- Supabase query patterns for SQL injection risk;
+- logging of tokens/secrets;
+- Flutter and npm dependency checks.
+
+Fixes applied during the audit:
+
+- Supabase RLS now prevents creating posts with another user's pet and enforces post visibility for posts, comments and likes.
+- Walk participation inserts now require an active walk.
+- Local Supabase redirect URLs are exact local HTTP URLs plus the production Netlify URL.
+- Historical Firebase Functions dependencies were updated so `npm audit` reports `found 0 vulnerabilities`.
+
+Validation status:
+
+```text
+flutter analyze: passed
+functions npm audit: passed
+functions npm run build: passed
+supabase db lint: blocked until local Supabase Postgres is running
+```
+
 ## Local Validation
 
 Before pushing, run:

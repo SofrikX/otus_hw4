@@ -1516,3 +1516,58 @@ flutter build web --release \
   --dart-define=SUPABASE_URL=<production-supabase-project-url> \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 ```
+
+## 30. Security Audit
+
+Дата изменения: 19 июня 2026.
+
+Цель: выполнить аудит безопасности PetConnect для Flutter Web, Supabase, Netlify/GitHub Actions и исторической Firebase Functions ветки.
+
+Роль Codex: Security Auditor, Flutter Reviewer и Supabase Security Engineer.
+
+Перед изменениями проверены:
+
+- `pubspec.yaml` и `pubspec.lock`;
+- `functions/package.json` и `functions/package-lock.json`;
+- `netlify.toml`;
+- `.github/workflows/`;
+- `supabase/migrations/`, `supabase/seed.sql`, `supabase/config.toml`;
+- `README.md`, `backend_documentation.md`, `integration_documentation.md`;
+- `lib/`, `web/`, `docs/`.
+
+Что найдено:
+
+- service role key, `sb_secret_`, private tokens и реальные token-like publishable keys в tracked source/docs не найдены;
+- tracked `.env` файлов нет, кроме безопасного `.env.example`;
+- локальный ignored `.env.deploy` содержит реальные локальные deployment values и должен оставаться вне git;
+- RLS был включен на всех application tables, но политики для posts/comments/likes требовали усиления по приватности и владению питомцем;
+- local OAuth redirect config содержал некорректный `https://127.0.0.1:3000`;
+- Flutter Web код не использует `dart:html`, `innerHtml`, `eval` или ручную DOM-вставку пользовательских данных;
+- `npm audit` нашел moderate advisory в исторической Firebase Functions dependency chain.
+
+Что исправлено:
+
+- создан `security_audit.md` с findings, командами, OWASP mapping, fixes и remaining risks;
+- усилены RLS policies в `supabase/migrations/002_rls_policies.sql`;
+- `supabase/config.toml` получил точные local/prod redirect URLs без wildcard;
+- `functions/package.json` и `functions/package-lock.json` обновлены так, что `npm audit` возвращает `found 0 vulnerabilities`;
+- README дополнен security audit commands;
+- `integration_documentation.md` дополнен security audit summary.
+
+Проверки:
+
+```bash
+flutter pub outdated
+flutter analyze
+cd functions && npm audit
+cd functions && npm run build
+supabase db lint
+```
+
+Результат:
+
+- `flutter pub outdated`: выполнен, показал доступные updates/major upgrades для планового обновления;
+- `flutter analyze`: `No issues found!`;
+- `npm audit`: после fix `found 0 vulnerabilities`;
+- `npm run build`: TypeScript build passed;
+- `supabase db lint`: заблокирован, потому что local Postgres на `127.0.0.1:54322` не запущен.

@@ -2629,3 +2629,49 @@ Deploy должен использовать:
 - Workflow ссылается только на GitHub repository secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
 - README, `integration_documentation.md` и `development_report.md` обновлены.
 - Реальные secrets и `build/web` не добавлялись.
+
+## Prompt 56 — Security Audit for Flutter, Supabase and Dependencies
+
+```markdown
+# Role
+Ты Security Auditor, Flutter Reviewer и Supabase Security Engineer.
+
+# Task
+Проведи аудит безопасности проекта PetConnect и создай `security_audit.md`.
+
+# Required checks
+- hardcoded secrets;
+- service role key / `sb_secret_`;
+- real Supabase publishable key in docs;
+- `.env` in git;
+- RLS policies;
+- OAuth redirect URLs;
+- XSS risks in Flutter Web;
+- SQL injection risks in Supabase queries;
+- insecure logging;
+- dependency risks;
+- `flutter pub outdated`;
+- `flutter analyze`;
+- grep checks for secrets;
+- `npm audit` when package.json exists;
+- GitHub/Netlify secret scanning notes;
+- OWASP mapping for Injection, Broken Auth, Sensitive Data Exposure, Security Misconfiguration and XSS.
+
+# Documentation updates
+Update README.md, integration_documentation.md, development_report.md and prompts.md.
+```
+
+Результат:
+
+- Создан `security_audit.md`.
+- Проверены Flutter, Supabase migrations/config, Netlify config, GitHub Actions, historical Firebase Functions package dependencies, tracked docs/source and ignored env behavior.
+- Service role key, `sb_secret_`, private token-like values and real publishable key strings in tracked source/docs не найдены.
+- Подтверждено, что service role key не используется во frontend, а `SUPABASE_PUBLISHABLE_KEY` используется как public frontend config.
+- Усилены RLS policies для `posts`, `comments`, `post_likes` и `walk_participants`.
+- Исправлены exact redirect URLs в `supabase/config.toml`.
+- `functions/package.json` и `functions/package-lock.json` обновлены: `npm audit` после fix возвращает `found 0 vulnerabilities`.
+- README получил security audit commands.
+- `integration_documentation.md` получил security audit summary.
+- `development_report.md` получил раздел Security Audit.
+- `flutter analyze`: `No issues found!`.
+- `supabase db lint`: заблокирован, потому что local Supabase Postgres на `127.0.0.1:54322` не запущен.
