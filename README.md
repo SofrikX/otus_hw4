@@ -151,6 +151,7 @@ SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 ANALYTICS_ENABLED=true
 ANALYTICS_PROVIDER=yandex_metrica
 ANALYTICS_ID=109987921
+APP_VERSION=<optional-release-version-or-commit-sha>
 ```
 
 `USE_SUPABASE_BACKEND=true` is passed directly by the build command. The real `SUPABASE_PUBLISHABLE_KEY` must stay in Netlify Environment Variables. Do not commit it to Git. Analytics values are public browser configuration; keep them in Netlify variables so production and local builds can enable or disable tracking independently.
@@ -222,10 +223,36 @@ Flutter Web uses client-side routing, so Netlify must serve `index.html` for dee
 
 ```toml
 [[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 ```
+
+### Health Check
+
+Production health endpoint:
+
+```text
+[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+```
+
+The endpoint is implemented as a Netlify Function in `netlify/functions/health.js`. It returns JSON with `status`, `timestamp`, `checks` and `version`.
+
+Checks:
+
+- Netlify Function is reachable;
+- `SUPABASE_URL` is configured and valid;
+- Supabase Auth endpoint responds;
+- Supabase REST endpoint responds;
+- optional `posts limit 1` query runs when a publishable key is available and RLS/API grants allow it.
+
+The health response never returns Supabase URLs, publishable keys, service role keys or other environment values. The function uses structured JSON logs with `info`, `warning` and `error` levels and does not log `SUPABASE_PUBLISHABLE_KEY`.
 
 If Netlify's build environment does not include Flutter SDK, build locally with the same `flutter build web --release ...` command and deploy the generated `build/web` directory manually through Netlify drag-and-drop.
 

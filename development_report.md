@@ -1650,3 +1650,39 @@ Privacy:
 - email, raw user id, tokens, passwords, post/comment text and secrets не отправляются;
 - текстовые поля передаются только как coarse length buckets;
 - service фильтрует чувствительные ключи параметров перед отправкой.
+
+## 33. Monitoring и Health Check через Netlify Function
+
+Дата изменения: 19 июня 2026.
+
+Цель: добавить production health endpoint и monitoring setup для Flutter Web на Netlify и Supabase backend.
+
+Роль Codex: Monitoring Engineer и Netlify/Supabase Integration Specialist.
+
+Перед изменениями прочитаны:
+
+- `netlify.toml`;
+- `README.md`;
+- `backend_documentation.md`;
+- `integration_documentation.md`;
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `docs/supabase_security.md`;
+- `supabase/migrations/`;
+- relevant `lib/core/config` and Supabase initialization files.
+
+Что изменено:
+
+- добавлен `netlify/functions/health.js`;
+- `netlify.toml` получил Functions directory и redirect `/api/health -> /.netlify/functions/health`;
+- README получил health endpoint URL и описание проверок;
+- `integration_documentation.md` получил monitoring setup для UptimeRobot/Pingdom/Better Stack;
+- `backend_documentation.md` описывает health endpoint как инфраструктурный слой поверх Supabase BaaS.
+
+Health endpoint возвращает JSON со `status`, `timestamp`, `checks` и `version`. Проверяются доступность Netlify Function, наличие и валидность `SUPABASE_URL`, reachability Supabase Auth и REST endpoints, а optional `posts limit 1` query выполняется только с publishable key и не использует service role.
+
+Security:
+
+- env values не возвращаются в response;
+- `SUPABASE_PUBLISHABLE_KEY` не логируется;
+- service role key не используется;
+- RLS/API-grant блокировка optional query считается `skipped`, а не ошибкой backend.

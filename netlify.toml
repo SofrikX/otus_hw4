@@ -5,6 +5,16 @@
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,ANALYTICS_ID"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

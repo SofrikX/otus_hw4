@@ -2748,3 +2748,43 @@ Important:
 - События не отправляют email, raw user id, токены, тексты постов/комментариев или секреты.
 - README, `integration_documentation.md`, `development_report.md` и `prompts.md` обновлены.
 - Добавлены тесты `test/core/analytics/analytics_service_test.dart`.
+
+## Prompt 59 — Monitoring and Health Check for Netlify/Supabase
+
+```markdown
+# Role
+Ты Monitoring Engineer и Netlify/Supabase Integration Specialist.
+
+# Task
+Настрой monitoring и health check для PetConnect.
+
+# Context
+ДЗ требует:
+- мониторинг приложения;
+- Health Check endpoint;
+- проверку доступности БД и внешних сервисов;
+- алерты при проблемах.
+
+Проект:
+- Flutter Web hosted on Netlify;
+- Supabase backend.
+
+# Requirements
+1. Добавь Health Check endpoint.
+2. Так как backend — Supabase BaaS, сделай health endpoint через Netlify Function.
+3. Endpoint должен быть доступен как `/api/health`.
+4. Health check должен проверять приложение, Supabase URL, Supabase REST/Auth endpoint и optional безопасный query.
+5. Response должен быть JSON: status, timestamp, checks, app version.
+6. Не возвращай secrets.
+7. Добавь structured logging.
+8. Обнови Netlify config и документацию.
+```
+
+Результат:
+
+- Добавлен `netlify/functions/health.js` без новых dependencies.
+- `netlify.toml` теперь направляет `/api/health` на Netlify Function до SPA fallback.
+- Health response содержит `status`, `timestamp`, `checks` и `version`.
+- Проверяются Netlify Function reachability, `SUPABASE_URL`, Supabase Auth endpoint, Supabase REST endpoint и optional `posts limit 1` query.
+- Function не использует service role key, не возвращает env values и не логирует `SUPABASE_PUBLISHABLE_KEY`.
+- README, `integration_documentation.md`, `backend_documentation.md`, `development_report.md` и `prompts.md` обновлены.

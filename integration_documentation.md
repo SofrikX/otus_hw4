@@ -200,6 +200,68 @@ build/web
 
 The repository also keeps `netlify.toml` for Netlify-compatible build settings and SPA redirect behavior. `build/web` remains ignored by git and must not be committed.
 
+## Monitoring And Health Check
+
+PetConnect exposes a production health endpoint through Netlify Functions:
+
+```text
+[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+```
+
+Implementation:
+
+```text
+netlify/functions/health.js
+```
+
+`netlify.toml` maps `/api/health` to `/.netlify/functions/health` before the Flutter SPA fallback. The endpoint returns JSON:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-06-19T00:00:00.000Z",
+  "checks": {
+    "app": { "status": "ok", "message": "Netlify Function is reachable." },
+    "supabase_url": { "status": "ok", "message": "Supabase URL is configured." },
+    "supabase_auth": { "status": "ok", "message": "Endpoint responded." },
+    "supabase_rest": { "status": "ok", "message": "Endpoint responded." },
+    "supabase_posts_query": { "status": "skipped", "message": "Optional posts query blocked by RLS/API grants." }
+  },
+  "version": "unknown"
+}
+```
+
+Health statuses:
+
+- `ok`: required checks passed;
+- `degraded`: Supabase responds with an upstream issue or the optional DB query fails unexpectedly;
+- `error`: required configuration is missing/invalid or required Supabase endpoints cannot be reached.
+
+Security notes:
+
+- the endpoint does not return environment values;
+- the function never logs `SUPABASE_PUBLISHABLE_KEY`;
+- no service role key is used;
+- the optional table query uses only a publishable key and treats RLS/API-grant blocks as `skipped`, not as a data leak or hard failure.
+
+Recommended monitor setup:
+
+1. Create an UptimeRobot, Pingdom or Better Stack HTTP monitor.
+2. Set the check URL to `[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health`.
+3. Use method `GET`.
+4. Use an interval of 5 minutes for free-tier monitoring.
+5. Alert when HTTP status is not `200`.
+6. If the monitor supports body matching, alert unless the response body contains `"status":"ok"` or `"status": "ok"`.
+7. Route alerts to email, Telegram, Slack or the student's preferred channel.
+
+Expected alert conditions:
+
+- Netlify function unavailable;
+- `SUPABASE_URL` missing or invalid in Netlify environment variables;
+- Supabase Auth endpoint timeout or 5xx;
+- Supabase REST endpoint timeout or 5xx;
+- optional DB query returns an unexpected non-auth/non-RLS failure.
+
 ## Security Notes
 
 - Pull requests run validation and build but do not deploy.

@@ -664,8 +664,42 @@ SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
 Netlify SPA redirect:
 
 ```text
+/api/health -> /.netlify/functions/health 200
 /* -> /index.html 200
 ```
+
+### 7. Health Check And Monitoring
+
+Health endpoint:
+
+```text
+[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+```
+
+PetConnect does not run a custom backend server because Supabase provides Auth, PostgreSQL, RLS, Storage and PostgREST. For monitoring, the project adds a small Netlify Function at `netlify/functions/health.js`.
+
+The function checks:
+
+- the Netlify Function/app route is reachable;
+- `SUPABASE_URL` exists and is a valid HTTP(S) URL;
+- Supabase Auth endpoint responds;
+- Supabase REST endpoint responds;
+- optional `posts limit 1` query when a publishable key is available and RLS/API grants allow it.
+
+Response shape:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-06-19T00:00:00.000Z",
+  "checks": {},
+  "version": "unknown"
+}
+```
+
+The endpoint never returns secrets or raw environment values. It does not use a service role key. Structured logs are emitted as JSON with `info`, `warning` and `error` levels, and publishable keys are not logged.
+
+External monitors such as UptimeRobot, Pingdom or Better Stack should check `[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health` with `GET` every 5 minutes and alert on non-`200` responses or a body status different from `ok`.
 
 If Netlify's build environment does not include Flutter SDK, build locally with the same release command and deploy the generated `build/web` folder manually through Netlify drag-and-drop.
 
