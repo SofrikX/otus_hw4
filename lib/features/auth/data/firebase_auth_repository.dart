@@ -58,6 +58,13 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle() {
+    throw const AuthFailure(
+      'Вход через Google настроен через Supabase Auth.',
+    );
+  }
+
+  @override
   Future<void> signOut() {
     return _firebaseAuth.signOut();
   }

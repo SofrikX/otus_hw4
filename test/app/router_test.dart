@@ -97,6 +97,11 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle() {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<void> signOut() async {
     _authStateController.add(null);
   }

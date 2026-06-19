@@ -48,7 +48,7 @@ Flutter UI
 - **Flutter frontend**: UI построен на Flutter, Material 3, `go_router` и Riverpod. Экраны не обращаются к Supabase напрямую.
 - **Application layer**: Riverpod controllers/providers вызывают repository interfaces.
 - **Repository layer**: Supabase implementations используются при `USE_SUPABASE_BACKEND=true`; mock repositories остаются для тестов и fallback.
-- **Supabase Auth**: email/password sign up, sign in, sign out, session restore и `auth.uid()` для RLS.
+- **Supabase Auth**: email/password sign up, Google OAuth sign in, sign out, session restore и `auth.uid()` для RLS.
 - **PostgreSQL**: relational schema для profiles, pets, posts, comments, likes, walks, walk participants, chats и messages.
 - **Row Level Security**: все application tables защищены RLS policies для роли `authenticated`.
 - **Supabase Storage**: private buckets для аватаров, фото питомцев и изображений постов.
@@ -577,7 +577,56 @@ Hosted project:
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=http://localhost:3000/
+```
+
+### 5.1. Configure Google OAuth in Supabase Auth
+
+Google OAuth is configured server-side in Supabase Auth. Flutter does not store the Google Client ID or Client Secret.
+
+Manual Dashboard setup:
+
+1. Supabase Dashboard -> `Authentication` -> `Providers` -> `Google`.
+2. Enable Google provider.
+3. Insert the Google OAuth Client ID.
+4. Insert the Google OAuth Client Secret only in Supabase Dashboard.
+5. Save provider settings.
+6. Supabase Dashboard -> `Authentication` -> `URL Configuration`.
+7. Set Site URL:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+```
+
+8. Add exact Redirect URLs:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+http://localhost:3000/
+http://127.0.0.1:3000/
+```
+
+9. In Google Cloud Console, configure the authorized redirect URI from the Supabase Google provider screen:
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+The Client Secret must not be committed, documented as a real value, passed through `--dart-define`, added to Netlify or GitHub Actions frontend secrets, or logged.
+
+OAuth application flow:
+
+```text
+LoginScreen
+  -> AuthController.signInWithGoogle()
+  -> AuthRepository.signInWithGoogle()
+  -> SupabaseAuthRepository.signInWithOAuth(OAuthProvider.google)
+  -> Google consent screen
+  -> Supabase Auth callback
+  -> production/local redirect URL
+  -> authStateProvider receives the session
+  -> go_router redirects authenticated user to /
 ```
 
 ### 6. Build Flutter Web for Netlify
@@ -690,7 +739,7 @@ lib/features/<feature>/
 
 Implemented Supabase integrations:
 
-- `SupabaseAuthRepository`: sign up, sign in, sign out, auth state, profile upsert;
+- `SupabaseAuthRepository`: sign up, email/password sign in, Google OAuth sign in, sign out, auth state, profile upsert;
 - `SupabaseFeedRepository`: select posts, create post, like/unlike, add comment;
 - `SupabasePetRepository`: select pets, get pet by id, owner pets, create pet;
 - `SupabaseWalkRepository`: select walks, create walk, join walk, leave walk.
@@ -698,6 +747,7 @@ Implemented Supabase integrations:
 Routing behavior:
 
 - `USE_SUPABASE_BACKEND=true` enables Supabase initialization and protected routes;
+- `SUPABASE_AUTH_REDIRECT_URL` controls the OAuth return URL and defaults to the Netlify production URL;
 - anonymous users are redirected to auth screens;
 - mock mode remains available without backend credentials.
 

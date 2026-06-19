@@ -62,6 +62,22 @@ void main() {
     expect(state.hasError, isTrue);
     expect(state.error.toString(), 'Пользователь уже существует.');
   });
+
+  test('signInWithGoogle delegates to auth repository', () async {
+    final repository = _FakeAuthRepository();
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(repository.dispose);
+
+    await container.read(authControllerProvider.notifier).signInWithGoogle();
+
+    expect(container.read(authControllerProvider).hasValue, isTrue);
+    expect(repository.googleSignInCalls, 1);
+  });
 }
 
 class _FakeAuthRepository implements AuthRepository {
@@ -73,6 +89,7 @@ class _FakeAuthRepository implements AuthRepository {
 
   AppUser? _currentUser;
   String? lastSignInEmail;
+  int googleSignInCalls = 0;
 
   @override
   AppUser? get currentUser => _currentUser;
@@ -112,6 +129,18 @@ class _FakeAuthRepository implements AuthRepository {
     _currentUser = user;
     _authStateController.add(user);
     return user;
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    googleSignInCalls += 1;
+    final user = const AppUser(
+      id: 'google-user',
+      email: 'google.owner@example.com',
+      displayName: 'Google Owner',
+    );
+    _currentUser = user;
+    _authStateController.add(user);
   }
 
   @override

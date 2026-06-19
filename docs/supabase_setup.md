@@ -218,7 +218,8 @@ Storage policies должны разрешать чтение authenticated user
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=http://localhost:3000/
 ```
 
 Fallback для macOS desktop:
@@ -227,10 +228,48 @@ Fallback для macOS desktop:
 flutter run -d macos \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=http://127.0.0.1:3000/
 ```
 
 Реальные значения передаются локально и не добавляются в README, screenshots, commits или issue-тексты.
+
+## 9.1. Настроить Google OAuth provider
+
+Google OAuth для PetConnect работает через Supabase Auth. Flutter вызывает `OAuthProvider.google`, а Client ID и Client Secret хранятся на стороне Supabase.
+
+Supabase Dashboard:
+
+1. `Authentication` -> `Providers` -> `Google`.
+2. Включите Google provider.
+3. Вставьте Google OAuth Client ID.
+4. Вставьте Google OAuth Client Secret только в Dashboard.
+5. Сохраните provider settings.
+6. `Authentication` -> `URL Configuration`.
+7. Site URL:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+```
+
+8. Redirect URLs:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+http://localhost:3000/
+http://127.0.0.1:3000/
+```
+
+Google Cloud Console:
+
+1. Откройте OAuth client.
+2. В `Authorized redirect URIs` добавьте callback из Supabase Google provider screen:
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+3. Не переносите Client Secret в Flutter, Netlify, GitHub Actions или tracked docs.
 
 ## 10. Проверить Supabase CLI перед hosted deploy
 

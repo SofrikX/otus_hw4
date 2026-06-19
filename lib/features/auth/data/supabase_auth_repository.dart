@@ -6,9 +6,13 @@ import '../domain/app_user.dart';
 import '../domain/auth_repository.dart';
 
 class SupabaseAuthRepository implements AuthRepository {
-  const SupabaseAuthRepository(this._client);
+  const SupabaseAuthRepository(
+    this._client, {
+    required Uri redirectTo,
+  }) : _redirectTo = redirectTo;
 
   final SupabaseClient _client;
+  final Uri _redirectTo;
 
   @override
   AppUser? get currentUser => _mapSupabaseUser(_client.auth.currentUser);
@@ -74,6 +78,28 @@ class SupabaseAuthRepository implements AuthRepository {
       rethrow;
     } on Object catch (error) {
       throw _unknownFailureFrom(error, operation: 'auth.register');
+    }
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    try {
+      final started = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: _redirectTo.toString(),
+      );
+
+      if (!started) {
+        throw const AuthFailure(
+          'Не удалось открыть вход через Google. Попробуйте еще раз.',
+        );
+      }
+    } on AuthException catch (error) {
+      throw _authFailureFrom(error, operation: 'auth.googleOAuth');
+    } on AuthFailure {
+      rethrow;
+    } on Object catch (error) {
+      throw _unknownFailureFrom(error, operation: 'auth.googleOAuth');
     }
   }
 

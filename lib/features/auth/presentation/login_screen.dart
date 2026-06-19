@@ -16,6 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  _PendingAuthAction? _pendingAction;
 
   @override
   void dispose() {
@@ -28,6 +29,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
+    final isEmailLoading =
+        isLoading && _pendingAction == _PendingAuthAction.email;
+    final isGoogleLoading =
+        isLoading && _pendingAction == _PendingAuthAction.google;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Вход')),
@@ -86,13 +91,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     FilledButton.icon(
                       key: const Key('login-submit'),
                       onPressed: isLoading ? null : _submit,
-                      icon: isLoading
+                      icon: isEmailLoading
                           ? const SizedBox.square(
                               dimension: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.login),
                       label: const Text('Войти'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      key: const Key('login-google'),
+                      onPressed: isLoading ? null : _signInWithGoogle,
+                      icon: isGoogleLoading
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.g_mobiledata),
+                      label: const Text('Войти через Google'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(
@@ -134,12 +151,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
+    setState(() => _pendingAction = _PendingAuthAction.email);
     await ref.read(authControllerProvider.notifier).signIn(
           email: _emailController.text,
           password: _passwordController.text,
         );
+    if (mounted) {
+      setState(() => _pendingAction = null);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _pendingAction = _PendingAuthAction.google);
+    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    if (mounted) {
+      setState(() => _pendingAction = null);
+    }
   }
 }
+
+enum _PendingAuthAction { email, google }
 
 class _AuthErrorBanner extends StatelessWidget {
   const _AuthErrorBanner({required this.error});

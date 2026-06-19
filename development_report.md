@@ -1571,3 +1571,46 @@ supabase db lint
 - `npm audit`: после fix `found 0 vulnerabilities`;
 - `npm run build`: TypeScript build passed;
 - `supabase db lint`: заблокирован, потому что local Postgres на `127.0.0.1:54322` не запущен.
+
+## 31. Google OAuth2 через Supabase Auth
+
+Дата изменения: 19 июня 2026.
+
+Цель: добавить OAuth2 integration для входа через Google, не ломая существующий email/password Supabase Auth flow.
+
+Роль Codex: Supabase Auth Engineer и Flutter Developer.
+
+Перед изменениями прочитаны:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `lib/features/auth/`;
+- `lib/core/supabase/`;
+- `lib/app/`;
+- `README.md`;
+- `backend_documentation.md`;
+- `docs/supabase_setup.md`;
+- `supabase/migrations/`;
+- `integration_documentation.md`.
+
+Что изменено:
+
+- `AuthRepository` получил метод `signInWithGoogle()`;
+- `AuthController` прокидывает Google OAuth вход через repository layer;
+- `SupabaseAuthRepository` вызывает `signInWithOAuth(OAuthProvider.google)` и использует redirect URL из конфигурации;
+- `BackendConfig` получил `SUPABASE_AUTH_REDIRECT_URL` с production default `https://cool-duckanoo-d28d04.netlify.app/`;
+- `LoginScreen` получил кнопку `Войти через Google`, loading state и общий friendly error banner;
+- mock repository поддерживает Google sign-in для локальных проверок и тестов;
+- `supabase/config.toml` содержит exact production и localhost redirect URLs;
+- README, backend docs, Supabase setup docs и integration docs описывают Dashboard setup.
+
+Секреты:
+
+- Google Client ID не нужен во Flutter-коде;
+- Google Client Secret вводится только в Supabase Dashboard и Google Cloud Console;
+- Client Secret не добавлялся в git, docs, `--dart-define`, Netlify или GitHub Actions.
+
+Автотесты:
+
+- добавлена проверка, что кнопка Google OAuth отображается;
+- добавлена проверка, что `AuthController.signInWithGoogle()` вызывает repository method;
+- добавлена проверка error state для Google OAuth.

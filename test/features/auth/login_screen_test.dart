@@ -9,6 +9,13 @@ import 'package:petconnect/features/auth/presentation/auth_controller.dart';
 import 'package:petconnect/features/auth/presentation/login_screen.dart';
 
 void main() {
+  testWidgets('LoginScreen shows Google OAuth button', (tester) async {
+    await tester.pumpWidget(_buildLogin(_FakeAuthRepository()));
+
+    expect(find.byKey(const Key('login-google')), findsOneWidget);
+    expect(find.text('Войти через Google'), findsOneWidget);
+  });
+
   testWidgets('LoginScreen shows loading state while signing in',
       (tester) async {
     final repository = _FakeAuthRepository();
@@ -53,6 +60,24 @@ void main() {
 
     expect(find.text('Email или пароль не подошли.'), findsOneWidget);
   });
+
+  testWidgets('LoginScreen shows Google OAuth error', (tester) async {
+    final repository = _FakeAuthRepository(
+      googleSignInError: const AuthFailure(
+        'Не удалось открыть вход через Google. Попробуйте еще раз.',
+      ),
+    );
+    await tester.pumpWidget(_buildLogin(repository));
+
+    await tester.tap(find.byKey(const Key('login-google')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Не удалось открыть вход через Google. Попробуйте еще раз.'),
+      findsOneWidget,
+    );
+    expect(repository.googleSignInCalls, 1);
+  });
 }
 
 Widget _buildLogin(_FakeAuthRepository repository) {
@@ -65,13 +90,15 @@ Widget _buildLogin(_FakeAuthRepository repository) {
 }
 
 class _FakeAuthRepository implements AuthRepository {
-  _FakeAuthRepository({this.signInError});
+  _FakeAuthRepository({this.signInError, this.googleSignInError});
 
   final Object? signInError;
+  final Object? googleSignInError;
   final _authStateController = StreamController<AppUser?>.broadcast();
   final _signInCompleter = Completer<AppUser>();
 
   AppUser? _currentUser;
+  int googleSignInCalls = 0;
 
   @override
   AppUser? get currentUser => _currentUser;
@@ -107,6 +134,23 @@ class _FakeAuthRepository implements AuthRepository {
     String? displayName,
   }) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    googleSignInCalls += 1;
+    final error = googleSignInError;
+    if (error != null) {
+      throw error;
+    }
+
+    final user = const AppUser(
+      id: 'google-user',
+      email: 'google.owner@example.test',
+      displayName: 'Google Owner',
+    );
+    _currentUser = user;
+    _authStateController.add(user);
   }
 
   @override

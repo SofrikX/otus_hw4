@@ -11,6 +11,7 @@ class BackendConfig {
     this.useSupabaseBackend = false,
     this.supabaseUrl = '',
     this.supabasePublishableKey = '',
+    this.supabaseAuthRedirectUrl = _productionAuthRedirectUrl,
   });
 
   factory BackendConfig.fromEnvironment() {
@@ -26,14 +27,22 @@ class BackendConfig {
       supabasePublishableKey: String.fromEnvironment(
         'SUPABASE_PUBLISHABLE_KEY',
       ),
+      supabaseAuthRedirectUrl: String.fromEnvironment(
+        'SUPABASE_AUTH_REDIRECT_URL',
+        defaultValue: _productionAuthRedirectUrl,
+      ),
     );
   }
+
+  static const _productionAuthRedirectUrl =
+      'https://cool-duckanoo-d28d04.netlify.app/';
 
   final String baseUrl;
   final bool useFirebaseBackend;
   final bool useSupabaseBackend;
   final String supabaseUrl;
   final String supabasePublishableKey;
+  final String supabaseAuthRedirectUrl;
 
   bool get requiresAuth => useSupabaseBackend || useFirebaseBackend;
 
@@ -78,6 +87,18 @@ class BackendConfig {
     }
 
     return trimmedKey;
+  }
+
+  Uri get supabaseAuthRedirectUri {
+    final trimmedUrl = supabaseAuthRedirectUrl.trim();
+    final uri = Uri.tryParse(trimmedUrl);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      throw BackendConfigException(
+        'Invalid SUPABASE_AUTH_REDIRECT_URL: $supabaseAuthRedirectUrl',
+      );
+    }
+
+    return uri;
   }
 }
 

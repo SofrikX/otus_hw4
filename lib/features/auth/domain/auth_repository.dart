@@ -16,6 +16,8 @@ abstract class AuthRepository {
     String? displayName,
   });
 
+  Future<void> signInWithGoogle();
+
   Future<void> signOut();
 }
 

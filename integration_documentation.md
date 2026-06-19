@@ -14,6 +14,47 @@ Current production stack:
 | CI/CD | GitHub Actions |
 | AI development agent | OpenAI Codex |
 
+## Google OAuth Through Supabase Auth
+
+PetConnect supports Google OAuth2 login through Supabase Auth. The Flutter app does not store Google provider credentials. It calls Supabase with `OAuthProvider.google`, Supabase handles the Google provider configuration, and the browser returns to the configured production or localhost redirect URL.
+
+OAuth flow:
+
+```text
+Login screen -> Supabase Auth Google provider -> Google consent
+  -> Supabase Auth callback -> Netlify/local redirect URL
+  -> Supabase session restore -> go_router authenticated redirect to /
+```
+
+Manual setup:
+
+1. Supabase Dashboard -> `Authentication` -> `Providers` -> `Google`.
+2. Enable Google provider.
+3. Paste Google OAuth Client ID.
+4. Paste Google OAuth Client Secret only in Supabase Dashboard.
+5. Supabase Dashboard -> `Authentication` -> `URL Configuration`.
+6. Set Site URL to `https://cool-duckanoo-d28d04.netlify.app/`.
+7. Add Redirect URLs:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+http://localhost:3000/
+http://127.0.0.1:3000/
+```
+
+8. Google Cloud Console -> OAuth client -> Authorized redirect URIs: add the Supabase callback URL from the provider screen:
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+Security notes:
+
+- Google Client Secret is stored only in Supabase Dashboard and Google Cloud Console.
+- Google Client Secret is not committed to git, added to docs, passed through `--dart-define`, or stored in Netlify/GitHub frontend secrets.
+- Production redirect URL must match the Netlify URL exactly.
+- Localhost redirect URL is used only for development.
+
 ## CI/CD
 
 Workflow file:

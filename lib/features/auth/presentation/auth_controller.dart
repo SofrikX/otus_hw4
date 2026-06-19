@@ -13,7 +13,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final config = ref.watch(backendConfigProvider);
 
   if (config.useSupabaseBackend) {
-    return SupabaseAuthRepository(Supabase.instance.client);
+    return SupabaseAuthRepository(
+      Supabase.instance.client,
+      redirectTo: config.supabaseAuthRedirectUri,
+    );
   }
 
   if (config.useFirebaseBackend) {
@@ -71,6 +74,11 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         );
       },
     );
+  }
+
+  Future<void> signInWithGoogle() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(_authRepository.signInWithGoogle);
   }
 
   Future<void> signOut() async {

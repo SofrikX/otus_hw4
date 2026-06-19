@@ -2675,3 +2675,38 @@ Update README.md, integration_documentation.md, development_report.md and prompt
 - `development_report.md` получил раздел Security Audit.
 - `flutter analyze`: `No issues found!`.
 - `supabase db lint`: заблокирован, потому что local Supabase Postgres на `127.0.0.1:54322` не запущен.
+
+## Prompt 57 — Google OAuth2 через Supabase Auth
+
+```markdown
+# Role
+Ты Supabase Auth Engineer и Flutter Developer.
+
+# Task
+Интегрируй Google OAuth2 авторизацию через Supabase Auth.
+
+# Context
+ДЗ требует OAuth2 integration.
+В проекте уже используется Supabase Auth для email/password.
+Нужно добавить вход через Google OAuth, не ломая текущую авторизацию.
+
+# Requirements
+1. Обнови Flutter auth layer: добавить `signInWithGoogle()`, использовать Supabase OAuth provider Google.
+2. UI: добавить кнопку "Войти через Google" на login screen, loading state, error state.
+3. Routing: после успешного OAuth входа пользователь попадает в приложение; redirect URL должен соответствовать production Netlify URL.
+4. Не хардкодь Client Secret.
+5. Не хардкодь Client ID, если он не нужен во Flutter.
+6. Обнови integration documentation, README, backend docs, development report и prompts.
+7. Добавь ручные шаги Supabase Dashboard и Google Cloud Console.
+8. Добавь/обнови тесты для кнопки, controller call и error state.
+```
+
+Результат:
+
+- `AuthRepository`, `AuthController` и Supabase/mock/Firebase auth implementations обновлены методом `signInWithGoogle()`.
+- Supabase implementation использует `OAuthProvider.google` и redirect URL из `SUPABASE_AUTH_REDIRECT_URL`.
+- Production default redirect URL: `https://cool-duckanoo-d28d04.netlify.app/`.
+- Login screen получил кнопку `Войти через Google`, loading state и friendly error state.
+- Тесты обновлены: Google кнопка отображается, controller вызывает repository OAuth method, Google OAuth error показывается в UI.
+- README, `backend_documentation.md`, `docs/supabase_setup.md`, `integration_documentation.md`, `development_report.md` и `prompts.md` обновлены.
+- Google Client Secret не добавлялся в код или документацию; он должен храниться только в Supabase Dashboard и Google Cloud Console.

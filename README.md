@@ -47,6 +47,7 @@ Mapping:
 ## Main Features
 
 - Email/password sign up, sign in and sign out through Supabase Auth in backend mode.
+- Google OAuth sign in through Supabase Auth. Google Client ID and Client Secret are configured only in Supabase Dashboard, not in Flutter code.
 - Protected routing with `go_router` and Riverpod auth state.
 - Pet social feed with posts, likes and comments.
 - Pet profiles and owner pets.
@@ -326,7 +327,7 @@ https://<project-ref>.supabase.co
 
 ### 3. Enable Auth
 
-Supabase Auth email/password is the target auth provider.
+Supabase Auth email/password is the target auth provider. Google OAuth is enabled through Supabase Auth for OAuth2 integration.
 
 For educational smoke checks, either:
 
@@ -334,6 +335,39 @@ For educational smoke checks, either:
 - temporarily disable email confirmation in Auth settings.
 
 Document the chosen option in the final validation notes. Do not commit real user credentials.
+
+### 3.1. Enable Google OAuth
+
+Manual Supabase Dashboard steps:
+
+1. Open Supabase Dashboard for the production project.
+2. Go to `Authentication` -> `Providers` -> `Google`.
+3. Enable the Google provider.
+4. Paste the Google OAuth Client ID.
+5. Paste the Google OAuth Client Secret only in Supabase Dashboard.
+6. Save the provider settings.
+7. Go to `Authentication` -> `URL Configuration`.
+8. Set Site URL to the production frontend URL:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+```
+
+9. Add exact Redirect URLs for production and local development:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+http://localhost:3000/
+http://127.0.0.1:3000/
+```
+
+Google Cloud Console should use the Supabase callback URL shown in the Supabase Google provider screen, usually:
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+The Google Client Secret must stay only in Supabase Dashboard and Google Cloud Console. Do not add it to Dart code, GitHub Actions, Netlify environment variables, documentation screenshots or git commits.
 
 ### 4. Run Migrations
 
@@ -463,7 +497,8 @@ Pass real values only locally through `--dart-define` or ignored local env files
 flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=http://localhost:3000/
 ```
 
 macOS fallback:
@@ -472,8 +507,17 @@ macOS fallback:
 flutter run -d macos \
   --dart-define=USE_SUPABASE_BACKEND=true \
   --dart-define=SUPABASE_URL=<your-supabase-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
+  --dart-define=SUPABASE_AUTH_REDIRECT_URL=http://127.0.0.1:3000/
 ```
+
+For production builds, `SUPABASE_AUTH_REDIRECT_URL` defaults to:
+
+```text
+https://cool-duckanoo-d28d04.netlify.app/
+```
+
+Flutter does not need the Google OAuth Client ID or Client Secret. It calls Supabase Auth with `OAuthProvider.google`; Supabase owns the provider configuration and redirects back to the allowed URL.
 
 ## End-To-End Check
 
