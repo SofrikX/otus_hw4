@@ -1,9 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../logging/app_logger.dart';
 import '../network/api_error.dart';
+
+const _logger = AppLogger(component: 'supabase');
 
 Future<T> guardSupabaseOperation<T>({
   required String operation,
@@ -164,14 +166,16 @@ void logSupabaseError({
   required String operation,
   required ApiException error,
 }) {
-  if (!kDebugMode) {
-    return;
-  }
-
-  debugPrint(
-    '[PetConnect][Supabase] operation=$operation '
-    'status=${error.statusCode} code=${error.code} '
-    'type=${error.runtimeType}',
+  _logger.error(
+    'supabase_request_error',
+    message: 'Supabase request failed.',
+    details: {
+      'operation': operation,
+      'status_code': error.statusCode,
+      'error_code': error.code,
+      'error_type': error.runtimeType.toString(),
+      if (error.requestId != null) 'request_reference': 'available',
+    },
   );
 }
 

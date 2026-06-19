@@ -262,6 +262,40 @@ Expected alert conditions:
 - Supabase REST endpoint timeout or 5xx;
 - optional DB query returns an unexpected non-auth/non-RLS failure.
 
+## Logging And AI Log Analysis
+
+Detailed logging guide:
+
+```text
+docs/logging.md
+```
+
+PetConnect now uses structured JSON logs for app diagnostics and Netlify health checks. Flutter logs are centralized through `AppLogger` in `lib/core/logging/app_logger.dart`; `/api/health` logs JSON lines from `netlify/functions/health.js`.
+
+Logged application events:
+
+| Area | Events |
+|---|---|
+| Startup | `app_startup`, `app_startup_completed`, `app_startup_failed` |
+| Supabase | `supabase_initialization_started`, `supabase_initialization_completed`, `supabase_request_error` |
+| Auth | `auth_success`, `auth_failure` |
+| Analytics | `analytics_disabled`, `analytics_dispatch_error` |
+| Health check | `health_check` JSON logs with `check`, `httpStatus`, `durationMs` and health status |
+
+Privacy and safety:
+
+- logs do not include tokens, passwords, service role keys, publishable keys, cookies or Authorization headers;
+- logs do not include email addresses, raw user ids, display names, post text, comment text or chat messages;
+- diagnostic payloads keep only operation names, status codes, error codes, exception class names, duration and safe boolean flags.
+
+AI log analysis prompt templates are stored in `docs/logging.md` for:
+
+- auth error analysis;
+- RLS permission denied analysis;
+- Netlify deploy failure analysis;
+- Supabase API error analysis;
+- analytics event missing analysis.
+
 ## Security Notes
 
 - Pull requests run validation and build but do not deploy.

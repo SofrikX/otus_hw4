@@ -1686,3 +1686,48 @@ Security:
 - `SUPABASE_PUBLISHABLE_KEY` не логируется;
 - service role key не используется;
 - RLS/API-grant блокировка optional query считается `skipped`, а не ошибкой backend.
+
+## 34. Structured logging и AI-анализ логов
+
+Дата изменения: 19 июня 2026.
+
+Цель: закрыть требование ДЗ по структурированным логам, уровням логирования, AI-анализу типичных ошибок и безопасной работе с production diagnostics.
+
+Роль Codex: Logging Engineer, QA Engineer и AI Debugging Specialist.
+
+Перед изменениями прочитаны:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `lib/core/`, `lib/features/`;
+- `netlify/functions/`;
+- `integration_documentation.md`;
+- `backend_documentation.md`;
+- `development_report.md`;
+- `prompts.md`.
+
+Что изменено:
+
+- добавлен `lib/core/logging/app_logger.dart` с уровнями `info`, `warning`, `error` и JSON payload;
+- логгер фильтрует секреты, email, raw user id, display names, post/comment/chat text и token-like поля;
+- startup теперь логирует `app_startup`, `app_startup_completed` и `app_startup_failed`;
+- Supabase initialization логирует начало/успех без URL/key values;
+- Supabase errors логируются как `supabase_request_error` с operation, status code, error code и exception type;
+- AuthController логирует `auth_success` и `auth_failure` без email/password/user id;
+- AnalyticsService логирует `analytics_disabled` и `analytics_dispatch_error`;
+- Netlify `/api/health` logs дополнительно санитизируются и остаются JSON logs;
+- создан `docs/logging.md` со strategy, examples, what not to log, Netlify/Supabase log inspection и AI prompt templates;
+- добавлены тесты `test/core/logging/app_logger_test.dart`.
+
+AI prompt templates добавлены для:
+
+- auth error analysis;
+- RLS permission denied analysis;
+- Netlify deploy failure analysis;
+- Supabase API error analysis;
+- analytics event missing analysis.
+
+Security:
+
+- реальные tokens/logs с персональными данными не добавлялись;
+- документация использует synthetic examples;
+- AI prompts прямо запрещают запрашивать JWT, email, user id, Netlify token, Supabase keys и database password.

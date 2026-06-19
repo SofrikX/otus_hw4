@@ -2788,3 +2788,79 @@ Important:
 - Проверяются Netlify Function reachability, `SUPABASE_URL`, Supabase Auth endpoint, Supabase REST endpoint и optional `posts limit 1` query.
 - Function не использует service role key, не возвращает env values и не логирует `SUPABASE_PUBLISHABLE_KEY`.
 - README, `integration_documentation.md`, `backend_documentation.md`, `development_report.md` и `prompts.md` обновлены.
+
+## Prompt 60 — Structured Logging and AI Log Analysis
+
+```markdown
+# Role
+Ты Logging Engineer, QA Engineer и AI Debugging Specialist.
+
+# Task
+Улучшить логирование проекта и добавить промпты для AI-анализа логов.
+
+# Context
+ДЗ требует:
+- структурировать логи;
+- добавить уровни логирования;
+- использовать AI для анализа логов;
+- протестировать анализ типичных ошибок.
+
+# Required reading
+Прочитай:
+- lib/core/
+- lib/features/
+- netlify/functions/
+- integration_documentation.md
+- backend_documentation.md
+- development_report.md
+- prompts.md
+
+# Requirements
+1. Добавь или улучши app logger:
+   - levels: info, warning, error;
+   - structured log format;
+   - no secrets;
+   - no personal data.
+2. Логируй важные события:
+   - app startup;
+   - auth success/failure;
+   - Supabase request error;
+   - analytics disabled/error;
+   - health check errors.
+3. Для Netlify Function `/api/health` используй JSON logs.
+4. Создай docs/logging.md.
+5. В docs/logging.md добавь:
+   - logging strategy;
+   - examples;
+   - what not to log;
+   - how to inspect Netlify logs;
+   - how to inspect Supabase logs.
+6. Добавь AI log analysis prompt templates:
+   - auth error analysis;
+   - RLS permission denied analysis;
+   - Netlify deploy failure analysis;
+   - Supabase API error analysis;
+   - analytics event missing analysis.
+7. Обнови integration_documentation.md.
+8. Обнови development_report.md.
+9. Обнови prompts.md.
+10. Не добавляй реальные tokens/logs с персональными данными.
+
+# Output format
+1. Summary.
+2. Logging changes.
+3. AI log prompts added.
+4. Files changed.
+5. Diff.
+```
+
+Результат:
+
+- Добавлен `AppLogger` в `lib/core/logging/app_logger.dart` с уровнями `info`, `warning`, `error` и JSON payload.
+- Логгер санитизирует детали и не пишет секреты, email, raw user id, display names, object ids, post/comment/chat text, authorization headers или Supabase env values.
+- Startup, Supabase initialization, Supabase request errors, auth success/failure и analytics disabled/error подключены к structured logs.
+- Netlify Function `/api/health` сохраняет JSON logs и дополнительно фильтрует потенциально чувствительные keys/details.
+- Создан `docs/logging.md` со strategy, examples, запретами, инструкциями Netlify/Supabase logs и AI prompt templates.
+- Добавлены AI-шаблоны анализа: auth error, RLS permission denied, Netlify deploy failure, Supabase API error, analytics event missing.
+- Обновлены `integration_documentation.md`, `development_report.md` и `prompts.md`.
+- Добавлен `test/core/logging/app_logger_test.dart` для проверки JSON формата и фильтрации secrets/PII.

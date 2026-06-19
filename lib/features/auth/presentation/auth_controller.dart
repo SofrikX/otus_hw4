@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/analytics/analytics_event.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../core/config/backend_config.dart';
+import '../../../core/logging/app_logger.dart';
 import '../data/firebase_auth_repository.dart';
 import '../data/mock_auth_repository.dart';
 import '../data/supabase_auth_repository.dart';
@@ -46,11 +47,14 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   AuthController(
     this._authRepository, {
     AnalyticsService? analytics,
+    AppLogger logger = const AppLogger(component: 'auth'),
   })  : _analytics = analytics,
+        _logger = logger,
         super(const AsyncValue.data(null));
 
   final AuthRepository _authRepository;
   final AnalyticsService? _analytics;
+  final AppLogger _logger;
 
   AppUser? get currentUser => _authRepository.currentUser;
 
@@ -68,9 +72,22 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         AnalyticsEvent.signInSuccess,
         params: const {'method': 'email'},
       );
+      _logger.info(
+        'auth_success',
+        message: 'Authentication succeeded.',
+        details: const {
+          'operation': 'sign_in',
+          'method': 'email',
+        },
+      );
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       await _analytics?.trackAuthError(operation: 'sign_in', error: error);
+      _logAuthFailure(
+        operation: 'sign_in',
+        method: 'email',
+        error: error,
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -92,9 +109,22 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         AnalyticsEvent.signInSuccess,
         params: const {'method': 'email_after_signup'},
       );
+      _logger.info(
+        'auth_success',
+        message: 'Authentication succeeded.',
+        details: const {
+          'operation': 'sign_up',
+          'method': 'email_after_signup',
+        },
+      );
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       await _analytics?.trackAuthError(operation: 'sign_up', error: error);
+      _logAuthFailure(
+        operation: 'sign_up',
+        method: 'email',
+        error: error,
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -107,10 +137,23 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         AnalyticsEvent.signInSuccess,
         params: const {'method': 'google'},
       );
+      _logger.info(
+        'auth_success',
+        message: 'Authentication succeeded.',
+        details: const {
+          'operation': 'sign_in_google',
+          'method': 'google',
+        },
+      );
       state = const AsyncValue.data(null);
     } catch (error, stackTrace) {
       await _analytics?.trackAuthError(
         operation: 'sign_in_google',
+        error: error,
+      );
+      _logAuthFailure(
+        operation: 'sign_in_google',
+        method: 'google',
         error: error,
       );
       state = AsyncValue.error(error, stackTrace);
@@ -120,5 +163,21 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(_authRepository.signOut);
+  }
+
+  void _logAuthFailure({
+    required String operation,
+    required String method,
+    required Object error,
+  }) {
+    _logger.warning(
+      'auth_failure',
+      message: 'Authentication failed.',
+      details: {
+        'operation': operation,
+        'method': method,
+        'error_type': error.runtimeType.toString(),
+      },
+    );
   }
 }

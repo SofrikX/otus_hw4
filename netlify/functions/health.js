@@ -2,14 +2,54 @@ const DEFAULT_TIMEOUT_MS = 5000;
 const APP_VERSION = process.env.APP_VERSION || process.env.COMMIT_REF || 'unknown';
 
 function log(level, message, details = {}) {
-  const safeDetails = {
+  const safeDetails = sanitizeLogDetails({
+    service: 'petconnect-health',
+    event: 'health_check',
     ...details,
     timestamp: new Date().toISOString(),
-  };
+  });
   const consoleLevel = level === 'warning' ? 'warn' : level;
 
   // Structured logs for Netlify Functions. Never include env values or keys.
   console[consoleLevel](JSON.stringify({ level, message, ...safeDetails }));
+}
+
+function sanitizeLogDetails(details) {
+  return Object.fromEntries(
+    Object.entries(details)
+      .filter(([key]) => !isSensitiveLogKey(key))
+      .map(([key, value]) => [key, sanitizeLogValue(value)]),
+  );
+}
+
+function isSensitiveLogKey(key) {
+  const normalized = key.toLowerCase();
+  return normalized.includes('token') ||
+    normalized.includes('password') ||
+    normalized.includes('secret') ||
+    normalized.includes('apikey') ||
+    normalized.includes('api_key') ||
+    normalized.includes('authorization') ||
+    normalized.includes('cookie') ||
+    normalized.includes('email') ||
+    normalized.includes('user_id') ||
+    normalized.endsWith('_id') ||
+    normalized.includes('supabase_url') ||
+    normalized.includes('publishable_key') ||
+    normalized.includes('service_role');
+}
+
+function sanitizeLogValue(value) {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+
+  const stringValue = String(value).trim();
+  return stringValue.length > 120 ? `${stringValue.slice(0, 120)}...` : stringValue;
 }
 
 function json(statusCode, body) {

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../logging/app_logger.dart';
 import '../network/api_error.dart';
 import 'analytics_event.dart';
 import 'analytics_dispatcher_stub.dart'
@@ -55,10 +55,13 @@ class AnalyticsService {
   const AnalyticsService({
     required this.config,
     AnalyticsDispatcher dispatcher = dispatchAnalyticsEvent,
-  }) : _dispatcher = dispatcher;
+    AppLogger logger = const AppLogger(component: 'analytics'),
+  })  : _dispatcher = dispatcher,
+        _logger = logger;
 
   final AnalyticsConfig config;
   final AnalyticsDispatcher _dispatcher;
+  final AppLogger _logger;
 
   Future<void> track(
     AnalyticsEvent event, {
@@ -66,7 +69,16 @@ class AnalyticsService {
   }) async {
     final safeParams = _safeParams(params);
     if (!config.isReady) {
-      _logLocal(event, safeParams);
+      _logger.info(
+        'analytics_disabled',
+        message:
+            'Analytics event was not dispatched because analytics is disabled or not configured.',
+        details: {
+          'event': event.name,
+          'provider_configured': config.provider.trim().isNotEmpty,
+          'analytics_id_configured': config.analyticsId.trim().isNotEmpty,
+        },
+      );
       return;
     }
 
@@ -78,7 +90,14 @@ class AnalyticsService {
         params: safeParams,
       );
     } on Object catch (error) {
-      debugPrint('Analytics dispatch skipped: ${error.runtimeType}');
+      _logger.error(
+        'analytics_dispatch_error',
+        message: 'Analytics event dispatch failed.',
+        details: {
+          'event': event.name,
+          'error_type': error.runtimeType.toString(),
+        },
+      );
     }
   }
 
@@ -156,11 +175,5 @@ class AnalyticsService {
       return error.code;
     }
     return error.runtimeType.toString();
-  }
-
-  void _logLocal(AnalyticsEvent event, Map<String, Object?> params) {
-    if (kDebugMode) {
-      debugPrint('Analytics disabled: ${event.name} $params');
-    }
   }
 }
