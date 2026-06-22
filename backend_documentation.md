@@ -51,7 +51,7 @@ Flutter UI
 - **Supabase Auth**: email/password sign up, Google OAuth sign in, sign out, session restore и `auth.uid()` для RLS.
 - **PostgreSQL**: relational schema для profiles, pets, posts, comments, likes, walks, walk participants, chats и messages.
 - **Row Level Security**: все application tables защищены RLS policies для роли `authenticated`.
-- **Supabase Storage**: private buckets для аватаров, фото питомцев и изображений постов.
+- **Supabase Storage**: private/prepared buckets для аватаров и post images, плюс public-read `pet-images` для видимой загрузки фото питомцев.
 - **Supabase REST API / Flutter SDK**: операции выполняются через `supabase_flutter`, а Supabase автоматически предоставляет REST endpoints через PostgREST.
 
 Hosted Supabase deployment был проверен 17 июня 2026: migrations применены, RLS включен, Auth login прошел, authenticated REST smoke checks прошли для feed, walks, like, comment, walk join и negative RLS update.
@@ -214,7 +214,8 @@ Migrations находятся в `supabase/migrations/`.
   - `recount_post_likes()` обновляет `posts.likes_count`;
   - `recount_comments()` обновляет `posts.comments_count`;
   - `recount_walk_participants()` обновляет `walks.participants_count`;
-- создает private Storage buckets `avatars`, `pet-photos`, `post-images`.
+- создает private Storage buckets `avatars`, `pet-photos`, `post-images`;
+- migration `004_pet_images_storage.sql` добавляет nullable `pets.photo_url`, public-read bucket `pet-images` и owner/pet-scoped Storage policies.
 
 Migrations применяются в порядке:
 
@@ -886,6 +887,36 @@ Production database was not empty during verification:
 | `walks` | 3 |
 | `walk_participants` | 5 before QA join, then increased |
 
+## 14.1 Pet Photo Storage Flow
+
+Файловое хранилище для финального demo реализовано через bucket `pet-images`.
+
+Выбранный подход: public read + authenticated owner-scoped writes. Для учебного Flutter Web проекта это проще signed URLs: `Image.network` может сразу показывать сохраненный URL из `pets.photo_url`, а безопасность записи остается на Supabase Auth, Storage policies и RLS.
+
+Security boundaries:
+
+- upload path: `pet-images/<auth.uid()>/<pet-id>/<timestamp>-<file-name>`;
+- Storage insert/update/delete проверяют, что первый segment равен `auth.uid()` и второй segment указывает на pet, где `pets.owner_id = auth.uid()`;
+- `public.pets.photo_url` nullable и обновляется только через обычный `pets_update_own` RLS;
+- Flutter валидирует file type до upload: `jpg`, `jpeg`, `png`, `webp`;
+- Flutter отклоняет пустые файлы и файлы больше 5 MB;
+- frontend использует только Supabase publishable key и текущую user session, service role key не используется.
+
+Flutter flow:
+
+```text
+Pet profile -> FilePicker -> validation -> Supabase Storage uploadBinary
+  -> update public.pets.photo_url -> invalidate pet providers -> Image.network
+```
+
+Manual hosted Supabase setup after pulling this change:
+
+```bash
+supabase db push
+```
+
+Если migration не применяется автоматически, выполните `supabase/migrations/004_pet_images_storage.sql` в Supabase SQL Editor. Затем проверьте Dashboard -> Storage: bucket `pet-images` должен быть public, а policies должны разрешать public select и authenticated owner-scoped insert/update/delete.
+
 Blocking frontend issue:
 
 ```text
@@ -925,7 +956,7 @@ All AI-generated changes were checked against project rules: no secrets in repos
 
 ## 16. Известные ограничения MVP
 
-- Image upload UI for avatars, pet photos and post images is prepared at Storage policy level but not fully exposed as a polished end-user flow.
+- Pet photo upload UI is implemented through Supabase Storage bucket `pet-images`; avatar and post image upload remain future polish.
 - Chat read/message policies exist, but client-side chat creation is intentionally not open without a trusted RPC or server operation.
 - Feed, pets and walks use denormalized display fields such as `author_name`, `pet_name` and `owner_name`; future production work can add stricter server-side consistency.
 - Fresh sign-up and create-post browser click-through should be repeated by the student with local hosted credentials before final demo.

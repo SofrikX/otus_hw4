@@ -39,6 +39,7 @@ class MockPetRepository implements PetRepository {
       breed: input.breed,
       age: input.age,
       description: input.description,
+      photoUrl: null,
       photoEmoji: input.photoEmoji ?? '🐾',
       ownerName: input.ownerName ?? 'Владелец',
     );
@@ -49,5 +50,19 @@ class MockPetRepository implements PetRepository {
 
   Future<List<Pet>> getAllPets() async {
     return List<Pet>.unmodifiable(_pets);
+  }
+
+  @override
+  Future<Pet> uploadPetPhoto(UploadPetPhotoInput input) async {
+    final index = _pets.indexWhere((pet) => pet.id == input.petId);
+    if (index == -1) {
+      throw StateError('Pet not found.');
+    }
+
+    final updated = _pets[index].copyWith(
+      photoUrl: 'https://example.test/pet-images/${input.petId}.jpg',
+    );
+    _pets[index] = updated;
+    return updated;
   }
 }

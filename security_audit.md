@@ -79,6 +79,7 @@ The grep gate intentionally scans runtime/configuration paths rather than docume
 | SEC-006 | Low | OAuth redirects | Local Supabase redirect config used an `https://127.0.0.1:3000` URL and did not document exact Netlify redirect in local config. | Fixed |
 | SEC-007 | Low | Secrets hygiene | Ignored local `.env.deploy` contains real local deployment values. It is not tracked, but must not be copied into docs or commits. | Documented |
 | SEC-008 | Low | Flutter Web | `web/index.html` loads an external Corbado/passkeys bundle required by the current web auth setup. This is a supply-chain/CSP consideration rather than direct XSS in app code. | Remaining risk |
+| SEC-009 | Medium | File upload | Pet photo upload can introduce oversized files, unexpected file types or public profile image exposure if unconstrained. | Mitigated |
 
 ## 4. Fixes Applied
 
@@ -175,6 +176,8 @@ RLS is enabled for all application tables:
 
 Storage buckets are private and Storage policies require authenticated access and owner-prefixed paths for writes.
 
+The pet photo bucket `pet-images` intentionally uses public read for simple profile photo rendering in Flutter Web. Write/update/delete policies require authenticated owner-scoped paths and verify that the path pet id belongs to `auth.uid()`. Flutter rejects unsupported file types and files larger than 5 MB before upload.
+
 ### OAuth Redirect URLs
 
 Local `supabase/config.toml` now uses exact redirect URLs:
@@ -206,6 +209,25 @@ Supabase repositories use the typed Supabase client query builder with `.from()`
 Flutter Supabase logging is debug-only and logs operation/status/code/type, not access tokens, passwords or full error payloads.
 
 Historical Firebase Functions logs request method/path/query, UID and resource IDs. Authorization headers and tokens are not logged. This branch is not the current production backend.
+
+### File Upload Risks
+
+Risks:
+
+- arbitrary file upload;
+- oversized files affecting storage quota and UX;
+- public profile photo URLs being shared outside the app;
+- users overwriting another pet's image path.
+
+Mitigations:
+
+- Flutter Web picker and validation allow only JPG/JPEG/PNG/WebP;
+- max file size is 5 MB;
+- file bytes are not logged;
+- Storage paths include `<auth.uid()>/<pet-id>/...`;
+- Storage policies check that `<pet-id>` belongs to `auth.uid()`;
+- `pets.photo_url` updates go through RLS-protected `pets_update_own`;
+- no service role key is used in frontend upload.
 
 ## 7. OWASP Top 10 Mapping
 

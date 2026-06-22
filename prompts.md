@@ -3179,3 +3179,34 @@ PetConnect — финальный портфолио-проект.
 - Create-post bottom sheet получил desktop max width, drag handle, helper text, keyboard-aware safe area и friendly error snackbar.
 - Обновлены `project_documentation.md` и `development_report.md`.
 - Routing, бизнес-логика, repository layer и Supabase integration не менялись.
+
+## Prompt 68 — Supabase Storage для фото питомцев
+
+```markdown
+# Role
+Ты OpenAI Codex, Supabase Storage Engineer и Flutter Web Developer.
+
+# Task
+Добавь в PetConnect поддержку загрузки и отображения фото питомцев через Supabase Storage.
+
+# Key requirements
+- проверить pet/profile model;
+- добавить migration для nullable image field, если нужно;
+- создать/обновить Storage bucket `pet-images`;
+- добавить Storage policies для owner-scoped upload/update/delete и read policy;
+- Flutter Web image picker/upload/display;
+- allowed types: jpg, jpeg, png, webp;
+- reasonable size limit and friendly errors;
+- no service role key, no disabled RLS, no secrets;
+- tests and documentation updates.
+```
+
+Результат:
+
+- `public.pets.photo_url` уже существовал в initial schema; новая migration делает `add column if not exists` для idempotency.
+- Добавлен `supabase/migrations/004_pet_images_storage.sql` с public-read bucket `pet-images` и policies для owner/pet-scoped upload/update/delete.
+- Flutter Web получил `file_picker`, `PetPhotoController`, validation JPG/JPEG/PNG/WebP до 5 MB, upload через Supabase Storage и сохранение public URL в `pets.photo_url`.
+- `PetCard` и `PetProfileScreen` показывают реальные фото через `Image.network`, с emoji placeholder, loading и error states.
+- Добавлены tests для pet photo controller validation/upload и widget tests для placeholder/image state.
+- Обновлены README, project docs, technical specification, user stories, backend/integration/security docs и development report.
+- Проверки: `flutter pub get`, `dart format lib/features/pets test/features/pets`, `flutter test test/features/pets`, `flutter analyze`.

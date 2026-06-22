@@ -110,19 +110,29 @@ Buckets:
 
 - `avatars`;
 - `pet-photos`;
+- `pet-images`;
 - `post-images`.
 
 Rules:
 
-- read: authenticated users;
+- `avatars`, `pet-photos`, `post-images` read: authenticated users;
+- `pet-images` read: public, because pet profile photos are intentionally visible in the app;
 - write/update/delete: first path segment must match `auth.uid()`;
-- paths should use `<user-id>/<file-name>`.
+- `pet-images` additionally checks the second path segment is a pet id owned by `auth.uid()`;
+- paths should use `<user-id>/<pet-id>/<file-name>` for pet photos.
 
 Example:
 
 ```text
-post-images/00000000-0000-0000-0000-000000000001/photo.jpg
+pet-images/00000000-0000-0000-0000-000000000001/pet-id/photo.jpg
 ```
+
+Pet photo upload mitigations:
+
+- Flutter accepts only JPG/JPEG/PNG/WebP;
+- Flutter rejects empty files and files larger than 5 MB;
+- file contents, tokens and raw secrets are not logged;
+- `pets.photo_url` is updated through normal RLS-protected table policies.
 
 ## Service Role Key
 

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'pet.dart';
 
 abstract class PetRepository {
@@ -8,6 +10,8 @@ abstract class PetRepository {
   Future<List<Pet>> getPetsByOwner(String ownerId);
 
   Future<Pet> createPet(CreatePetInput input);
+
+  Future<Pet> uploadPetPhoto(UploadPetPhotoInput input);
 }
 
 class CreatePetInput {
@@ -30,4 +34,20 @@ class CreatePetInput {
   final String description;
   final String? ownerName;
   final String? photoEmoji;
+}
+
+class UploadPetPhotoInput {
+  const UploadPetPhotoInput({
+    required this.petId,
+    required this.fileName,
+    required this.bytes,
+    required this.contentType,
+  });
+
+  final String petId;
+  final String fileName;
+  final Uint8List bytes;
+  final String contentType;
+
+  int get sizeBytes => bytes.lengthInBytes;
 }

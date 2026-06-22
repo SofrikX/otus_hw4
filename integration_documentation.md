@@ -222,6 +222,33 @@ build/web
 
 The repository also keeps `netlify.toml` for Netlify-compatible build settings and SPA redirect behavior. `build/web` remains ignored by git and must not be committed.
 
+## Supabase Storage Integration
+
+PetConnect exposes file storage through pet photo upload in Flutter Web.
+
+Storage bucket:
+
+```text
+pet-images
+```
+
+The bucket uses public read because pet profile images are part of visible community profiles and Flutter Web can render the saved `pets.photo_url` directly with `Image.network`. Writes remain authenticated and owner-scoped by Storage policies.
+
+Upload constraints:
+
+- allowed extensions/content types: JPG, JPEG, PNG, WebP;
+- maximum file size: 5 MB;
+- path format: `<auth.uid()>/<pet-id>/<timestamp>-<safe-file-name>`;
+- after upload, Flutter updates `public.pets.photo_url` through the Supabase client.
+
+Manual setup:
+
+```bash
+supabase db push
+```
+
+For hosted projects without CLI migration access, run `supabase/migrations/004_pet_images_storage.sql` in the Supabase SQL Editor and confirm the `pet-images` bucket and policies in Dashboard -> Storage.
+
 ## Monitoring And Health Check
 
 PetConnect exposes a production health endpoint through Netlify Functions:
@@ -390,7 +417,7 @@ AI recommendations before final handoff:
 - keep analytics lazy: Yandex Metrica must load only after an enabled event is dispatched with configured provider/id;
 - avoid verbose production logging from Flutter Web, especially startup and disabled-analytics events;
 - avoid unnecessary Riverpod consumers in static UI widgets;
-- keep current emoji/placeholders cheap until the image upload UI is exposed; when real Storage images are added, use constrained dimensions, thumbnails and lazy list rendering;
+- keep Storage images constrained in pet cards/profile and preserve lightweight emoji placeholders for missing or failed images;
 - keep the external Corbado/passkeys script pinned and loaded before Flutter because it is part of the current web auth workaround, but treat it as a startup/network risk to revisit after auth validation.
 
 Applied safe optimizations:

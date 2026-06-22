@@ -4,8 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/responsive_center.dart';
+import '../../../auth/presentation/auth_controller.dart';
+import '../../application/pet_photo_controller.dart';
+import '../../application/pet_photo_picker.dart';
 import '../../application/pets_provider.dart';
 import '../../domain/pet.dart';
+import '../widgets/pet_photo_view.dart';
 
 class PetProfileScreen extends ConsumerWidget {
   const PetProfileScreen({required this.petId, super.key});
@@ -38,18 +42,24 @@ class PetProfileScreen extends ConsumerWidget {
   }
 }
 
-class _PetProfileContent extends StatelessWidget {
+class _PetProfileContent extends ConsumerWidget {
   const _PetProfileContent({required this.pet});
 
   final Pet pet;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(authStateProvider).valueOrNull;
+    final canUploadPhoto = currentUser?.id == pet.ownerId;
+
     return ResponsiveCenter(
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _PetSummaryCard(pet: pet),
+          _PetSummaryCard(
+            pet: pet,
+            canUploadPhoto: canUploadPhoto,
+          ),
           const SizedBox(height: 16),
           _OwnerCard(ownerName: pet.ownerName),
           const SizedBox(height: 12),
@@ -61,9 +71,13 @@ class _PetProfileContent extends StatelessWidget {
 }
 
 class _PetSummaryCard extends StatelessWidget {
-  const _PetSummaryCard({required this.pet});
+  const _PetSummaryCard({
+    required this.pet,
+    required this.canUploadPhoto,
+  });
 
   final Pet pet;
+  final bool canUploadPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +86,15 @@ class _PetSummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Text(
-              pet.photoEmoji,
-              style: const TextStyle(fontSize: 96),
+            PetPhotoView(
+              pet: pet,
+              size: 160,
+              borderRadius: 32,
             ),
+            if (canUploadPhoto) ...[
+              const SizedBox(height: 12),
+              _PetPhotoUploadButton(petId: pet.id),
+            ],
             const SizedBox(height: 16),
             Text(
               pet.name,
@@ -92,6 +111,60 @@ class _PetSummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _PetPhotoUploadButton extends ConsumerWidget {
+  const _PetPhotoUploadButton({required this.petId});
+
+  final String petId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uploadState = ref.watch(petPhotoControllerProvider(petId));
+    final isLoading = uploadState.isLoading;
+
+    return Column(
+      children: [
+        FilledButton.icon(
+          onPressed: isLoading
+              ? null
+              : () async {
+                  final updatedPet = await ref
+                      .read(petPhotoControllerProvider(petId).notifier)
+                      .pickAndUpload();
+                  if (updatedPet != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Фото питомца обновлено')),
+                    );
+                  }
+                },
+          icon: isLoading
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add_photo_alternate_outlined),
+          label: Text(isLoading ? 'Загрузка...' : 'Загрузить фото'),
+        ),
+        if (uploadState.hasError) ...[
+          const SizedBox(height: 8),
+          Text(
+            _petPhotoErrorMessage(uploadState.error),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _petPhotoErrorMessage(Object? error) {
+    if (error is PetPhotoValidationException) {
+      return error.message;
+    }
+
+    return 'Не удалось загрузить фото. Попробуйте ещё раз.';
   }
 }
 

@@ -80,8 +80,11 @@ Reasoning:
 
 ### Image upload
 
-- Supabase Storage buckets exist for avatars, pet photos and post images.
-- User-facing upload/display for pet/post images is planned.
+- Pet owners can upload a pet photo from Flutter Web.
+- Allowed pet photo types are JPG, JPEG, PNG and WebP.
+- Pet photo uploads are limited to 5 MB.
+- The app uploads pet photos to Supabase Storage bucket `pet-images` and stores the resulting public URL in `pets.photo_url`.
+- Post image upload is planned through Supabase Storage.
 
 ### Analytics
 
@@ -219,7 +222,8 @@ Storage buckets:
 | Bucket | Purpose | Status |
 |---|---|---|
 | `avatars` | User avatars | Backend configured, UI upload planned |
-| `pet-photos` | Pet profile photos | Backend configured, UI upload planned |
+| `pet-photos` | Historical/prepared pet photo bucket | Backend configured |
+| `pet-images` | Pet profile photos shown in UI | Public read, owner-scoped authenticated upload/update/delete implemented |
 | `post-images` | Post images | Backend configured, UI upload planned |
 
 ## 7. API/CRUD Operations
@@ -232,7 +236,8 @@ PetConnect uses Supabase client operations and auto REST API rather than a custo
 | Profiles | Upsert profile after auth | Done |
 | Pets | Read list/details/owner pets | Done |
 | Pets | Create pet | Backend/repository done, UI flow planned |
-| Pets | Update/delete own pet | Planned |
+| Pets | Update own pet photo | Done |
+| Pets | Update/delete own pet profile fields | Planned |
 | Feed | Read recent non-deleted posts | Done |
 | Feed | Create post | Done |
 | Feed | Update/delete own post | Planned |
@@ -308,7 +313,9 @@ Policy summary:
 Storage security:
 
 - Buckets are configured by migrations.
-- Writes must be scoped to the current user path, for example `<auth.uid()>/<file-name>`.
+- `pet-images` uses public read for simple image rendering in Flutter Web.
+- `pet-images` writes use paths `<auth.uid()>/<pet-id>/<file-name>` and policies verify that `<pet-id>` belongs to the current user.
+- The app validates JPG/JPEG/PNG/WebP and 5 MB max size before upload.
 - Service role key is never used in the Flutter app.
 
 Repository security:

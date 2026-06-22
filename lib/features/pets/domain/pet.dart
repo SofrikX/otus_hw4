@@ -9,6 +9,7 @@ class Pet {
     required this.description,
     required this.photoEmoji,
     required this.ownerName,
+    this.photoUrl,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class Pet {
   final String description;
   final String photoEmoji;
   final String ownerName;
+  final String? photoUrl;
 
   Pet copyWith({
     String? id,
@@ -31,6 +33,7 @@ class Pet {
     String? description,
     String? photoEmoji,
     String? ownerName,
+    String? photoUrl,
   }) {
     return Pet(
       id: id ?? this.id,
@@ -42,6 +45,7 @@ class Pet {
       description: description ?? this.description,
       photoEmoji: photoEmoji ?? this.photoEmoji,
       ownerName: ownerName ?? this.ownerName,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 
@@ -56,6 +60,7 @@ class Pet {
       description: json['description'] as String,
       photoEmoji: json['photoEmoji'] as String,
       ownerName: json['ownerName'] as String,
+      photoUrl: json['photoUrl'] as String?,
     );
   }
 
@@ -70,6 +75,7 @@ class Pet {
       'description': description,
       'photoEmoji': photoEmoji,
       'ownerName': ownerName,
+      'photoUrl': photoUrl,
     };
   }
 }

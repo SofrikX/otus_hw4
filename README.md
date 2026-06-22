@@ -50,7 +50,7 @@ Mapping:
 - Google OAuth sign in through Supabase Auth. Google Client ID and Client Secret are configured only in Supabase Dashboard, not in Flutter code.
 - Protected routing with `go_router` and Riverpod auth state.
 - Pet social feed with posts, likes and comments.
-- Pet profiles and owner pets.
+- Pet profiles and owner pets with Supabase Storage photo upload/display.
 - Walk list, walk creation and join/leave flow.
 - Basic chat data model for chat list and messages.
 - Friendly loading, empty, error and success states through controllers/providers.
@@ -116,6 +116,7 @@ Storage buckets:
 
 - `avatars`
 - `pet-photos`
+- `pet-images`
 - `post-images`
 
 RLS model:
@@ -125,6 +126,7 @@ RLS model:
 - walk creators manage their own walks;
 - chat rows and messages are visible only to chat participants;
 - Storage writes require paths like `<auth.uid()>/<file-name>`.
+- `pet-images` uses public read for profile photo rendering and authenticated owner-scoped writes to `<auth.uid()>/<pet-id>/<file-name>`.
 
 More details:
 
@@ -556,11 +558,10 @@ order by tablename;
 
 Every returned row should have `rowsecurity = true`.
 
-Also check that private Storage buckets exist:
+Also check that Storage buckets exist:
 
-- `avatars`
-- `pet-photos`
-- `post-images`
+- private/prepared: `avatars`, `pet-photos`, `post-images`;
+- public-read pet profile photos: `pet-images`.
 
 ## Run The App
 

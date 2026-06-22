@@ -41,6 +41,7 @@ class ApiPetRepository implements PetRepository {
       'age': input.age,
       'description': input.description,
       'photoEmoji': input.photoEmoji,
+      'photoUrl': null,
     });
 
     return _mapPet(pet);
@@ -55,8 +56,18 @@ class ApiPetRepository implements PetRepository {
       breed: json['breed'] as String? ?? 'Не указана',
       age: (json['age'] as num?)?.toInt() ?? 0,
       description: json['description'] as String? ?? '',
+      photoUrl: json['photoUrl'] as String?,
       photoEmoji: json['photoEmoji'] as String? ?? '🐾',
       ownerName: json['ownerName'] as String? ?? 'Владелец',
+    );
+  }
+
+  @override
+  Future<Pet> uploadPetPhoto(UploadPetPhotoInput input) {
+    throw const ApiUnexpectedException(
+      statusCode: 501,
+      code: 'unsupported-storage-backend',
+      message: 'Pet photo upload is available in Supabase backend mode.',
     );
   }
 }

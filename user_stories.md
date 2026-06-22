@@ -281,12 +281,13 @@ Priority values:
 
 **Acceptance criteria:**
 
-- Given the user selects an allowed image file, then the file is uploaded to the `pet-photos` bucket under a path owned by `auth.uid()`.
-- Given the file is too large or not an image, then the upload is rejected.
-- Given another user tries to overwrite a file outside their path, then Storage policies block the request.
+- Given the pet owner selects a JPG, JPEG, PNG or WebP image up to 5 MB, then the file is uploaded to `pet-images/<auth.uid()>/<pet-id>/...`.
+- Given upload succeeds, then `public.pets.photo_url` is updated and the pets list/profile show the uploaded image.
+- Given the file is too large or not an allowed image type, then the upload is rejected with a friendly message.
+- Given another user tries to upload, update or delete an image for a pet they do not own, then Storage policies and `pets` RLS block the request.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ### IMG-2. Upload post image
 

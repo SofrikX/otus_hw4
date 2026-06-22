@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/pet.dart';
+import 'pet_photo_view.dart';
 
 class PetCard extends StatelessWidget {
   const PetCard({
@@ -24,20 +25,7 @@ class PetCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Center(
-                  child: Text(
-                    pet.photoEmoji,
-                    style: const TextStyle(fontSize: 34),
-                  ),
-                ),
-              ),
+              PetPhotoView(pet: pet, size: 72),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

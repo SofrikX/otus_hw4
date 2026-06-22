@@ -890,7 +890,41 @@ flutter test
 
 - реальные Supabase URL/publishable key не добавлялись;
 - hosted Supabase smoke test профилей питомцев остается next step после создания project и применения migrations;
-- Supabase Storage upload фото питомца пока не подключался к UI, используется существующий `photo_emoji` fallback.
+- Supabase Storage upload фото питомца реализован через `pet-images`, `file_picker`, owner-scoped policies и `pets.photo_url`; `photo_emoji` остается fallback.
+
+## 18. Pet photo Storage integration
+
+Дата интеграции: 22 июня 2026.
+
+Codex добавил пользовательский Storage flow для фото питомцев:
+
+- `public.pets.photo_url` подтвержден как nullable поле и защищен существующей owner-scoped RLS policy;
+- добавлена migration `004_pet_images_storage.sql` для bucket `pet-images` с public read и authenticated owner/pet-scoped insert/update/delete;
+- `Pet` получил `photoUrl`, Supabase repository загружает bytes через `uploadBinary`, сохраняет public URL в `pets.photo_url` и не использует service role key;
+- Flutter Web использует `file_picker` с `withData`, допускает только JPG/JPEG/PNG/WebP и ограничивает размер 5 MB;
+- `PetProfileScreen` показывает upload button только владельцу питомца, loading/error state и success snackbar;
+- `PetCard` и profile screen показывают `Image.network`, а при отсутствии/ошибке изображения используют emoji placeholder.
+
+Проверки:
+
+```bash
+flutter pub get
+dart format lib/features/pets test/features/pets
+flutter test test/features/pets
+flutter analyze
+flutter test
+```
+
+Результат:
+
+- `flutter test test/features/pets` прошел: 19 tests passed;
+- `flutter analyze` завершился без замечаний;
+- полный `flutter test` прошел: 82 tests passed.
+
+Ограничения:
+
+- hosted Supabase migration/smoke upload нужно выполнить после `supabase db push`;
+- post image upload остается planned enhancement.
 
 ## 18. Supabase walks integration
 
@@ -1892,7 +1926,7 @@ PetConnect становится портфолио-проектом full-stack F
 - создан `final_project_gap_analysis.md` с таблицей требований, статусами `Done` / `Partial` / `Missing`, evidence и planned action;
 - в `project_documentation.md` добавлен раздел `Final delivery plan`;
 - обязательные блоки frontend/backend/AI/docs в целом закрыты, но delivery readiness отмечен как `Partial`;
-- ключевые gaps: production redeploy + E2E, Storage UI, search/filtering UI, CRUD completeness для pets/posts/walks, responsive screenshots и финальный QA status.
+- ключевые gaps на момент анализа: production redeploy + E2E, Storage UI, search/filtering UI, CRUD completeness для pets/posts/walks, responsive screenshots и финальный QA status. Storage UI для фото питомцев позже закрыт отдельной интеграцией.
 
 Минимальный набор доработок перед сдачей:
 

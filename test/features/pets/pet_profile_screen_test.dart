@@ -58,6 +58,38 @@ void main() {
     expect(find.text(pet.description), findsOneWidget);
   });
 
+  testWidgets('PetProfileScreen shows placeholder when pet has no photo',
+      (tester) async {
+    final pet = mockPets.first.copyWith(photoUrl: null);
+
+    await tester.pumpWidget(
+      _buildPetsApp(
+        initialLocation: '/pets/${pet.id}',
+        repository: _FakePetRepository(pets: [pet]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(pet.photoEmoji), findsWidgets);
+  });
+
+  testWidgets('PetProfileScreen renders network image when photoUrl exists',
+      (tester) async {
+    final pet = mockPets.first.copyWith(
+      photoUrl: 'https://example.test/pet-images/bruno.jpg',
+    );
+
+    await tester.pumpWidget(
+      _buildPetsApp(
+        initialLocation: '/pets/${pet.id}',
+        repository: _FakePetRepository(pets: [pet]),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(Image), findsOneWidget);
+  });
+
   testWidgets('PetProfileScreen shows not found state for unknown pet',
       (tester) async {
     await tester.pumpWidget(
@@ -185,8 +217,24 @@ class _FakePetRepository implements PetRepository {
       breed: input.breed,
       age: input.age,
       description: input.description,
+      photoUrl: null,
       photoEmoji: input.photoEmoji ?? '🐾',
       ownerName: input.ownerName ?? 'Владелец',
     );
+  }
+
+  @override
+  Future<Pet> uploadPetPhoto(UploadPetPhotoInput input) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    final pet = await getPetById(input.petId);
+    if (pet == null) {
+      throw StateError('Pet not found.');
+    }
+
+    return pet.copyWith(photoUrl: 'https://example.test/${input.fileName}');
   }
 }

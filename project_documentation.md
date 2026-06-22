@@ -69,7 +69,7 @@ Scope финальной работы:
 | Backend schema | SQL migrations для `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages` |
 | Security | RLS policies для application tables, Storage policies, security audit |
 | API integration | Supabase repositories for feed, pets and walks; legacy API repositories preserved as historical Firebase branch support |
-| Storage | Supabase buckets `avatars`, `pet-photos`, `post-images` описаны и создаются migrations |
+| Storage | Supabase buckets `avatars`, `pet-photos`, `post-images` описаны; `pet-images` добавлен для пользовательской загрузки фото питомцев |
 | Hosting | Netlify configuration, SPA redirects, health endpoint |
 | CI/CD | GitHub Actions: security audit, format, analyze, tests, web build, Netlify deploy on `main` |
 | Analytics | Yandex Metrica events with privacy filtering |
@@ -84,7 +84,7 @@ Scope финальной работы:
 | Product packaging | Свести документы ДЗ в единую финальную проектную историю |
 | Frontend UX | Проверить финальные production scenarios, mobile/desktop responsive layout и error states |
 | Backend validation | Повторить Supabase `db lint`, `db reset` или hosted SQL/RLS smoke checks перед сдачей |
-| File storage UX | При необходимости вывести реальные Storage images в UI вместо текущих emoji/fallback values |
+| File storage UX | Фото питомцев загружаются в Supabase Storage и отображаются в pet list/profile; emoji остается fallback |
 | Search/filtering | Уточнить и показать фильтрацию прогулок или ленты как дополнительную функцию проекта |
 | Notifications | Описать как future enhancement, если не будет реализовано в финальном scope |
 | Production QA | Повторить Netlify redeploy и E2E проверку после исправлений OAuth/web startup |
@@ -216,7 +216,7 @@ PostgreSQL relations cover more than three connected tables: profiles own pets, 
 | Backend: data validation | PostgreSQL constraints, RLS checks, repository-side mapping and friendly error handling |
 | Additional: OAuth2 | Google OAuth through Supabase Auth |
 | Additional: analytics | Yandex Metrica events with privacy-safe params |
-| Additional: file storage | Supabase Storage buckets for avatars, pet photos and post images |
+| Additional: file storage | Supabase Storage bucket `pet-images` for pet photo upload/display, plus prepared buckets for avatars and post images |
 | Additional: search/filtering | Walk/feed data model supports query filters; final demo can emphasize active walks/feed filtering |
 | AI: planning/design | Documented in `docs/ai_workflow.md`, `prompts.md` and `development_report.md` |
 | AI: user stories/specification | `user_stories.md`, `technical_specification.md`, `project_documentation.md` |
@@ -236,5 +236,5 @@ Final requirements package:
 
 - Production Netlify frontend must be redeployed after the latest OAuth/web startup hardening and then checked end-to-end.
 - Supabase local lint/reset should be repeated when local Supabase services are running; hosted smoke checks already document previous validation.
-- Real image upload/display through Supabase Storage can be polished further if the final demo should show uploaded photos instead of existing fallback visuals.
+- Real pet photo upload/display through Supabase Storage is implemented for the final demo; post image upload remains a planned enhancement.
 - Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and search/filtering cover the required additional-function set.

@@ -32,6 +32,7 @@ void main() {
               'breed': 'Corgi',
               'age': 3,
               'description': 'Loves parks',
+              'photo_url': 'https://example.test/bruno.jpg',
               'photo_emoji': '🐶',
               'created_at': '2026-06-17T10:00:00Z',
             },
@@ -46,6 +47,7 @@ void main() {
     expect(pet?.ownerId, 'user-1');
     expect(pet?.name, 'Bruno');
     expect(pet?.ownerName, 'Ava');
+    expect(pet?.photoUrl, 'https://example.test/bruno.jpg');
     expect(pet?.photoEmoji, '🐶');
   });
 
@@ -105,6 +107,7 @@ void main() {
               'breed': null,
               'age': null,
               'description': null,
+              'photo_url': null,
               'photo_emoji': null,
               'created_at': '2026-06-17T10:00:00Z',
             },

@@ -8,6 +8,8 @@ import '../domain/pet_repository.dart';
 class SupabasePetRepository implements PetRepository {
   const SupabasePetRepository(this._client);
 
+  static const petImagesBucket = 'pet-images';
+
   static const _petColumns = '''
 id,
 owner_id,
@@ -17,6 +19,7 @@ animal_type,
 breed,
 age,
 description,
+photo_url,
 photo_emoji,
 created_at
 ''';
@@ -95,6 +98,50 @@ created_at
     });
   }
 
+  @override
+  Future<Pet> uploadPetPhoto(UploadPetPhotoInput input) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      final petRow = await _client
+          .from('pets')
+          .select('id, owner_id')
+          .eq('id', input.petId)
+          .single();
+
+      if (petRow['owner_id'] != userId) {
+        throw const ApiForbiddenException(
+          message: 'Only the pet owner can update this photo.',
+        );
+      }
+
+      final safeFileName = _safeStorageFileName(input.fileName);
+      final storagePath =
+          '$userId/${input.petId}/${DateTime.now().microsecondsSinceEpoch}-$safeFileName';
+
+      await _client.storage.from(petImagesBucket).uploadBinary(
+            storagePath,
+            input.bytes,
+            fileOptions: FileOptions(
+              cacheControl: '3600',
+              contentType: input.contentType,
+              upsert: true,
+            ),
+          );
+
+      final publicUrl =
+          _client.storage.from(petImagesBucket).getPublicUrl(storagePath);
+
+      final response = await _client
+          .from('pets')
+          .update({'photo_url': publicUrl})
+          .eq('id', input.petId)
+          .select(_petColumns)
+          .single();
+
+      return _mapPet(response);
+    });
+  }
+
   Pet _mapPet(Map<String, dynamic> row) {
     return Pet(
       id: row['id'] as String,
@@ -104,9 +151,18 @@ created_at
       breed: row['breed'] as String? ?? 'Не указана',
       age: (row['age'] as num?)?.toInt() ?? 0,
       description: row['description'] as String? ?? '',
+      photoUrl: row['photo_url'] as String?,
       photoEmoji: row['photo_emoji'] as String? ?? '🐾',
       ownerName: row['owner_name'] as String? ?? 'Владелец',
     );
+  }
+
+  String _safeStorageFileName(String fileName) {
+    final trimmed = fileName.trim().toLowerCase();
+    final sanitized = trimmed.replaceAll(RegExp(r'[^a-z0-9._-]'), '-');
+    final withoutRuns = sanitized.replaceAll(RegExp('-+'), '-');
+    final result = withoutRuns.isEmpty ? 'pet-photo.jpg' : withoutRuns;
+    return result.length > 96 ? result.substring(result.length - 96) : result;
   }
 
   List<Map<String, dynamic>> _rowsFrom(Object? response) {
