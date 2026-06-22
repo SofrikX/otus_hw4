@@ -680,7 +680,7 @@ Netlify SPA redirect:
 Health endpoint:
 
 ```text
-[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+https://cool-duckanoo-d28d04.netlify.app/api/health
 ```
 
 PetConnect does not run a custom backend server because Supabase provides Auth, PostgreSQL, RLS, Storage and PostgREST. For monitoring, the project adds a small Netlify Function at `netlify/functions/health.js`.
@@ -706,7 +706,7 @@ Response shape:
 
 The endpoint never returns secrets or raw environment values. It does not use a service role key. Structured logs are emitted as JSON with `info`, `warning` and `error` levels, and publishable keys are not logged.
 
-External monitors such as UptimeRobot, Pingdom or Better Stack should check `[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health` with `GET` every 5 minutes and alert on non-`200` responses or a body status different from `ok`.
+External monitors such as UptimeRobot, Pingdom or Better Stack should check `https://cool-duckanoo-d28d04.netlify.app/api/health` with `GET` every 5 minutes and alert on non-`200` responses or a body status different from `ok`.
 
 If Netlify's build environment does not include Flutter SDK, build locally with the same release command and deploy the generated `build/web` folder manually through Netlify drag-and-drop.
 

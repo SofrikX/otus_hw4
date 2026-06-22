@@ -227,7 +227,7 @@ The repository also keeps `netlify.toml` for Netlify-compatible build settings a
 PetConnect exposes a production health endpoint through Netlify Functions:
 
 ```text
-[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+https://cool-duckanoo-d28d04.netlify.app/api/health
 ```
 
 Implementation:
@@ -269,7 +269,7 @@ Security notes:
 Recommended monitor setup:
 
 1. Create an UptimeRobot, Pingdom or Better Stack HTTP monitor.
-2. Set the check URL to `[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health`.
+2. Set the check URL to `https://cool-duckanoo-d28d04.netlify.app/api/health`.
 3. Use method `GET`.
 4. Use an interval of 5 minutes for free-tier monitoring.
 5. Alert when HTTP status is not `200`.

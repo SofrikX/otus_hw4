@@ -34,9 +34,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return AsyncContentView(
       value: postsValue,
       onRetry: controller.refresh,
+      emptyIcon: Icons.dynamic_feed_outlined,
       emptyTitle: 'В ленте пока пусто',
       emptyMessage:
-          'Подпишитесь на владельцев питомцев или создайте первый пост.',
+          'Создайте первый пост через кнопку добавления или обновите ленту.',
+      emptyActionLabel: 'Обновить ленту',
+      onEmptyActionPressed: controller.refresh,
       isEmpty: (posts) => posts.isEmpty,
       dataBuilder: (posts) => ResponsiveCenter(
         child: RefreshIndicator(

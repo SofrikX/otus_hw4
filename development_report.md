@@ -241,6 +241,21 @@ build/web
 - `docs/ai_agent_rules.md` задает правила безопасной Supabase-интеграции;
 - `README.md` описывает Supabase как текущий backend choice и сохраняет Firebase как исследованную историю.
 
+## 10.0.1. Финальные требования проектной работы
+
+22 июня 2026 выполнен AI-assisted requirements engineering pass для финального портфолио-проекта PetConnect.
+
+Codex выступил в роли Product Analyst, Business Analyst и Technical Writer:
+
+- прочитал проектную документацию, gap analysis, README, backend/integration documentation, development report, prompt journal, `lib/` и `supabase/`;
+- сверил текущую реализацию с Supabase migrations, repository interfaces, controllers, UI screens and tests;
+- создал корневой `user_stories.md` как финальный набор user stories, сгруппированный по Authentication, Pet profiles, Feed and posts, Comments and likes, Walks, Search and filters, Image upload, Analytics, Monitoring and Admin/Maintenance;
+- создал корневой `technical_specification.md` для актуального Flutter Web + Supabase scope;
+- явно разделил статусы `Done`, `Planned` и `Optional`, чтобы не выдавать planned-функции за реализованные;
+- добавил раздел `AI-assisted requirements engineering`, описывающий вклад AI в формирование требований и ТЗ.
+
+Итог: финальные требования теперь отделены от исторических документов в `docs/`, где сохраняется ранний Firebase/mobile контекст предыдущих домашних заданий.
+
 ## 10.1. План production-развертывания Flutter Web
 
 Для закрытия frontend production deployment gap добавлен отдельный план Netlify-развертывания.
@@ -1810,3 +1825,144 @@ Non-blocking notes:
 Ручной production шаг: в Supabase Dashboard `Authentication` -> `URL Configuration` установить Site URL `https://cool-duckanoo-d28d04.netlify.app/`, добавить этот exact Redirect URL, затем пересобрать и переопубликовать Flutter Web bundle.
 
 Follow-up hardening: `BackendConfig.supabaseAuthRedirectUri` теперь для Flutter Web вычисляет redirect из текущего browser origin через `Uri.base` и нормализует путь в `/`. На Netlify это дает `https://cool-duckanoo-d28d04.netlify.app/` независимо от случайного local build-time значения. Для non-web платформ остается configured `SUPABASE_AUTH_REDIRECT_URL`.
+
+## 37. Переход от домашних заданий к финальному проекту
+
+Дата изменения: 22 июня 2026.
+
+Цель: подготовить PetConnect как тему финальной проектной работы курса "Разработка полнофункционального веб-приложения с использованием AI-агентов".
+
+Роль Codex: AI Product Manager, Solution Architect и Technical Writer.
+
+Перед изменениями прочитаны:
+
+- `AGENTS.md`;
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `README.md`;
+- `docs/project_description.md`, `docs/technical_specification.md`, `docs/user_stories.md`;
+- `backend_documentation.md`, `integration_documentation.md`, `security_audit.md`;
+- `development_report.md`, `prompts.md`;
+- `pubspec.yaml`, `netlify.toml`, `.github/workflows/ci_cd.yml`;
+- структура `supabase/`, `lib/`, `test/` и `docs/`.
+
+Результат:
+
+- создан `project_documentation.md` как финальная продуктово-техническая документация проекта;
+- создан `ai_development_process.md` с описанием использования OpenAI Codex на этапах идеи, требований, user stories, БД, кода, тестов, CI/CD, security audit, log analysis и performance optimization;
+- в `README.md` добавлен раздел `Final project scope`;
+- production health endpoint в README/backend/integration документах заменен на известный Netlify URL `https://cool-duckanoo-d28d04.netlify.app/api/health`;
+- бизнес-логика Flutter, SQL migrations, Netlify workflow и runtime-конфигурация не менялись.
+
+Финальное позиционирование:
+
+PetConnect становится портфолио-проектом full-stack Flutter Web + Supabase: приложение для владельцев домашних животных с авторизацией, профилями питомцев, социальной лентой, лайками, комментариями, прогулками, базовым chat-сценарием, Netlify hosting, GitHub Actions CI/CD, Yandex Metrica, health check, structured logging и security audit.
+
+Оставшиеся gaps перед финальной сдачей:
+
+- выполнить production redeploy после последних OAuth/web startup fixes;
+- повторить browser E2E на Netlify;
+- повторить Supabase lint/reset или hosted smoke checks;
+- при необходимости отполировать демонстрацию Supabase Storage images.
+
+## 38. Gap analysis финальной проектной работы
+
+Дата изменения: 22 июня 2026.
+
+Цель: оценить PetConnect относительно требований финальной проектной работы и выделить минимальные доработки перед сдачей.
+
+Роль Codex: AI Project Reviewer, QA Lead и Technical Product Manager.
+
+Перед изменениями прочитаны:
+
+- `project_documentation.md`;
+- `ai_development_process.md`;
+- `README.md`;
+- `backend_documentation.md`;
+- `integration_documentation.md`;
+- `security_audit.md`;
+- `development_report.md`;
+- `prompts.md`;
+- `pubspec.yaml`;
+- `netlify.toml`;
+- `.github/workflows/ci_cd.yml`;
+- структура `lib/`, `supabase/`, `test/` и `docs/`.
+
+Результат:
+
+- создан `final_project_gap_analysis.md` с таблицей требований, статусами `Done` / `Partial` / `Missing`, evidence и planned action;
+- в `project_documentation.md` добавлен раздел `Final delivery plan`;
+- обязательные блоки frontend/backend/AI/docs в целом закрыты, но delivery readiness отмечен как `Partial`;
+- ключевые gaps: production redeploy + E2E, Storage UI, search/filtering UI, CRUD completeness для pets/posts/walks, responsive screenshots и финальный QA status.
+
+Минимальный набор доработок перед сдачей:
+
+1. Redeploy Netlify from current branch.
+2. Production browser E2E.
+3. Live health check verification.
+4. Flutter validation commands.
+5. Supabase lint/reset или hosted SQL/RLS smoke checks.
+6. README/development report final QA status update.
+7. Desktop/mobile screenshots refresh.
+
+Код приложения на этом шаге не менялся; изменения касаются только документации.
+
+## 39. UI/UX и responsive audit перед финальной проектной работой
+
+Дата изменения: 22 июня 2026.
+
+Цель: проверить PetConnect как финальный Flutter Web UI перед сдачей: основные экраны, desktop/mobile behavior, navigation, forms, empty/loading/error states, accessibility и визуальную консистентность.
+
+Роль Codex: UI/UX Designer, Flutter Web Developer и Accessibility Reviewer.
+
+Перед изменениями прочитаны:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `README.md`;
+- `project_documentation.md`;
+- `final_project_gap_analysis.md`;
+- `user_stories.md`;
+- `technical_specification.md`;
+- `lib/app/`;
+- `lib/core/`;
+- `lib/features/`;
+- `test/`.
+
+Примечание: `lib/shared/` в проекте отсутствует; shared UI находится в `lib/core/widgets/`.
+
+AI UI/UX audit:
+
+- обязательные 3 экрана закрыты через Feed, Pets и Walks; Auth, Pet profile и Chat усиливают demo flow;
+- desktop использует `NavigationRail`, mobile использует `NavigationBar`, контент ограничен через `ResponsiveCenter`;
+- формы входа/регистрации/создания поста имеют labels, validation, loading/disabled states и feedback;
+- loading/error/empty states реализованы через reusable widgets;
+- accessibility baseline поддержан Material 3 controls, labels, tooltips и semantic state widgets;
+- основные gaps остаются в финальном polish: visible search/filter, create pet/create walk forms, Storage images и свежие desktop/mobile screenshots.
+
+Applied improvements:
+
+- создан `docs/ui_ux_audit.md`;
+- `EmptyState` получил contextual icon и optional action;
+- `AsyncContentView` теперь передает empty-state icon/action и добавляет semantic loading label;
+- `ErrorState` получил semantic live-region container;
+- Feed/Pets/Walks empty states получили contextual icons и refresh actions;
+- Chat empty state получил chat-specific icon;
+- create-post bottom sheet получил drag handle, keyboard-aware safe area, desktop max width, helper text и friendly snackbar errors без raw `Exception:` prefix;
+- `project_documentation.md` дополнен разделом UI/UX audit.
+
+Бизнес-логика, routing, repository layer и Supabase integration не менялись.
+
+Validation:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат:
+
+```text
+dart format .: passed, 84 files checked
+flutter analyze: passed, No issues found
+flutter test: passed, 77 tests
+```

@@ -31,9 +31,12 @@ void main() {
 
     expect(find.text('Прогулок пока нет'), findsOneWidget);
     expect(
-      find.text('Создайте первую прогулку и пригласите владельцев рядом.'),
+      find.text(
+        'Активные встречи появятся здесь. Обновите список перед прогулкой.',
+      ),
       findsOneWidget,
     );
+    expect(find.text('Обновить прогулки'), findsOneWidget);
   });
 
   testWidgets('WalksScreen shows walk list', (tester) async {

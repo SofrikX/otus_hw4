@@ -39,9 +39,11 @@ void main() {
 
     expect(find.text('В ленте пока пусто'), findsOneWidget);
     expect(
-      find.text('Подпишитесь на владельцев питомцев или создайте первый пост.'),
+      find.text(
+          'Создайте первый пост через кнопку добавления или обновите ленту.'),
       findsOneWidget,
     );
+    expect(find.text('Обновить ленту'), findsOneWidget);
   });
 
   testWidgets('FeedScreen shows friendly error state', (tester) async {

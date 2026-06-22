@@ -56,6 +56,29 @@ Mapping:
 - Friendly loading, empty, error and success states through controllers/providers.
 - Mock mode for local UI checks and tests without Supabase credentials.
 
+## Final project scope
+
+PetConnect is being prepared as the final portfolio project for the course "Разработка полнофункционального веб-приложения с использованием AI-агентов".
+
+Final positioning: PetConnect is a full-stack Flutter Web application for pet owners. Users can authenticate, create and view pet profiles, publish posts, react with likes/comments, discover walks, join pet activities and use a basic chat scenario.
+
+Final project scope:
+
+- frontend: Flutter Web, Material 3, responsive layout, interactive auth/feed/pets/walks/chat flows and loading/error/empty/success states;
+- backend: Supabase Auth, Google OAuth, PostgreSQL, RLS, Storage and auto REST API through `supabase_flutter`;
+- data model: connected tables for profiles, pets, posts, comments, likes, walks, walk participants, chats, chat participants and messages;
+- integrations: Netlify hosting, GitHub Actions CI/CD, Yandex Metrica analytics, health check endpoint and structured logging;
+- quality: Flutter tests, Supabase SQL/RLS validation plan, security audit, CI security gates and performance optimization notes;
+- AI process: OpenAI Codex is used for planning, user stories, technical specification, frontend/backend development, testing, debugging, CI/CD, security audit, log analysis and performance review.
+
+Final project documents:
+
+- `project_documentation.md` - product positioning, scope, architecture and requirement coverage;
+- `ai_development_process.md` - how AI agents were used and will be used in the final project;
+- `backend_documentation.md` - Supabase backend architecture, schema, RLS, Storage and API;
+- `integration_documentation.md` - Google OAuth, CI/CD, analytics, Netlify and monitoring;
+- `security_audit.md` - security findings, fixes and remaining risks.
+
 ## Backend Architecture
 
 ```text
@@ -240,7 +263,7 @@ Flutter Web uses client-side routing, so Netlify must serve `index.html` for dee
 Production health endpoint:
 
 ```text
-[ВСТАВИТЬ_NETLIFY_SITE_URL]/api/health
+https://cool-duckanoo-d28d04.netlify.app/api/health
 ```
 
 The endpoint is implemented as a Netlify Function in `netlify/functions/health.js`. It returns JSON with `status`, `timestamp`, `checks` and `version`.

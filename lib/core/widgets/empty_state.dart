@@ -4,6 +4,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({
     required this.title,
     required this.message,
+    this.icon = Icons.pets,
     this.actionLabel,
     this.onActionPressed,
     super.key,
@@ -11,6 +12,7 @@ class EmptyState extends StatelessWidget {
 
   final String title;
   final String message;
+  final IconData icon;
   final String? actionLabel;
   final VoidCallback? onActionPressed;
 
@@ -25,7 +27,7 @@ class EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.pets,
+              icon,
               size: 64,
               color: colorScheme.primary,
             ),
@@ -45,9 +47,10 @@ class EmptyState extends StatelessWidget {
             ),
             if (actionLabel != null && onActionPressed != null) ...[
               const SizedBox(height: 20),
-              FilledButton(
+              FilledButton.icon(
                 onPressed: onActionPressed,
-                child: Text(actionLabel!),
+                icon: const Icon(Icons.refresh),
+                label: Text(actionLabel!),
               ),
             ],
           ],

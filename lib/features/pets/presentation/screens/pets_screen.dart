@@ -18,8 +18,12 @@ class PetsScreen extends ConsumerWidget {
     return AsyncContentView<List<Pet>>(
       value: pets,
       isEmpty: (pets) => pets.isEmpty,
+      emptyIcon: Icons.pets_outlined,
       emptyTitle: 'Питомцев пока нет',
-      emptyMessage: 'Добавьте питомца, чтобы его профиль появился здесь.',
+      emptyMessage:
+          'Когда вы добавите профиль питомца, он появится в этом списке.',
+      emptyActionLabel: 'Обновить список',
+      onEmptyActionPressed: () => ref.invalidate(petsProvider),
       onRetry: () => ref.invalidate(petsProvider),
       dataBuilder: (pets) => ResponsiveCenter(
         child: ListView.separated(

@@ -118,63 +118,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
       builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            MediaQuery.viewInsetsOf(sheetContext).bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Новый пост',
-                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+        return SafeArea(
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  MediaQuery.viewInsetsOf(sheetContext).bottom + 20,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Новый пост',
+                      style:
+                          Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                key: const Key('create-post-input'),
-                controller: textController,
-                autofocus: true,
-                minLines: 3,
-                maxLines: 5,
-                maxLength: 1000,
-                decoration: const InputDecoration(
-                  labelText: 'Что нового у питомца?',
-                  border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    TextField(
+                      key: const Key('create-post-input'),
+                      controller: textController,
+                      autofocus: true,
+                      minLines: 3,
+                      maxLines: 5,
+                      maxLength: 1000,
+                      decoration: const InputDecoration(
+                        labelText: 'Что нового у питомца?',
+                        helperText: 'Короткое обновление для общей ленты',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const Key('submit-create-post'),
+                      onPressed: () async {
+                        try {
+                          await ref
+                              .read(feedControllerProvider.notifier)
+                              .createPost(
+                                author: author,
+                                text: textController.text,
+                              );
+                          if (!sheetContext.mounted) {
+                            return;
+                          }
+                          Navigator.of(sheetContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Пост опубликован')),
+                          );
+                        } on Object catch (error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(_friendlyMessage(error))),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.send_outlined),
+                      label: const Text('Опубликовать'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('submit-create-post'),
-                onPressed: () async {
-                  try {
-                    await ref.read(feedControllerProvider.notifier).createPost(
-                          author: author,
-                          text: textController.text,
-                        );
-                    if (!sheetContext.mounted) {
-                      return;
-                    }
-                    Navigator.of(sheetContext).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Пост опубликован')),
-                    );
-                  } on Object catch (error) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(error.toString())),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.send_outlined),
-                label: const Text('Опубликовать'),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -187,6 +200,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Новых уведомлений пока нет.')),
     );
+  }
+
+  String _friendlyMessage(Object error) {
+    final message = error.toString().replaceFirst('Exception: ', '').trim();
+    if (message.isEmpty) {
+      return 'Не удалось выполнить действие. Попробуйте еще раз.';
+    }
+    return message;
   }
 }
 

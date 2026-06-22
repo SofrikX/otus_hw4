@@ -2325,7 +2325,7 @@ Important:
 - dart format .
 - flutter analyze
 - flutter test
-- flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=[ВСТАВИТЬ_SUPABASE_PROJECT_URL] --dart-define=SUPABASE_PUBLISHABLE_KEY=[ВСТАВИТЬ_SUPABASE_PUBLISHABLE_KEY]
+- flutter build web --release --dart-define=USE_SUPABASE_BACKEND=true --dart-define=SUPABASE_URL=https://fivtpxsjcjirddogngtl.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=значение из Netlify/GitHub environment variables
 
 # Requirements
 1. Если build успешен, зафиксируй:
@@ -3008,3 +3008,174 @@ Follow-up после повторного localhost callback:
 - Supabase hosted authorize endpoint с явным `redirect_to=https://cool-duckanoo-d28d04.netlify.app/` возвращает 302 в Google и сохраняет этот `redirect_to`.
 - `BackendConfig.supabaseAuthRedirectUri` усилен: во Flutter Web redirect теперь берется из текущего browser origin (`Uri.base`) и нормализуется в `/`, чтобы Netlify runtime не зависел от ошибочного localhost env.
 - Локальный release build проверен: `build/web/main.dart.js` содержит Netlify URL и не содержит `localhost:3000` по OAuth redirect search.
+
+## Prompt 64 — финальная проектная работа PetConnect
+
+```markdown
+# Role
+Ты OpenAI Codex, AI Product Manager, Solution Architect и Technical Writer.
+
+# Task
+Подготовь PetConnect как тему финальной проектной работы курса "Разработка полнофункционального веб-приложения с использованием AI-агентов".
+
+# Context
+PetConnect был разработан в рамках домашних заданий курса и теперь будет расширен до финального портфолио-проекта.
+
+# Requirements
+1. Не менять бизнес-логику приложения.
+2. Создать или обновить `project_documentation.md`.
+3. Создать или обновить `ai_development_process.md`.
+4. Создать раздел `Final project scope` в README.md.
+5. Обновить `development_report.md`.
+6. Обновить `prompts.md`.
+7. Не добавлять secrets.
+8. Не добавлять квадратные placeholders, если значение уже известно.
+```
+
+Результат:
+
+- Создан `project_documentation.md` с названием, идеей, аудиторией, проблемой, сценариями, final scope, текущей реализацией, planned improvements, стеком, frontend/backend architecture и coverage обязательных требований.
+- Создан `ai_development_process.md` с описанием использования OpenAI Codex для идеи, анализа требований, user stories, БД, code generation, refactoring, tests, CI/CD, security audit, log analysis и performance optimization.
+- В `README.md` добавлен раздел `Final project scope`.
+- `development_report.md` дополнен переходом от домашних заданий к финальному проекту.
+- Production health endpoint в README/backend/integration документах заменен на известный URL `https://cool-duckanoo-d28d04.netlify.app/api/health`.
+- Бизнес-логика приложения, Flutter UI, SQL migrations, GitHub Actions workflow и Netlify runtime behavior не менялись.
+
+## Prompt 65 — gap analysis финального проекта
+
+```markdown
+# Role
+Ты AI Project Reviewer, QA Lead и Technical Product Manager.
+
+# Task
+Проведи gap analysis проекта PetConnect относительно требований финальной проектной работы.
+
+# Requirements
+1. Создай файл `final_project_gap_analysis.md`.
+2. В файле сделай таблицу требований: requirement, status, evidence in project, planned action.
+3. Проверь frontend screens, adaptive layout, forms, loading/error states, backend tables, CRUD, auth, validation, OAuth2, analytics, storage, search/filtering, CI/CD, deployment, monitoring, logging, security audit, AI docs, README и project docs.
+4. Определи минимальный набор доработок.
+5. Обнови `project_documentation.md`, `development_report.md`, `prompts.md`.
+6. Не меняй код приложения на этом шаге, кроме документации.
+```
+
+Результат:
+
+- Создан `final_project_gap_analysis.md` с QA/product gap table и recommended implementation plan.
+- Статусы выставлены консервативно: core screens, backend schema, auth, OAuth2, analytics, logging, CI/CD, security audit и AI docs в основном `Done`; Storage UI, search/filtering, CRUD completeness, deployment readiness, monitoring verification, responsive screenshots отмечены как `Partial`.
+- В `project_documentation.md` добавлен `Final delivery plan`.
+- `development_report.md` дополнен разделом о gap analysis.
+- Код приложения, Supabase migrations, Netlify config и GitHub Actions workflow не менялись.
+
+## Prompt 66 — финальные user stories и техническое задание
+
+```markdown
+# Role
+Ты Product Analyst, Business Analyst и Technical Writer.
+
+# Task
+Создай финальные User Stories и техническое задание для PetConnect как проектной работы.
+
+# Context
+PetConnect — финальный портфолио-проект.
+Нужно показать, что AI использовался на этапе планирования и формирования требований.
+
+# Required reading
+Прочитай:
+- project_documentation.md
+- final_project_gap_analysis.md
+- README.md
+- user_stories.md, если есть
+- technical_specification.md, если есть
+- backend_documentation.md
+- integration_documentation.md
+- development_report.md
+- prompts.md
+- lib/
+- supabase/
+
+# Requirements
+1. Обнови или создай `user_stories.md`.
+2. User stories должны быть сгруппированы: Authentication; Pet profiles; Feed and posts; Comments and likes; Walks; Search and filters; Image upload; Analytics; Monitoring; Admin/maintenance.
+3. Для каждой user story добавь user story, acceptance criteria, priority: Must / Should / Could, status: Done / Planned / Optional.
+4. Обнови или создай `technical_specification.md`.
+5. Technical specification должен включать project overview, requirements, frontend/backend architecture, database entities, API/CRUD, auth, RLS/security, integrations, deployment, CI/CD, monitoring/logging, testing strategy.
+6. Добавь раздел `AI-assisted requirements engineering`.
+7. Обнови `project_documentation.md`, `development_report.md`, `prompts.md`.
+8. Не добавляй secrets.
+9. Не выдумывай функциональность как Done, если она еще не реализована.
+```
+
+Результат:
+
+- Создан корневой `user_stories.md` с финальными grouped user stories, acceptance criteria, priority и status.
+- Создан корневой `technical_specification.md` для текущего Flutter Web + Supabase scope.
+- Planned/Optional функции отделены от Done: Storage UI, visible search/filter controls, edit/delete flows, create pet/walk UI polish и full chat messaging не помечены как реализованные.
+- `project_documentation.md` обновлен ссылками на финальные requirements documents.
+- `development_report.md` обновлен разделом о финальном AI-assisted requirements engineering pass.
+- Secrets не добавлялись.
+
+## Prompt 67 — UI/UX и responsive audit PetConnect
+
+```markdown
+# Role
+Ты UI/UX Designer, Flutter Web Developer и Accessibility Reviewer.
+
+# Task
+Проведи UI/UX и responsive audit проекта PetConnect перед финальной проектной работой.
+
+# Context
+Финальный проект должен иметь понятный UX, минимум 3 экрана, адаптивный дизайн для desktop и mobile, loading/error states.
+
+# Required reading
+Прочитай:
+- lib/app/
+- lib/features/
+- lib/shared/
+- lib/core/
+- README.md
+- project_documentation.md
+- final_project_gap_analysis.md
+- user_stories.md
+- technical_specification.md
+
+# Requirements
+1. Проведи audit текущего UI.
+2. Создай файл `docs/ui_ux_audit.md`.
+3. В audit включи:
+   - список основных экранов;
+   - desktop behavior;
+   - mobile behavior;
+   - navigation;
+   - forms;
+   - empty states;
+   - loading states;
+   - error states;
+   - accessibility notes;
+   - визуальная консистентность.
+4. Найди безопасные улучшения, которые можно сделать без переписывания архитектуры.
+5. Если можно быстро улучшить UI — внеси изменения:
+   - добавить/улучшить empty states;
+   - добавить понятные error messages;
+   - улучшить mobile layout;
+   - добавить responsive padding;
+   - улучшить кнопки/формы.
+6. Не меняй бизнес-логику.
+7. Не ломай routing.
+8. Обнови `project_documentation.md`:
+   - раздел UI/UX.
+9. Обнови `development_report.md`:
+   - AI UI/UX audit.
+10. Обнови `prompts.md`.
+```
+
+Результат:
+
+- Проведен аудит `lib/app/`, `lib/core/`, `lib/features/`, README и финальных проектных документов. `lib/shared/` отсутствует; shared widgets находятся в `lib/core/widgets/`.
+- Создан `docs/ui_ux_audit.md` с экранами, desktop/mobile behavior, navigation, forms, empty/loading/error states, accessibility notes, visual consistency, applied improvements и recommendations.
+- Улучшены shared UI states: contextual empty-state icons/actions, semantic loading label и live-region error semantics.
+- Feed/Pets/Walks empty states получили refresh actions и более точные сообщения.
+- Chat empty state получил chat-specific icon.
+- Create-post bottom sheet получил desktop max width, drag handle, helper text, keyboard-aware safe area и friendly error snackbar.
+- Обновлены `project_documentation.md` и `development_report.md`.
+- Routing, бизнес-логика, repository layer и Supabase integration не менялись.

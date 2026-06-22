@@ -17,8 +17,12 @@ class WalksScreen extends ConsumerWidget {
     return AsyncContentView(
       value: walksValue,
       onRetry: controller.refresh,
+      emptyIcon: Icons.map_outlined,
       emptyTitle: 'Прогулок пока нет',
-      emptyMessage: 'Создайте первую прогулку и пригласите владельцев рядом.',
+      emptyMessage:
+          'Активные встречи появятся здесь. Обновите список перед прогулкой.',
+      emptyActionLabel: 'Обновить прогулки',
+      onEmptyActionPressed: controller.refresh,
       isEmpty: (walks) => walks.isEmpty,
       dataBuilder: (walks) => ResponsiveCenter(
         child: RefreshIndicator(
