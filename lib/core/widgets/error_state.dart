@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import 'glass_card.dart';
+
 class ErrorState extends StatelessWidget {
   const ErrorState({
     required this.title,
@@ -24,37 +27,53 @@ class ErrorState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+            child: GlassCard(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.32),
                       ),
-                ),
-                if (onRetry != null) ...[
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Повторить'),
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 34,
+                      color: colorScheme.error,
+                    ),
                   ),
+                  const SizedBox(height: 18),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  if (onRetry != null) ...[
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Повторить'),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

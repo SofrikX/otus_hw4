@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/responsive_center.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/gradient_button.dart';
+import 'auth_landing_layout.dart';
 import 'auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -31,94 +33,76 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authControllerProvider);
     final isLoading = authState.isLoading;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Регистрация')),
-      body: SafeArea(
-        child: ResponsiveCenter(
-          maxWidth: 480,
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              Text(
-                'Создайте аккаунт',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'После регистрации PetConnect откроет основные разделы.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 24),
-              if (authState.hasError) ...[
-                _AuthErrorBanner(error: authState.error),
-                const SizedBox(height: 16),
-              ],
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      key: const Key('register-name'),
-                      controller: _nameController,
-                      textInputAction: TextInputAction.next,
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Имя',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      key: const Key('register-email'),
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      validator: _validateEmail,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      key: const Key('register-password'),
-                      controller: _passwordController,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.newPassword],
-                      enabled: !isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Пароль',
-                        prefixIcon: Icon(Icons.lock_outline),
-                      ),
-                      validator: _validatePassword,
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      key: const Key('register-submit'),
-                      onPressed: isLoading ? null : _submit,
-                      icon: isLoading
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.person_add_alt_1),
-                      label: const Text('Зарегистрироваться'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      key: const Key('go-login'),
-                      onPressed: isLoading ? null : () => context.go('/login'),
-                      child: const Text('Уже есть аккаунт'),
-                    ),
-                  ],
+    return AuthLandingLayout(
+      formTitle: 'Создайте аккаунт',
+      formSubtitle: 'После регистрации PetConnect откроет основные разделы.',
+      form: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (authState.hasError) ...[
+            _AuthErrorBanner(error: authState.error),
+            const SizedBox(height: 16),
+          ],
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  key: const Key('register-name'),
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  enabled: !isLoading,
+                  decoration: const InputDecoration(
+                    labelText: 'Имя',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: const Key('register-email'),
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  enabled: !isLoading,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  validator: _validateEmail,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  key: const Key('register-password'),
+                  controller: _passwordController,
+                  obscureText: true,
+                  autofillHints: const [AutofillHints.newPassword],
+                  enabled: !isLoading,
+                  decoration: const InputDecoration(
+                    labelText: 'Пароль',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                  validator: _validatePassword,
+                  onFieldSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: 24),
+                GradientButton(
+                  keyValue: const Key('register-submit'),
+                  onPressed: isLoading ? null : _submit,
+                  icon: Icons.person_add_alt_1,
+                  isLoading: isLoading,
+                  label: 'Зарегистрироваться',
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  key: const Key('go-login'),
+                  onPressed: isLoading ? null : () => context.go('/login'),
+                  child: const Text('Уже есть аккаунт'),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -167,8 +151,9 @@ class _AuthErrorBanner extends StatelessWidget {
       container: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(8),
+          color: colorScheme.errorContainer.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.32)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),

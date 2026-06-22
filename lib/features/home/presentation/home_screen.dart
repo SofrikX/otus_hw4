@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_error.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/widgets/app_screen_background.dart';
+import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/gradient_button.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../chat/presentation/screens/chat_screen.dart';
 import '../../feed/application/feed_controller.dart';
@@ -34,17 +39,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(_selectedDestination.title),
+            title: _AppTitle(title: _selectedDestination.title),
             actions: _buildAppBarActions(context, isWide: isWide),
           ),
-          body: SafeArea(
-            child: isWide
-                ? _WideHomeLayout(
-                    selectedIndex: _selectedIndex,
-                    onDestinationSelected: _selectDestination,
-                    child: _selectedDestination.screen,
-                  )
-                : _selectedDestination.screen,
+          body: AppScreenBackground(
+            child: SafeArea(
+              child: isWide
+                  ? _WideHomeLayout(
+                      selectedIndex: _selectedIndex,
+                      onDestinationSelected: _selectDestination,
+                      child: _selectedDestination.screen,
+                    )
+                  : _selectedDestination.screen,
+            ),
           ),
           floatingActionButton: !isWide && _selectedDestination.isFeed
               ? FloatingActionButton(
@@ -159,6 +166,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+class _AppTitle extends StatelessWidget {
+  const _AppTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: AppColors.gradient),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.pets, size: 20, color: Colors.white),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CreatePostSheet extends StatefulWidget {
   const _CreatePostSheet({required this.onSubmit});
 
@@ -186,7 +231,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
+            child: GlassCard(
               padding: EdgeInsets.fromLTRB(
                 20,
                 8,
@@ -200,7 +245,14 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                   Text(
                     'Новый пост',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Поделитесь моментом с питомцем в общей ленте.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                   ),
                   const SizedBox(height: 16),
@@ -216,20 +268,15 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                       labelText: 'Что нового у питомца?',
                       helperText: 'Короткое обновление для общей ленты',
                       errorText: _error,
-                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  FilledButton.icon(
-                    key: const Key('submit-create-post'),
+                  GradientButton(
+                    keyValue: const Key('submit-create-post'),
                     onPressed: _isSaving ? null : _submit,
-                    icon: _isSaving
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send_outlined),
-                    label: Text(_isSaving ? 'Публикация...' : 'Опубликовать'),
+                    icon: Icons.send_outlined,
+                    isLoading: _isSaving,
+                    label: _isSaving ? 'Публикация...' : 'Опубликовать',
                   ),
                 ],
               ),
@@ -372,15 +419,25 @@ class _WideHomeLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        NavigationRail(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: onDestinationSelected,
-          labelType: NavigationRailLabelType.all,
-          destinations: _homeDestinations
-              .map((destination) => destination.toNavigationRailDestination())
-              .toList(growable: false),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 16),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            borderRadius: AppRadius.xl,
+            child: NavigationRail(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: onDestinationSelected,
+              labelType: NavigationRailLabelType.all,
+              minWidth: 88,
+              backgroundColor: Colors.transparent,
+              destinations: _homeDestinations
+                  .map(
+                    (destination) => destination.toNavigationRailDestination(),
+                  )
+                  .toList(growable: false),
+            ),
+          ),
         ),
-        const VerticalDivider(width: 1),
         Expanded(child: child),
       ],
     );
@@ -398,12 +455,17 @@ class _BottomHomeNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onDestinationSelected,
-      destinations: _homeDestinations
-          .map((destination) => destination.toNavigationDestination())
-          .toList(growable: false),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.glassBorder)),
+      ),
+      child: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onDestinationSelected,
+        destinations: _homeDestinations
+            .map((destination) => destination.toNavigationDestination())
+            .toList(growable: false),
+      ),
     );
   }
 }

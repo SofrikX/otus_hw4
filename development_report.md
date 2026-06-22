@@ -2290,3 +2290,42 @@ Regression test:
 
 - добавлен widget test `HomeScreen creates post with current user pet, not feed pet`;
 - test покрывает сценарий, где первый пост ленты связан с чужим `pet-1`, а текущий пользователь `user-2` создает пост для своего `pet-2`.
+
+## 47. Final visual redesign
+
+Дата изменения: 23 июня 2026.
+
+Цель: привести PetConnect к premium portfolio-level визуалу в стиле modern dark pet social app без изменения backend schema, Supabase migrations, RLS, routing, Riverpod state management, analytics or CRUD flows.
+
+Роль Codex: Senior Flutter Web UI Engineer, Product Designer and Design System Architect.
+
+Проверено перед изменениями:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `README.md`, `project_documentation.md`, `final_project_gap_analysis.md`, `technical_specification.md`, `user_stories.md`;
+- `docs/ui_ux_audit.md`, `docs/manual_qa_checklist.md`;
+- `pubspec.yaml`;
+- `lib/app/`, `lib/core/`, `lib/features/auth/`, `lib/features/feed/`, `lib/features/pets/`, `lib/features/walks/`, `lib/features/chat/`, `lib/features/home/`;
+- `test/`;
+- visual reference `docs/design/codex_conc.png`.
+
+Решение:
+
+- добавлены dark design tokens and shared UI primitives in `lib/core/theme/` and `lib/core/widgets/`;
+- global Material 3 theme converted to premium dark navy/black with violet/blue gradients and glass surfaces;
+- Auth landing redesigned with hero, feature chips and glass forms;
+- Home shell, Feed, Pets, Walks, Pet Profile and Chat visually polished;
+- shared loading, empty and error states unified with the new dark glass style;
+- walk widget tests updated to scroll to enlarged premium cards before tapping join/leave actions.
+
+AI-agent contribution:
+
+- Codex preserved existing feature-first architecture and repository/controller boundaries;
+- no backend schema, migrations, RLS policies, Supabase secrets, analytics disablement or routing rewrites were introduced;
+- validation found viewport-related widget-test failures after the visual expansion and Codex fixed them without weakening UI behavior.
+
+Validation:
+
+- `flutter analyze`: passed after UI implementation;
+- targeted `flutter test test/features/auth test/features/walks/walks_screen_test.dart`: passed, 19 tests;
+- final full validation is recorded in the command log for this redesign pass.

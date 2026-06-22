@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/pet.dart';
 
 class PetPhotoView extends StatelessWidget {
@@ -59,8 +60,15 @@ class _PetPhotoPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ColoredBox(
-      color: colorScheme.primaryContainer,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primaryContainer,
+            AppColors.secondary.withValues(alpha: 0.58),
+          ],
+        ),
+      ),
       child: Center(
         child: Text(
           pet.photoEmoji,

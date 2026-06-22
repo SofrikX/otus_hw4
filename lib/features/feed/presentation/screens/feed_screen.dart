@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/analytics/analytics_event.dart';
 import '../../../../core/analytics/analytics_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/widgets/async_content_view.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../../auth/presentation/auth_controller.dart';
@@ -61,7 +64,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         child: RefreshIndicator(
           onRefresh: controller.refresh,
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
             itemCount: posts.length + 3,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
@@ -197,19 +200,32 @@ class _FeedHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+    return GlassCard(
+      padding: const EdgeInsets.all(22),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Привет!\nЧто нового у питомца?',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSurface,
-                  ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Живая лента питомцев',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: colorScheme.onSurface,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Делитесь моментами, находите друзей и следите за прогулками рядом.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: 12),
           IconButton.filledTonal(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -238,30 +254,36 @@ class _FeedSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      key: const Key('feed-search-input'),
-      controller: controller,
-      onChanged: onChanged,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            if (value.text.isEmpty) {
-              return const SizedBox.shrink();
-            }
+    return GlassCard(
+      borderRadius: AppRadius.lg,
+      padding: const EdgeInsets.all(12),
+      child: TextField(
+        key: const Key('feed-search-input'),
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
 
-            return IconButton(
-              key: const Key('feed-search-clear'),
-              onPressed: onClear,
-              icon: const Icon(Icons.close),
-              tooltip: 'Сбросить поиск',
-            );
-          },
+              return IconButton(
+                key: const Key('feed-search-clear'),
+                onPressed: onClear,
+                icon: const Icon(Icons.close),
+                tooltip: 'Сбросить поиск',
+              );
+            },
+          ),
+          hintText: 'Поиск по постам, авторам и питомцам',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
         ),
-        hintText: 'Поиск по постам, авторам и питомцам',
-        border: const OutlineInputBorder(),
       ),
     );
   }

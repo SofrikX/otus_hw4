@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/data/mock_data.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/widgets/glass_card.dart';
 
 class PetStoriesStrip extends StatelessWidget {
   const PetStoriesStrip({super.key});
@@ -9,63 +12,64 @@ class PetStoriesStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Истории питомцев',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: mockPets.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final pet = mockPets[index];
-                  return SizedBox(
-                    width: 72,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [
-                                colorScheme.primaryContainer,
-                                colorScheme.secondaryContainer,
-                              ],
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              pet.photoEmoji,
-                              style: const TextStyle(fontSize: 30),
-                            ),
+    return GlassCard(
+      borderRadius: AppRadius.lg,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Истории питомцев',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: mockPets.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final pet = mockPets[index];
+                return SizedBox(
+                  width: 72,
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              colorScheme.secondary,
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          pet.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium,
+                        child: Center(
+                          child: Text(
+                            pet.photoEmoji,
+                            style: const TextStyle(fontSize: 30),
+                          ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        pet.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

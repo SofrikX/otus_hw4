@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/widgets/app_screen_background.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../application/pet_photo_controller.dart';
@@ -22,20 +26,22 @@ class PetProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Профиль питомца')),
-      body: SafeArea(
-        child: AsyncContentView<Pet?>(
-          value: pet,
-          onRetry: () => ref.invalidate(petByIdProvider(petId)),
-          dataBuilder: (pet) {
-            if (pet == null) {
-              return const ErrorState(
-                title: 'Питомец не найден',
-                message: 'Проверьте ссылку или вернитесь к списку питомцев.',
-              );
-            }
+      body: AppScreenBackground(
+        child: SafeArea(
+          child: AsyncContentView<Pet?>(
+            value: pet,
+            onRetry: () => ref.invalidate(petByIdProvider(petId)),
+            dataBuilder: (pet) {
+              if (pet == null) {
+                return const ErrorState(
+                  title: 'Питомец не найден',
+                  message: 'Проверьте ссылку или вернитесь к списку питомцев.',
+                );
+              }
 
-            return _PetProfileContent(pet: pet);
-          },
+              return _PetProfileContent(pet: pet);
+            },
+          ),
         ),
       ),
     );
@@ -81,34 +87,34 @@ class _PetSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            PetPhotoView(
-              pet: pet,
-              size: 160,
-              borderRadius: 32,
-            ),
-            if (canUploadPhoto) ...[
-              const SizedBox(height: 12),
-              _PetPhotoUploadButton(petId: pet.id),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              pet.name,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text('${pet.animalType} • ${pet.breed} • ${pet.age} г.'),
-            const SizedBox(height: 16),
-            Text(
-              pet.description,
-              textAlign: TextAlign.center,
-            ),
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          PetPhotoView(
+            pet: pet,
+            size: 160,
+            borderRadius: 32,
+          ),
+          if (canUploadPhoto) ...[
+            const SizedBox(height: 12),
+            _PetPhotoUploadButton(petId: pet.id),
           ],
-        ),
+          const SizedBox(height: 16),
+          Text(
+            pet.name,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text('${pet.animalType} • ${pet.breed} • ${pet.age} г.'),
+          const SizedBox(height: 16),
+          Text(
+            pet.description,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -175,7 +181,9 @@ class _OwnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return GlassCard(
+      borderRadius: AppRadius.lg,
+      padding: EdgeInsets.zero,
       child: ListTile(
         leading: const Icon(Icons.person_outline),
         title: const Text('Владелец'),
@@ -190,9 +198,11 @@ class _PetInterestsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return GlassCard(
+      borderRadius: AppRadius.lg,
+      padding: EdgeInsets.zero,
       child: ListTile(
-        leading: const Icon(Icons.favorite_outline),
+        leading: const Icon(Icons.favorite_outline, color: AppColors.primary),
         title: const Text('Интересы'),
         subtitle: const Text('Прогулки, игры и общение с другими питомцами'),
         trailing: FilledButton(

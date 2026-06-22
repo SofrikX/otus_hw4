@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../domain/pet_post.dart';
 
 class PostCard extends StatelessWidget {
@@ -19,30 +23,34 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _PostHeader(post: post, onDelete: onDelete),
-          _PostMedia(post: post),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(post.text),
-                const SizedBox(height: 12),
-                _PostActions(
-                  post: post,
-                  onLike: onLike,
-                  onCommentPressed: () => _showCommentSheet(context),
-                ),
-                _RecentComments(comments: post.comments),
-              ],
+    return AppCard(
+      padding: EdgeInsets.zero,
+      borderRadius: AppRadius.xl,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _PostHeader(post: post, onDelete: onDelete),
+            _PostMedia(post: post),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(post.text),
+                  const SizedBox(height: 12),
+                  _PostActions(
+                    post: post,
+                    onLike: onLike,
+                    onCommentPressed: () => _showCommentSheet(context),
+                  ),
+                  _RecentComments(comments: post.comments),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -75,9 +83,14 @@ class _PostHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            child: Text(post.petEmoji),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: AppColors.gradient),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(child: Text(post.petEmoji)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -86,7 +99,9 @@ class _PostHeader extends StatelessWidget {
               children: [
                 Text(
                   post.petName,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 Text(
                   '${post.authorName} • ${formatRelativeDate(post.createdAt)}',
@@ -154,8 +169,17 @@ class _PostMedia extends StatelessWidget {
             height: mediaHeight,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.42),
-                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.primaryContainer.withValues(alpha: 0.82),
+                    colorScheme.secondaryContainer.withValues(alpha: 0.72),
+                    AppColors.surfaceHigh,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                border: Border.all(color: AppColors.glassBorder),
               ),
               child: Center(
                 child: Text(
@@ -186,27 +210,73 @@ class _PostActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Row(
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        IconButton(
-          key: Key('like-${post.id}'),
+        _ActionPill(
+          keyValue: Key('like-${post.id}'),
           onPressed: onLike,
-          icon: Icon(
-            post.isLiked ? Icons.favorite : Icons.favorite_border,
-          ),
-          color: post.isLiked ? colorScheme.error : null,
+          icon: post.isLiked ? Icons.favorite : Icons.favorite_border,
+          color: post.isLiked ? colorScheme.error : AppColors.textSecondary,
+          label: '${post.likesCount}',
           tooltip: 'Лайк',
         ),
-        Text('${post.likesCount}'),
-        const SizedBox(width: 16),
-        IconButton(
-          key: Key('comment-${post.id}'),
+        _ActionPill(
+          keyValue: Key('comment-${post.id}'),
           onPressed: onCommentPressed,
-          icon: const Icon(Icons.mode_comment_outlined),
+          icon: Icons.mode_comment_outlined,
+          color: AppColors.textSecondary,
+          label: '${post.commentsCount}',
           tooltip: 'Комментарий',
         ),
-        Text('${post.commentsCount}'),
       ],
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({
+    required this.keyValue,
+    required this.onPressed,
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.tooltip,
+  });
+
+  final Key keyValue;
+  final VoidCallback onPressed;
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: AppColors.glassLight,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          key: keyValue,
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(999),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20, color: color),
+                const SizedBox(width: 6),
+                Text(label),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -226,19 +296,24 @@ class _RecentComments extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: comments.reversed.take(2).map((comment) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              comment,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          );
-        }).toList(growable: false),
+      child: GlassCard(
+        borderRadius: AppRadius.lg,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        opacity: 0.44,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: comments.reversed.take(2).map((comment) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                comment,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            );
+          }).toList(growable: false),
+        ),
       ),
     );
   }

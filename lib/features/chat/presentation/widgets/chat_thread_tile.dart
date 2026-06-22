@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../domain/chat_thread.dart';
 
 class ChatThreadTile extends StatelessWidget {
@@ -12,7 +14,9 @@ class ChatThreadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Card(
+    return AppCard(
+      borderRadius: AppRadius.lg,
+      padding: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import 'glass_card.dart';
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     required this.title,
@@ -28,37 +31,48 @@ class EmptyState extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 64,
-                  color: colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+            child: GlassCard(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: AppColors.gradient,
                       ),
-                ),
-                if (actionLabel != null && onActionPressed != null) ...[
-                  const SizedBox(height: 20),
-                  FilledButton.icon(
-                    onPressed: onActionPressed,
-                    icon: const Icon(Icons.refresh),
-                    label: Text(actionLabel!),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Icon(icon, size: 34, color: Colors.white),
                   ),
+                  const SizedBox(height: 18),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  if (actionLabel != null && onActionPressed != null) ...[
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: onActionPressed,
+                      icon: const Icon(Icons.refresh),
+                      label: Text(actionLabel!),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

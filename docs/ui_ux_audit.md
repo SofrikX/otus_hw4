@@ -163,3 +163,37 @@ Recommended browser viewports:
 - mobile: 390 x 844;
 - tablet: 768 x 1024;
 - desktop: 1440 x 900.
+
+## Final visual redesign
+
+Date: 23 June 2026.
+
+The final UI pass moves PetConnect from the earlier bright social-network direction to a premium modern dark pet social app style for the portfolio submission.
+
+Design system changes:
+
+- added dark navy/black color tokens, violet/blue gradients and semantic accent colors in `lib/core/theme/`;
+- added `AppCard`, `GlassCard`, `GradientButton` and `AppScreenBackground` shared widgets;
+- updated the global Material 3 theme for dark inputs, chips, cards, navigation, dialogs, bottom sheets, snackbars and FABs;
+- shared `AsyncContentView`, `EmptyState` and `ErrorState` now render polished glass loading/empty/error states.
+
+Screens redesigned:
+
+- Auth/landing: responsive hero, PetConnect logo/title, feature chips, glass login/register card and polished Google OAuth button.
+- Home shell: gradient background, branded title, glass desktop navigation rail and dark mobile bottom navigation.
+- Feed: premium hero header, integrated glass search bar, glass stories strip and modern post cards with gradient media placeholders and compact action pills.
+- Pets: hero header, glass search/type filters, richer pet cards, gradient image placeholders and polished create/edit sheet.
+- Walks: hero header, glass filters, map-like activity preview card, date/location/participant chips and consistent join/leave CTA.
+- Pet profile and chat: aligned with the same glass card and dark navigation system.
+
+Responsive notes:
+
+- mobile remains bottom-navigation first;
+- desktop keeps constrained dashboard-like content and a navigation rail;
+- auth uses stacked layout below desktop width and side-by-side hero/form on wide screens;
+- widget tests were updated to scroll to enlarged walk cards before tapping join/leave actions.
+
+Remaining visual limitations:
+
+- uploaded pet photos render through Supabase Storage, but mock post media still uses emoji placeholders;
+- final screenshots in `docs/screenshots/` should be refreshed after production redeploy and browser QA.

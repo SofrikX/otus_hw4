@@ -3426,3 +3426,35 @@ Diagnose and fix the create-post flow without weakening Supabase RLS.
 - Если у пользователя нет питомца, показывается дружелюбная ошибка: `Сначала добавьте питомца для публикации.`
 - Raw `ApiException(...)` больше не показывается в create-post bottom sheet; используется friendly `ApiException.userMessage`.
 - Добавлен regression widget test: `HomeScreen creates post with current user pet, not feed pet`.
+
+## Prompt 76 — Final visual redesign
+
+```markdown
+# Role
+Ты OpenAI Codex, Senior Flutter Web UI Engineer, Product Designer и Design System Architect.
+
+# Task
+Сделай финальный визуальный редизайн PetConnect перед сдачей проектной работы.
+
+# Goal
+Привести интерфейс PetConnect к premium portfolio-level визуалу в стиле modern dark pet social app.
+
+# Key requirements
+- темная navy/black тема;
+- purple/blue gradient accents;
+- glassmorphism cards;
+- polished auth landing, feed, pets and walks screens;
+- preserve routing, auth, Google OAuth, Supabase integration, Storage upload, CRUD, search/filter logic, analytics and tests;
+- update docs and run `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test`.
+```
+
+Результат:
+
+- Добавлены design tokens: `lib/core/theme/app_colors.dart`, `app_spacing.dart`, `app_radius.dart`.
+- Добавлены shared widgets: `AppCard`, `GlassCard`, `GradientButton`, `AppScreenBackground`.
+- Глобальная Material 3 тема переведена в premium dark UI с glass-like surfaces.
+- Auth/landing screen получил hero, feature chips and glass login/register form.
+- Home shell, Feed, Pets, Walks, Pet Profile and Chat redesigned visually while preserving existing controllers, routes and repository calls.
+- Shared loading/empty/error states unified in the dark glass style.
+- Walk widget tests updated for enlarged premium cards via `scrollUntilVisible`.
+- Documentation updated in README, project documentation, UI/UX audit, development report and prompt journal.

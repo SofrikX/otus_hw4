@@ -255,3 +255,28 @@ Final requirements package:
 - Real pet photo upload/display through Supabase Storage is implemented for the final demo; post image upload remains a planned enhancement.
 - Final minimum CRUD is implemented for pets, posts and walks; post editing, comment deletion UI, walk edit/delete UI and profile editing remain scoped enhancements.
 - Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and implemented search/filtering cover the required additional-function set.
+
+## Final visual redesign
+
+On 23 June 2026 PetConnect received a final portfolio-level UI redesign in the requested modern dark pet social app direction.
+
+Implemented design system updates:
+
+- dark navy/black background tokens, violet/blue gradients and semantic success/warning/error colors;
+- shared spacing/radius tokens in `lib/core/theme/`;
+- reusable `AppCard`, `GlassCard`, `GradientButton` and `AppScreenBackground` widgets in `lib/core/widgets/`;
+- updated global Material 3 theme with dark inputs, chips, buttons, navigation, dialogs, snackbars and bottom sheets.
+
+Screens polished:
+
+- Auth uses a hero landing layout with PetConnect branding, feature chips and glass login/register forms.
+- Home shell uses a branded title, dark gradient background, bottom navigation on mobile and a glass navigation rail on desktop.
+- Feed uses a premium header, integrated search panel, polished stories strip and modern post cards.
+- Pets uses a dashboard header, glass filters, richer pet cards and polished create/edit form shell.
+- Walks uses a premium header, glass filter controls, map-like activity preview cards and consistent join/leave CTA.
+- Pet Profile and Chat were visually aligned with the new glass card system.
+
+Functional constraints preserved:
+
+- no backend schema, Supabase migration, RLS or Storage policy changes;
+- existing routes, auth flow, Google OAuth integration, Supabase repositories, CRUD flows, search/filter logic, analytics events and tests remain active.

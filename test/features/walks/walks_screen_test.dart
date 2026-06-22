@@ -88,6 +88,7 @@ void main() {
       ),
     );
 
+    await _scrollToJoinButton(tester, walk);
     await tester.tap(find.byKey(Key('join-${walk.id}')));
     await tester.pumpAndSettle();
 
@@ -110,6 +111,7 @@ void main() {
       ),
     );
 
+    await _scrollToJoinButton(tester, walk);
     await tester.tap(find.byKey(Key('join-${walk.id}')));
     await tester.pumpAndSettle();
 
@@ -128,6 +130,7 @@ void main() {
       ),
     );
 
+    await _scrollToJoinButton(tester, walk);
     await tester.tap(find.byKey(Key('join-${walk.id}')));
     await tester.pumpAndSettle();
 
@@ -165,6 +168,15 @@ void main() {
     expect(find.text('Не удалось загрузить прогулки рядом.'), findsOneWidget);
     expect(find.text('Повторить'), findsOneWidget);
   });
+}
+
+Future<void> _scrollToJoinButton(WidgetTester tester, Walk walk) async {
+  await tester.scrollUntilVisible(
+    find.byKey(Key('join-${walk.id}')),
+    320,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
 }
 
 class _AlreadyJoinedWalksRepository implements WalksRepository {

@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/async_content_view.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../../auth/presentation/auth_controller.dart';
@@ -57,10 +60,14 @@ class _PetsScreenState extends ConsumerState<PetsScreen> {
           dataBuilder: (pets) => ResponsiveCenter(
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-              itemCount: pets.length + 1,
+              itemCount: pets.length + 2,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 if (index == 0) {
+                  return const _PetsHeader();
+                }
+
+                if (index == 1) {
                   return _PetFiltersPanel(
                     filters: filters,
                     availableTypes: _availableTypes(allPets),
@@ -71,7 +78,7 @@ class _PetsScreenState extends ConsumerState<PetsScreen> {
                   );
                 }
 
-                final pet = pets[index - 1];
+                final pet = pets[index - 2];
                 final isOwner = currentUser?.id == pet.ownerId;
                 return PetCard(
                   pet: pet,
@@ -249,6 +256,51 @@ class _PetsScreenState extends ConsumerState<PetsScreen> {
   }
 }
 
+class _PetsHeader extends StatelessWidget {
+  const _PetsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(22),
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: AppColors.gradient),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: const Icon(Icons.pets, color: Colors.white, size: 30),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Мои питомцы',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Профили, фото и детали ваших любимцев в одном месте.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PetFiltersPanel extends StatelessWidget {
   const _PetFiltersPanel({
     required this.filters,
@@ -268,50 +320,53 @@ class _PetFiltersPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          key: const Key('pet-search-input'),
-          controller: searchController,
-          onChanged: onQueryChanged,
-          textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search),
-            hintText: 'Поиск питомца по имени',
-            border: OutlineInputBorder(),
+    return GlassCard(
+      borderRadius: AppRadius.lg,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            key: const Key('pet-search-input'),
+            controller: searchController,
+            onChanged: onQueryChanged,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Поиск питомца по имени',
+            ),
           ),
-        ),
-        if (availableTypes.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                key: const Key('pet-type-all'),
-                label: const Text('Все'),
-                selected: filters.animalType == null,
-                onSelected: (_) => onTypeChanged(null),
-              ),
-              for (final type in availableTypes)
+          if (availableTypes.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
                 ChoiceChip(
-                  key: Key('pet-type-$type'),
-                  label: Text(_animalTypeLabel(type)),
-                  selected: filters.animalType == type,
-                  onSelected: (_) => onTypeChanged(type),
+                  key: const Key('pet-type-all'),
+                  label: const Text('Все'),
+                  selected: filters.animalType == null,
+                  onSelected: (_) => onTypeChanged(null),
                 ),
-              if (filters.hasActiveFilters)
-                TextButton.icon(
-                  key: const Key('pet-clear-filters'),
-                  onPressed: onClearFilters,
-                  icon: const Icon(Icons.close),
-                  label: const Text('Сбросить'),
-                ),
-            ],
-          ),
+                for (final type in availableTypes)
+                  ChoiceChip(
+                    key: Key('pet-type-$type'),
+                    label: Text(_animalTypeLabel(type)),
+                    selected: filters.animalType == type,
+                    onSelected: (_) => onTypeChanged(type),
+                  ),
+                if (filters.hasActiveFilters)
+                  TextButton.icon(
+                    key: const Key('pet-clear-filters'),
+                    onPressed: onClearFilters,
+                    icon: const Icon(Icons.close),
+                    label: const Text('Сбросить'),
+                  ),
+              ],
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -394,92 +449,96 @@ class _PetFormSheetState extends State<_PetFormSheet> {
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const Key('pet-name-input'),
-                  controller: _nameController,
-                  enabled: !_isSaving,
-                  maxLength: 50,
-                  decoration: const InputDecoration(
-                    labelText: 'Имя',
-                    border: OutlineInputBorder(),
+            child: GlassCard(
+              padding: const EdgeInsets.all(20),
+              borderRadius: AppRadius.xl,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('pet-name-input'),
+                    controller: _nameController,
+                    enabled: !_isSaving,
+                    maxLength: 50,
+                    decoration: const InputDecoration(
+                      labelText: 'Имя',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<String>(
-                  key: const Key('pet-type-input'),
-                  segments: const [
-                    ButtonSegment(value: 'dog', label: Text('Собака')),
-                    ButtonSegment(value: 'cat', label: Text('Кошка')),
-                    ButtonSegment(value: 'other', label: Text('Другой')),
-                  ],
-                  selected: {_animalType},
-                  onSelectionChanged: _isSaving
-                      ? null
-                      : (value) => setState(() => _animalType = value.single),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const Key('pet-breed-input'),
-                  controller: _breedController,
-                  enabled: !_isSaving,
-                  maxLength: 80,
-                  decoration: const InputDecoration(
-                    labelText: 'Порода',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  key: const Key('pet-age-input'),
-                  controller: _ageController,
-                  enabled: !_isSaving,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Возраст',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const Key('pet-description-input'),
-                  controller: _descriptionController,
-                  enabled: !_isSaving,
-                  maxLength: 500,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Описание',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                if (_error != null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    key: const Key('pet-form-error'),
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.error),
+                  SegmentedButton<String>(
+                    key: const Key('pet-type-input'),
+                    segments: const [
+                      ButtonSegment(value: 'dog', label: Text('Собака')),
+                      ButtonSegment(value: 'cat', label: Text('Кошка')),
+                      ButtonSegment(value: 'other', label: Text('Другой')),
+                    ],
+                    selected: {_animalType},
+                    onSelectionChanged: _isSaving
+                        ? null
+                        : (value) => setState(() => _animalType = value.single),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('pet-breed-input'),
+                    controller: _breedController,
+                    enabled: !_isSaving,
+                    maxLength: 80,
+                    decoration: const InputDecoration(
+                      labelText: 'Порода',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    key: const Key('pet-age-input'),
+                    controller: _ageController,
+                    enabled: !_isSaving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Возраст',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('pet-description-input'),
+                    controller: _descriptionController,
+                    enabled: !_isSaving,
+                    maxLength: 500,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Описание',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      key: const Key('pet-form-error'),
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    key: const Key('save-pet-button'),
+                    onPressed: _isSaving ? null : _submit,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
                   ),
                 ],
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  key: const Key('save-pet-button'),
-                  onPressed: _isSaving ? null : _submit,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_outlined),
-                  label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
