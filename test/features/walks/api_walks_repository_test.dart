@@ -22,7 +22,7 @@ void main() {
                 'id': 'walk-1',
                 'title': 'Corgi meetup',
                 'place': 'Gorky Park',
-                'startsAt': '2026-06-16T09:30:00.000Z',
+                'startsAt': '2026-06-25T09:30:00.000Z',
                 'description': 'Morning social walk',
                 'organizerName': 'Ava',
                 'participantsCount': 6,

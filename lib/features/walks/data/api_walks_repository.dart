@@ -8,16 +8,25 @@ class ApiWalksRepository implements WalksRepository {
   final ApiClient _apiClient;
 
   @override
-  Future<List<Walk>> fetchWalks({int limit = 20}) async {
+  Future<List<Walk>> fetchWalks({
+    int limit = 20,
+    WalkFilters filters = const WalkFilters(),
+  }) async {
     final walks = await _apiClient.getWalks(limit: limit);
-    return walks.map(_mapWalk).toList(growable: false);
+    return walks.map(_mapWalk).where(filters.matches).toList(growable: false);
   }
 
   @override
   Future<Walk> createWalk(CreateWalkInput input) async {
-    throw UnsupportedError(
-      'Creating walks is not supported by the legacy API repository.',
-    );
+    final walk = await _apiClient.createWalk({
+      'title': input.title,
+      'place': input.place,
+      'startsAt': input.startsAt.toIso8601String(),
+      'description': input.description,
+      'organizerName': input.organizerName,
+    });
+
+    return _mapWalk(walk);
   }
 
   @override
@@ -28,9 +37,8 @@ class ApiWalksRepository implements WalksRepository {
 
   @override
   Future<WalkJoinResult> leaveWalk(String walkId) async {
-    throw UnsupportedError(
-      'Leaving walks is not supported by the legacy API repository.',
-    );
+    final result = await _apiClient.leaveWalk(walkId);
+    return WalkJoinResult.fromJson(result);
   }
 
   Walk _mapWalk(Map<String, dynamic> json) {

@@ -9,8 +9,11 @@ class MockFeedRepository implements FeedRepository {
   List<PetPost> _posts;
 
   @override
-  Future<List<PetPost>> fetchPosts({int limit = 20}) async {
-    return _posts.take(limit).toList(growable: false);
+  Future<List<PetPost>> fetchPosts({
+    int limit = 20,
+    FeedSearchQuery query = const FeedSearchQuery(),
+  }) async {
+    return _posts.where(query.matches).take(limit).toList(growable: false);
   }
 
   @override
@@ -20,6 +23,7 @@ class MockFeedRepository implements FeedRepository {
       petId: input.petId,
       petName: input.petName ?? 'Питомец',
       authorName: input.authorName ?? 'Владелец',
+      authorId: input.authorId,
       petEmoji: input.petEmoji ?? '🐾',
       imageEmoji: input.imageEmoji ?? '📷',
       text: input.text,
@@ -31,6 +35,15 @@ class MockFeedRepository implements FeedRepository {
 
     _posts = List<PetPost>.unmodifiable([post, ..._posts]);
     return post;
+  }
+
+  @override
+  Future<void> deletePost(String postId) async {
+    final before = _posts.length;
+    _posts = _posts.where((post) => post.id != postId).toList(growable: false);
+    if (_posts.length == before) {
+      throw ArgumentError('Post not found: $postId');
+    }
   }
 
   @override

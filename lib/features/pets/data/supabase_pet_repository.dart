@@ -99,6 +99,60 @@ created_at
   }
 
   @override
+  Future<Pet> updatePet(UpdatePetInput input) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      final petRow = await _client
+          .from('pets')
+          .select('id, owner_id')
+          .eq('id', input.petId)
+          .single();
+
+      if (petRow['owner_id'] != userId) {
+        throw const ApiForbiddenException(
+          message: 'Only the pet owner can update this profile.',
+        );
+      }
+
+      final response = await _client
+          .from('pets')
+          .update({
+            'name': input.name,
+            'animal_type': input.animalType,
+            'breed': input.breed,
+            'age': input.age,
+            'description': input.description,
+            if (input.photoEmoji != null) 'photo_emoji': input.photoEmoji,
+          })
+          .eq('id', input.petId)
+          .select(_petColumns)
+          .single();
+
+      return _mapPet(response);
+    });
+  }
+
+  @override
+  Future<void> deletePet(String petId) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      final petRow = await _client
+          .from('pets')
+          .select('id, owner_id')
+          .eq('id', petId)
+          .single();
+
+      if (petRow['owner_id'] != userId) {
+        throw const ApiForbiddenException(
+          message: 'Only the pet owner can delete this profile.',
+        );
+      }
+
+      await _client.from('pets').delete().eq('id', petId);
+    });
+  }
+
+  @override
   Future<Pet> uploadPetPhoto(UploadPetPhotoInput input) {
     return _guard(() async {
       final userId = _requiredUserId();

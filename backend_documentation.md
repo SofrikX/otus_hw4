@@ -383,6 +383,22 @@ Prefer: return=representation
 }
 ```
 
+### DELETE own posts
+
+Flutter:
+
+```dart
+await supabase.from('posts').delete().eq('id', postId);
+```
+
+RLS policy `posts_delete_own` requires `author_id = auth.uid()`. The Flutter UI exposes this through an owner-only post menu and confirmation dialog.
+
+REST:
+
+```http
+DELETE /rest/v1/posts?id=eq.<post-id>
+```
+
 ### INSERT/DELETE post_likes
 
 Like:
@@ -440,6 +456,29 @@ REST:
 GET /rest/v1/walks?status=eq.active&order=scheduled_at.asc&limit=20
 ```
 
+### INSERT walks
+
+Flutter:
+
+```dart
+await supabase.from('walks').insert({
+  'creator_id': userId,
+  'organizer_name': organizerName,
+  'title': title,
+  'place': place,
+  'scheduled_at': startsAt.toIso8601String(),
+  'description': description,
+}).select().single();
+```
+
+RLS policy `walks_insert_own` requires `creator_id = auth.uid()`. The Flutter form validates title, place, future date/time and description before calling the repository.
+
+REST:
+
+```http
+POST /rest/v1/walks?select=*
+```
+
 ### INSERT walk_participants
 
 Flutter:
@@ -462,6 +501,26 @@ POST /rest/v1/walk_participants
   "walk_id": "<walk-id>",
   "user_id": "<current-user-id>"
 }
+```
+
+### DELETE walk_participants
+
+Flutter:
+
+```dart
+await supabase
+    .from('walk_participants')
+    .delete()
+    .eq('walk_id', walkId)
+    .eq('user_id', userId);
+```
+
+RLS policy `walk_participants_delete_self` requires `user_id = auth.uid()`. This powers the `Выйти` action for joined walks.
+
+REST:
+
+```http
+DELETE /rest/v1/walk_participants?walk_id=eq.<walk-id>&user_id=eq.<current-user-id>
 ```
 
 ### SELECT pets
@@ -491,6 +550,47 @@ REST:
 ```http
 GET /rest/v1/pets?select=id,owner_id,owner_name,name,animal_type,breed,age,description,photo_emoji,created_at&order=created_at.desc&limit=50
 ```
+
+### INSERT/UPDATE/DELETE pets
+
+Create:
+
+```dart
+await supabase.from('pets').insert({
+  'owner_id': userId,
+  'owner_name': ownerName,
+  'name': name,
+  'animal_type': animalType,
+  'breed': breed,
+  'age': age,
+  'description': description,
+}).select().single();
+```
+
+Update:
+
+```dart
+await supabase
+    .from('pets')
+    .update({
+      'name': name,
+      'animal_type': animalType,
+      'breed': breed,
+      'age': age,
+      'description': description,
+    })
+    .eq('id', petId)
+    .select()
+    .single();
+```
+
+Delete:
+
+```dart
+await supabase.from('pets').delete().eq('id', petId);
+```
+
+RLS policies `pets_insert_own`, `pets_update_own` and `pets_delete_own` require `owner_id = auth.uid()`. The Flutter UI exposes update/delete only for pet cards owned by the current user and uses confirmation before delete.
 
 ### INSERT comments
 
@@ -782,8 +882,8 @@ lib/features/<feature>/
 Implemented Supabase integrations:
 
 - `SupabaseAuthRepository`: sign up, email/password sign in, Google OAuth sign in, sign out, auth state, profile upsert;
-- `SupabaseFeedRepository`: select posts, create post, like/unlike, add comment;
-- `SupabasePetRepository`: select pets, get pet by id, owner pets, create pet;
+- `SupabaseFeedRepository`: select posts, create post, delete own post, like/unlike, add comment;
+- `SupabasePetRepository`: select pets, get pet by id, owner pets, create/update/delete own pet, upload pet photo;
 - `SupabaseWalkRepository`: select walks, create walk, join walk, leave walk.
 
 Routing behavior:

@@ -120,6 +120,12 @@ class _RecordingPetRepository implements PetRepository {
   Future<Pet> createPet(CreatePetInput input) async => _pet;
 
   @override
+  Future<Pet> updatePet(UpdatePetInput input) async => _pet;
+
+  @override
+  Future<void> deletePet(String petId) async {}
+
+  @override
   Future<List<Pet>> fetchPets({int limit = 50}) async => [_pet];
 
   @override

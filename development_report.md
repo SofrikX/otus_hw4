@@ -2000,3 +2000,97 @@ dart format .: passed, 84 files checked
 flutter analyze: passed, No issues found
 flutter test: passed, 77 tests
 ```
+
+## 40. Search and filtering для финальной проектной работы
+
+Дата изменения: 22 июня 2026.
+
+Цель: закрыть visible search/filtering gap для финального PetConnect demo и добавить дополнительную portfolio-ready функцию поверх OAuth2, analytics и Supabase Storage.
+
+Роль Codex: Flutter Product Engineer и Supabase Query Specialist.
+
+Перед изменениями прочитаны:
+
+- `project_documentation.md`, `final_project_gap_analysis.md`, `technical_specification.md`, `user_stories.md`;
+- `README.md`, `integration_documentation.md`, `development_report.md`, `prompts.md`;
+- `lib/features/feed/`, `lib/features/walks/`, `lib/features/pets/`;
+- `lib/core/supabase/`, `lib/core/analytics/`;
+- `supabase/migrations/`;
+- relevant tests in `test/features/feed/`, `test/features/walks/`, `test/features/pets/`.
+
+Результат:
+
+- Feed получил debounced search input и поиск по тексту поста, имени автора и имени питомца.
+- Walks получили фильтры по дате, place/location и статусу `upcoming` / `completed` / `all`, а также clear filters action.
+- Pets получили поиск по имени и filter chips по типу животного.
+- Supabase walks используют query builder filters `.neq`, `.gte`, `.lt`, `.ilike`; feed search фильтрует уже RLS-visible feed result set без raw SQL из пользовательского ввода.
+- Добавлены analytics events `search_performed`, `feed_filter_changed`, `walk_filter_changed` без raw search/location text.
+- Обновлены user stories, technical specification, project documentation, integration documentation, README и prompt journal.
+
+Validation:
+
+```bash
+dart format .
+flutter analyze
+flutter test
+```
+
+Результат:
+
+```text
+dart format .: passed
+flutter analyze: passed, No issues found
+flutter test: passed, 87 tests
+```
+
+## 41. CRUD completeness audit and fixes
+
+Дата изменения: 22 июня 2026.
+
+Цель: провести аудит CRUD полноты PetConnect для финальной проектной работы и исправить важные Missing/Partial операции для pets, posts, walks и walk participation.
+
+Роль Codex: Full-Stack QA Engineer, Supabase CRUD Reviewer, Flutter Product Engineer.
+
+Перед изменениями прочитаны:
+
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `technical_specification.md`, `user_stories.md`, `final_project_gap_analysis.md`;
+- `backend_documentation.md`, `integration_documentation.md`, `security_audit.md`;
+- `supabase/migrations/`;
+- `lib/features/pets/`, `lib/features/feed/`, `lib/features/walks/`, `lib/features/auth/`;
+- `test/`, `README.md`, `development_report.md`, `prompts.md`.
+
+Результат аудита:
+
+- создан `docs/crud_audit.md` с CRUD-таблицами по pets, posts, comments, walks, walk_participants и profiles;
+- подтверждено, что RLS уже закрывает owner-scoped writes/deletes: `pets_*_own`, `posts_*_own`, `walks_*_own`, `walk_participants_*_self`;
+- выявлены главные UI/repository gaps: pet create/update/delete UI, post delete, walk create UI и walk leave UI.
+
+Applied fixes:
+
+- `PetRepository` расширен `updatePet` и `deletePet`; Supabase/mock/API implementations обновлены;
+- добавлен `PetActions` application layer с validation: required fields, length limits, age 0-30;
+- `PetsScreen` получил create/edit bottom sheet, owner-only edit/delete menu и delete confirmation dialog;
+- `FeedRepository` и controller получили `deletePost`; `PetPost` теперь хранит nullable `authorId`;
+- `PostCard` и `FeedScreen` получили owner-only delete action с confirmation dialog;
+- `WalksController` получил `createWalk` и `leaveWalk` с validation будущей даты: минимум +15 минут и максимум +1 год;
+- `WalksScreen` получил create-walk form и working leave action for joined walks;
+- legacy API repositories updated to satisfy repository contracts.
+
+Tests:
+
+- добавлены/обновлены controller and widget tests for pet form validation, pet delete confirmation, post delete confirmation, walk create validation and walk leave;
+- focused validation passed:
+
+```text
+dart format .: passed
+flutter analyze: passed, No issues found
+flutter test test/features/feed test/features/pets test/features/walks: passed, 72 tests
+flutter test: passed, 97 tests
+```
+
+Supabase validation:
+
+- SQL migrations were inspected but not changed in this CRUD pass.
+- `supabase db lint` could not connect to local Postgres on `127.0.0.1:54322`; this is an environment blocker because local Supabase services were not running, not a SQL lint result.
+- RLS validation remains based on existing migrations and should be repeated with `supabase db lint` / `supabase db reset` when local Supabase services are running, or by hosted authenticated smoke checks.

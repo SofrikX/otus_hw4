@@ -38,6 +38,19 @@ void main() {
     expect(controller.state.error.toString(), contains('Backend down'));
   });
 
+  test('updateSearchQuery filters posts by text, author or pet name', () async {
+    final controller = FeedController(
+      repository: _FakeFeedRepository(posts: mockPosts),
+      initialPosts: mockPosts,
+    );
+
+    await controller.updateSearchQuery('рокки');
+
+    expect(controller.query.normalizedText, 'рокки');
+    expect(controller.state.value, hasLength(1));
+    expect(controller.state.value?.single.petName, 'Рокки');
+  });
+
   test('toggleLike updates post like state in mock feed state', () async {
     final controller = FeedController();
     final post = mockPosts.first;
@@ -103,6 +116,43 @@ void main() {
     expect(controller.state.value, hasLength(2));
   });
 
+  test('deletePost removes own post from state', () async {
+    final post = mockPosts.first.copyWith(authorId: 'user-qa');
+    final controller = FeedController(
+      repository: _FakeFeedRepository(posts: [post]),
+      initialPosts: [post],
+    );
+
+    await controller.deletePost(
+      post: post,
+      author: const AppUser(
+        id: 'user-qa',
+        email: 'qa@example.com',
+        displayName: 'QA User',
+      ),
+    );
+
+    expect(controller.state.value, isEmpty);
+  });
+
+  test('deletePost rejects non-owned post before repository call', () async {
+    final post = mockPosts.first.copyWith(authorId: 'other-user');
+    final controller = FeedController(
+      repository: _FakeFeedRepository(posts: [post]),
+      initialPosts: [post],
+    );
+
+    await expectLater(
+      controller.deletePost(
+        post: post,
+        author: const AppUser(id: 'user-qa', email: 'qa@example.com'),
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+
+    expect(controller.state.value, [post]);
+  });
+
   test('feedRepositoryProvider uses mock repository by default', () {
     final container = ProviderContainer(
       overrides: [
@@ -163,13 +213,16 @@ class _FakeFeedRepository implements FeedRepository {
   final Object? commentError;
 
   @override
-  Future<List<PetPost>> fetchPosts({int limit = 20}) async {
+  Future<List<PetPost>> fetchPosts({
+    int limit = 20,
+    FeedSearchQuery query = const FeedSearchQuery(),
+  }) async {
     final error = fetchError;
     if (error != null) {
       throw error;
     }
 
-    return posts.take(limit).toList(growable: false);
+    return posts.where(query.matches).take(limit).toList(growable: false);
   }
 
   @override
@@ -179,6 +232,7 @@ class _FakeFeedRepository implements FeedRepository {
       petId: input.petId,
       petName: input.petName ?? 'Питомец',
       authorName: input.authorName ?? 'Владелец',
+      authorId: input.authorId,
       petEmoji: input.petEmoji ?? '🐾',
       imageEmoji: input.imageEmoji ?? '📷',
       text: input.text,
@@ -188,6 +242,9 @@ class _FakeFeedRepository implements FeedRepository {
       isLiked: false,
     );
   }
+
+  @override
+  Future<void> deletePost(String postId) async {}
 
   @override
   Future<PostLikeResult> toggleLike(String postId) async {

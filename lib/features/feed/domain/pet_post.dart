@@ -12,12 +12,14 @@ class PetPost {
     required this.commentsCount,
     required this.isLiked,
     this.comments = const [],
+    this.authorId,
   });
 
   final String id;
   final String petId;
   final String petName;
   final String authorName;
+  final String? authorId;
   final String petEmoji;
   final String imageEmoji;
   final String text;
@@ -32,6 +34,7 @@ class PetPost {
     String? petId,
     String? petName,
     String? authorName,
+    String? authorId,
     String? petEmoji,
     String? imageEmoji,
     String? text,
@@ -46,6 +49,7 @@ class PetPost {
       petId: petId ?? this.petId,
       petName: petName ?? this.petName,
       authorName: authorName ?? this.authorName,
+      authorId: authorId ?? this.authorId,
       petEmoji: petEmoji ?? this.petEmoji,
       imageEmoji: imageEmoji ?? this.imageEmoji,
       text: text ?? this.text,
@@ -63,6 +67,7 @@ class PetPost {
       petId: json['petId'] as String,
       petName: json['petName'] as String,
       authorName: json['authorName'] as String,
+      authorId: json['authorId'] as String?,
       petEmoji: json['petEmoji'] as String,
       imageEmoji: json['imageEmoji'] as String,
       text: json['text'] as String,
@@ -81,6 +86,7 @@ class PetPost {
       'petId': petId,
       'petName': petName,
       'authorName': authorName,
+      'authorId': authorId,
       'petEmoji': petEmoji,
       'imageEmoji': imageEmoji,
       'text': text,

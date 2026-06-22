@@ -8,12 +8,14 @@ class PostCard extends StatelessWidget {
     required this.post,
     required this.onLike,
     required this.onComment,
+    this.onDelete,
     super.key,
   });
 
   final PetPost post;
   final VoidCallback onLike;
   final ValueChanged<String> onComment;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,7 @@ class PostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _PostHeader(post: post),
+          _PostHeader(post: post, onDelete: onDelete),
           _PostMedia(post: post),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -60,9 +62,10 @@ class PostCard extends StatelessWidget {
 }
 
 class _PostHeader extends StatelessWidget {
-  const _PostHeader({required this.post});
+  const _PostHeader({required this.post, this.onDelete});
 
   final PetPost post;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -94,15 +97,41 @@ class _PostHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_horiz),
-            tooltip: 'Дополнительно',
-          ),
+          if (onDelete != null)
+            PopupMenuButton<_PostAction>(
+              key: Key('post-actions-${post.id}'),
+              tooltip: 'Дополнительно',
+              onSelected: (action) {
+                switch (action) {
+                  case _PostAction.delete:
+                    onDelete?.call();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _PostAction.delete,
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Удалить'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            )
+          else
+            IconButton(
+              onPressed: null,
+              icon: const Icon(Icons.more_horiz),
+              tooltip: 'Дополнительно',
+            ),
         ],
       ),
     );
   }
+}
+
+enum _PostAction {
+  delete,
 }
 
 class _PostMedia extends StatelessWidget {

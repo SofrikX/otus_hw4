@@ -16,7 +16,9 @@ void main() {
 
         if (request.url.path == '/rest/v1/walks') {
           expect(request.method, 'GET');
-          expect(request.url.queryParameters['status'], 'eq.active');
+          expect(request.url.queryParameters['status'], 'neq.cancelled');
+          expect(
+              request.url.queryParameters['scheduled_at'], startsWith('gte.'));
           expect(request.url.queryParameters['limit'], '2');
 
           return _jsonResponse(
@@ -26,7 +28,7 @@ void main() {
                 'id': 'walk-1',
                 'title': 'Corgi meetup',
                 'place': 'Gorky Park',
-                'scheduled_at': '2026-06-18T09:30:00Z',
+                'scheduled_at': '2026-06-25T09:30:00Z',
                 'description': 'Morning social walk',
                 'organizer_name': 'Ava',
                 'participants_count': 6,

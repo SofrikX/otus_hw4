@@ -1,13 +1,39 @@
 import 'pet_post.dart';
 
 abstract class FeedRepository {
-  Future<List<PetPost>> fetchPosts({int limit = 20});
+  Future<List<PetPost>> fetchPosts({
+    int limit = 20,
+    FeedSearchQuery query = const FeedSearchQuery(),
+  });
 
   Future<PetPost> createPost(CreatePostInput input);
+
+  Future<void> deletePost(String postId);
 
   Future<PostLikeResult> toggleLike(String postId);
 
   Future<PostCommentResult> addComment(AddCommentInput input);
+}
+
+class FeedSearchQuery {
+  const FeedSearchQuery({this.text = ''});
+
+  final String text;
+
+  String get normalizedText => text.trim().toLowerCase();
+
+  bool get hasText => normalizedText.isNotEmpty;
+
+  bool matches(PetPost post) {
+    final query = normalizedText;
+    if (query.isEmpty) {
+      return true;
+    }
+
+    return post.text.toLowerCase().contains(query) ||
+        post.authorName.toLowerCase().contains(query) ||
+        post.petName.toLowerCase().contains(query);
+  }
 }
 
 class CreatePostInput {

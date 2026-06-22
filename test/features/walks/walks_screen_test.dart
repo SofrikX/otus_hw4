@@ -32,11 +32,11 @@ void main() {
     expect(find.text('Прогулок пока нет'), findsOneWidget);
     expect(
       find.text(
-        'Активные встречи появятся здесь. Обновите список перед прогулкой.',
+        'Активные встречи появятся здесь. Создайте первую прогулку.',
       ),
       findsOneWidget,
     );
-    expect(find.text('Обновить прогулки'), findsOneWidget);
+    expect(find.text('Создать прогулку'), findsOneWidget);
   });
 
   testWidgets('WalksScreen shows walk list', (tester) async {
@@ -56,6 +56,27 @@ void main() {
     expect(find.text('Присоединиться'), findsOneWidget);
   });
 
+  testWidgets('WalksScreen shows empty state for unmatched filters',
+      (tester) async {
+    final walk = mockWalks.first.copyWith(
+      startsAt: DateTime.now().add(const Duration(days: 1)),
+    );
+
+    await tester.pumpWidget(
+      _buildWalksScreen(
+        controller: WalksController(
+          initialState: AsyncValue<List<Walk>>.data([walk]),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('walk-status-completed')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Подходящих прогулок нет'), findsOneWidget);
+    expect(find.text('Сбросить фильтры'), findsOneWidget);
+  });
+
   testWidgets('WalksScreen allows user to join walk', (tester) async {
     final walk = mockWalks.first.copyWith(isJoined: false, participantCount: 1);
 
@@ -70,7 +91,7 @@ void main() {
     await tester.tap(find.byKey(Key('join-${walk.id}')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Вы участвуете'), findsOneWidget);
+    expect(find.text('Выйти'), findsOneWidget);
     expect(find.text('2 участников'), findsOneWidget);
     expect(find.text('1 участников'), findsNothing);
     expect(find.text('Вы присоединились: ${walk.title}'), findsOneWidget);
@@ -92,8 +113,40 @@ void main() {
     await tester.tap(find.byKey(Key('join-${walk.id}')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Вы участвуете'), findsOneWidget);
+    expect(find.text('Выйти'), findsOneWidget);
     expect(find.text('Вы уже участвуете: ${walk.title}'), findsOneWidget);
+  });
+
+  testWidgets('WalksScreen allows user to leave joined walk', (tester) async {
+    final walk = mockWalks.first.copyWith(isJoined: true, participantCount: 2);
+
+    await tester.pumpWidget(
+      _buildWalksScreen(
+        controller: WalksController(
+          initialState: AsyncValue<List<Walk>>.data([walk]),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(Key('join-${walk.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Присоединиться'), findsOneWidget);
+    expect(find.text('1 участников'), findsOneWidget);
+    expect(find.text('Вы вышли из прогулки: ${walk.title}'), findsOneWidget);
+  });
+
+  testWidgets('WalksScreen validates create walk form', (tester) async {
+    await tester.pumpWidget(_buildWalksScreen());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-walk-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-walk-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('walk-form-error')), findsOneWidget);
+    expect(find.text('Укажите название прогулки.'), findsOneWidget);
   });
 
   testWidgets('WalksScreen shows error state with retry', (tester) async {
@@ -120,8 +173,11 @@ class _AlreadyJoinedWalksRepository implements WalksRepository {
   final List<Walk> _walks;
 
   @override
-  Future<List<Walk>> fetchWalks({int limit = 20}) async {
-    return _walks.take(limit).toList(growable: false);
+  Future<List<Walk>> fetchWalks({
+    int limit = 20,
+    WalkFilters filters = const WalkFilters(),
+  }) async {
+    return _walks.where(filters.matches).take(limit).toList(growable: false);
   }
 
   @override

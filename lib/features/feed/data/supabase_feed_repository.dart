@@ -10,6 +10,7 @@ class SupabaseFeedRepository implements FeedRepository {
 
   static const _postColumns = '''
 id,
+author_id,
 pet_id,
 pet_name,
 author_name,
@@ -24,7 +25,10 @@ comments_count
   final SupabaseClient _client;
 
   @override
-  Future<List<PetPost>> fetchPosts({int limit = 20}) {
+  Future<List<PetPost>> fetchPosts({
+    int limit = 20,
+    FeedSearchQuery query = const FeedSearchQuery(),
+  }) {
     return _guard(() async {
       final userId = _requiredUserId();
       final response = await _client
@@ -55,6 +59,7 @@ comments_count
               comments: commentsByPostId[row['id'] as String] ?? const [],
             ),
           )
+          .where(query.matches)
           .toList(growable: false);
     });
   }
@@ -79,6 +84,26 @@ comments_count
           .single();
 
       return _mapPost(response);
+    });
+  }
+
+  @override
+  Future<void> deletePost(String postId) {
+    return _guard(() async {
+      final userId = _requiredUserId();
+      final postRow = await _client
+          .from('posts')
+          .select('id, author_id')
+          .eq('id', postId)
+          .single();
+
+      if (postRow['author_id'] != userId) {
+        throw const ApiForbiddenException(
+          message: 'Only the post author can delete this post.',
+        );
+      }
+
+      await _client.from('posts').delete().eq('id', postId);
     });
   }
 
@@ -218,6 +243,7 @@ comments_count
   }) {
     return PetPost(
       id: row['id'] as String,
+      authorId: row['author_id'] as String?,
       petId: row['pet_id'] as String,
       petName: row['pet_name'] as String? ?? 'Питомец',
       authorName: row['author_name'] as String? ?? 'Владелец',

@@ -9,8 +9,11 @@ class MockWalksRepository implements WalksRepository {
   List<Walk> _walks;
 
   @override
-  Future<List<Walk>> fetchWalks({int limit = 20}) async {
-    return _walks.take(limit).toList(growable: false);
+  Future<List<Walk>> fetchWalks({
+    int limit = 20,
+    WalkFilters filters = const WalkFilters(),
+  }) async {
+    return _walks.where(filters.matches).take(limit).toList(growable: false);
   }
 
   @override

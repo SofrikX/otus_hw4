@@ -178,6 +178,17 @@ Storage buckets are private and Storage policies require authenticated access an
 
 The pet photo bucket `pet-images` intentionally uses public read for simple profile photo rendering in Flutter Web. Write/update/delete policies require authenticated owner-scoped paths and verify that the path pet id belongs to `auth.uid()`. Flutter rejects unsupported file types and files larger than 5 MB before upload.
 
+### CRUD Ownership Review
+
+The final CRUD pass added Flutter UI actions for create/update/delete pets, delete own posts, create walks and leave joined walks. These actions are owner-aware in the UI when ownership is available, but PostgreSQL RLS remains the security boundary:
+
+- pet update/delete is protected by `pets_update_own` and `pets_delete_own`;
+- post delete is protected by `posts_delete_own`;
+- walk creation is protected by `walks_insert_own`;
+- walk leave deletes only the current user's `walk_participants` row through `walk_participants_delete_self`.
+
+No RLS policy was disabled, no service role key was added and no allow-all policy was introduced.
+
 ### OAuth Redirect URLs
 
 Local `supabase/config.toml` now uses exact redirect URLs:

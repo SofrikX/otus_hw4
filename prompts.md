@@ -3210,3 +3210,72 @@ PetConnect — финальный портфолио-проект.
 - Добавлены tests для pet photo controller validation/upload и widget tests для placeholder/image state.
 - Обновлены README, project docs, technical specification, user stories, backend/integration/security docs и development report.
 - Проверки: `flutter pub get`, `dart format lib/features/pets test/features/pets`, `flutter test test/features/pets`, `flutter analyze`.
+
+## Prompt 69 — Search and filtering для PetConnect
+
+```markdown
+# Role
+Ты OpenAI Codex, Flutter Product Engineer и Supabase Query Specialist.
+
+# Task
+Добавь поиск и фильтрацию данных в PetConnect.
+
+# Requirements
+- Feed search по тексту поста, имени автора или имени питомца;
+- Walk filters по дате, городу/локации и статусу upcoming/completed/all;
+- Pets filters по имени и типу питомца, если структура позволяет;
+- Supabase query builder без raw SQL из пользовательского ввода;
+- Riverpod pattern, responsive Material 3 UI, analytics events, tests and documentation updates.
+```
+
+Результат:
+
+- Добавлен `FeedSearchQuery`, debounced search input на Feed screen и empty state для нулевого результата.
+- Добавлен `WalkFilters`, UI-фильтры даты/place/status на Walks screen и clear filters action.
+- Добавлен `PetFilters`, поиск питомцев по имени и chips по типу животного на Pets screen.
+- Supabase walks используют builder filters; feed search работает по RLS-visible результатам без клиентского raw SQL.
+- Analytics расширена событиями `search_performed`, `feed_filter_changed`, `walk_filter_changed` без raw query/location text.
+- Обновлены `project_documentation.md`, `user_stories.md`, `technical_specification.md`, `integration_documentation.md`, `README.md`, `development_report.md`.
+- Проверки: `dart format .`, `flutter analyze`, `flutter test` — успешно, 87 tests.
+
+## Prompt 70 — CRUD completeness audit and fixes
+
+```markdown
+# Role
+Ты OpenAI Codex, Full-Stack QA Engineer и Supabase CRUD Reviewer.
+
+# Task
+Проведи аудит CRUD полноты PetConnect и исправь недостающие операции.
+
+# Target entities
+- pets;
+- posts;
+- comments;
+- walks;
+- walk_participants;
+- profiles, если редактирование профиля есть.
+
+# Minimum required final behavior
+- пользователь может создать питомца;
+- пользователь может посмотреть список/карточку питомца;
+- пользователь может отредактировать своего питомца;
+- пользователь может удалить своего питомца;
+- пользователь может создать пост;
+- пользователь может удалить свой пост;
+- пользователь может создать прогулку;
+- пользователь может присоединиться к прогулке;
+- пользователь может выйти из прогулки;
+- пользователь не может редактировать/удалять чужие данные.
+```
+
+Результат:
+
+- Создан `docs/crud_audit.md` с CRUD-матрицами и RLS policy evidence для pets, posts, comments, walks, walk_participants и profiles.
+- Pets: добавлены `updatePet`, `deletePet`, `PetActions`, create/edit form, owner-only edit/delete menu и delete confirmation.
+- Posts: добавлен `authorId` в `PetPost`, `deletePost` в repository/controller, owner-only post menu и confirmation dialog.
+- Walks: добавлены `createWalk` и `leaveWalk` в controller/UI, create-walk form и working leave action for joined walks.
+- Validation: pet fields, post/comment required text, walk title/place/description and date sanity.
+- RLS не менялся и не ослаблялся; существующие policies проверены по migrations.
+- Обновлены `technical_specification.md`, `backend_documentation.md`, `security_audit.md`, `project_documentation.md`, `README.md`, `development_report.md`, `user_stories.md`.
+- Проверки: `dart format .`, `flutter analyze`, `flutter test test/features/feed test/features/pets test/features/walks`, полный `flutter test` — успешно, 97 tests.
+- `supabase db lint` не подключился к локальному Postgres `127.0.0.1:54322`, потому что локальный Supabase не был запущен; требуется повторить после `supabase start` / local reset или через hosted smoke checks.

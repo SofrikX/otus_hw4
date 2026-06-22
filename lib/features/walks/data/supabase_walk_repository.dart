@@ -25,15 +25,40 @@ participants_count
   final String? _currentUserIdOverride;
 
   @override
-  Future<List<Walk>> fetchWalks({int limit = 20}) {
+  Future<List<Walk>> fetchWalks({
+    int limit = 20,
+    WalkFilters filters = const WalkFilters(),
+  }) {
     return _guard(() async {
       final userId = _requiredUserId();
-      final response = await _client
-          .from('walks')
-          .select(_walkColumns)
-          .eq('status', 'active')
-          .order('scheduled_at', ascending: true)
-          .limit(limit);
+      var query =
+          _client.from('walks').select(_walkColumns).neq('status', 'cancelled');
+
+      final date = filters.date;
+      if (date != null) {
+        final start = DateTime(date.year, date.month, date.day);
+        final end = start.add(const Duration(days: 1));
+        query = query
+            .gte('scheduled_at', start.toUtc().toIso8601String())
+            .lt('scheduled_at', end.toUtc().toIso8601String());
+      }
+
+      final location = filters.normalizedLocationQuery;
+      if (location.isNotEmpty) {
+        query = query.ilike('place', '%${_escapeIlike(location)}%');
+      }
+
+      query = switch (filters.status) {
+        WalkStatusFilter.all => query,
+        WalkStatusFilter.upcoming =>
+          query.gte('scheduled_at', DateTime.now().toUtc().toIso8601String()),
+        WalkStatusFilter.completed =>
+          query.lt('scheduled_at', DateTime.now().toUtc().toIso8601String()),
+      };
+
+      final response = await query.order('scheduled_at', ascending: true).limit(
+            limit,
+          );
 
       final walkRows = _rowsFrom(response);
       if (walkRows.isEmpty) {
@@ -219,6 +244,13 @@ participants_count
     }
 
     return user.email ?? 'Владелец';
+  }
+
+  String _escapeIlike(String value) {
+    return value
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {

@@ -7,6 +7,7 @@ Purpose: final project user stories for PetConnect as a portfolio full-stack Flu
 Status values:
 
 - **Done** - implemented in code, migrations, tests or documented production setup.
+- **Partial** - important parts are implemented, but one or more acceptance criteria remain scoped.
 - **Planned** - part of the final product direction, but not fully exposed or validated in the current UI/backend.
 - **Optional** - future enhancement outside the required final demo.
 
@@ -54,7 +55,7 @@ Priority values:
 - Given OAuth succeeds, then the app returns to the configured Netlify or localhost redirect URL and restores the session.
 - Google Client Secret is stored only in Supabase/Google consoles and is not committed to the repository.
 
-**Priority:** Should  
+**Priority:** Should
 **Status:** Done
 
 ### AUTH-4. Sign out
@@ -95,7 +96,7 @@ Priority values:
 - Given another user tries to write a pet for a different owner id, then RLS blocks the request.
 
 **Priority:** Must  
-**Status:** Planned
+**Status:** Done
 
 ### PET-3. Edit or delete own pet profile
 
@@ -108,7 +109,7 @@ Priority values:
 - Given the pet is deleted, then dependent data is handled according to database constraints.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ## Feed And Posts
 
@@ -149,7 +150,9 @@ Priority values:
 - UI actions for edit/delete are visible only where they are supported by the application layer.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Partial
+
+Note: deleting own posts is implemented through an owner-only action and confirmation dialog. Editing own posts remains planned.
 
 ## Comments And Likes
 
@@ -190,7 +193,7 @@ Priority values:
 - The UI should expose delete only after the application layer supports the operation.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ## Walks
 
@@ -230,7 +233,7 @@ Priority values:
 - Given another user tries to delete a participant row they do not own, then RLS blocks the operation.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ### WALK-4. Create walk
 
@@ -243,7 +246,7 @@ Priority values:
 - Given the creator owns the walk, then RLS allows future update/delete operations.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ## Search And Filters
 
@@ -254,11 +257,12 @@ Priority values:
 **Acceptance criteria:**
 
 - Given the user enters a search query or selects a filter, then the feed displays only matching posts.
+- Given the query matches post text, author name or pet name, then the matching posts remain visible.
 - Given the query returns no results, then the app shows an empty state.
 - Filtering must not bypass RLS or expose private/deleted content.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
 
 ### SEARCH-2. Filter walks
 
@@ -266,12 +270,25 @@ Priority values:
 
 **Acceptance criteria:**
 
-- Given the user selects active walks or searches by place, then the walks screen shows matching walks.
+- Given the user selects a date, place/location text or upcoming/completed/all status, then the walks screen shows matching walks.
 - Given no matching walks exist, then the app shows an empty state.
 - Filters use repository queries or local state without direct backend calls from widgets.
 
 **Priority:** Should  
-**Status:** Planned
+**Status:** Done
+
+### SEARCH-3. Filter pets
+
+**User story:** As a pet owner, I want to search pets by name and filter by animal type so that I can quickly find relevant profiles.
+
+**Acceptance criteria:**
+
+- Given the user types a pet name, then the pets screen shows matching pet profiles.
+- Given the user selects an animal type chip, then the list shows only pets of that type.
+- Given filters return no results, then the app shows an empty state and a clear filters action.
+
+**Priority:** Should
+**Status:** Done
 
 ## Image Upload
 

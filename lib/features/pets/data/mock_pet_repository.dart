@@ -48,6 +48,34 @@ class MockPetRepository implements PetRepository {
     return pet;
   }
 
+  @override
+  Future<Pet> updatePet(UpdatePetInput input) async {
+    final index = _pets.indexWhere((pet) => pet.id == input.petId);
+    if (index == -1) {
+      throw StateError('Pet not found.');
+    }
+
+    final updated = _pets[index].copyWith(
+      name: input.name,
+      animalType: input.animalType,
+      breed: input.breed,
+      age: input.age,
+      description: input.description,
+      photoEmoji: input.photoEmoji,
+    );
+    _pets[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<void> deletePet(String petId) async {
+    final before = _pets.length;
+    _pets.removeWhere((pet) => pet.id == petId);
+    if (_pets.length == before) {
+      throw StateError('Pet not found.');
+    }
+  }
+
   Future<List<Pet>> getAllPets() async {
     return List<Pet>.unmodifiable(_pets);
   }

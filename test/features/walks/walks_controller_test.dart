@@ -7,6 +7,7 @@ import 'package:petconnect/core/data/mock_data.dart';
 import 'package:petconnect/core/network/api_client.dart';
 import 'package:petconnect/core/network/auth_token_provider.dart';
 import 'package:petconnect/core/supabase/supabase_client_provider.dart';
+import 'package:petconnect/features/auth/domain/app_user.dart';
 import 'package:petconnect/features/walks/application/walks_controller.dart';
 import 'package:petconnect/features/walks/data/api_walks_repository.dart';
 import 'package:petconnect/features/walks/data/mock_walks_repository.dart';
@@ -38,6 +39,31 @@ void main() {
 
     expect(controller.state.hasError, isTrue);
     expect(controller.state.error.toString(), contains('Backend down'));
+  });
+
+  test('updateFilters filters walks by status, date and location', () async {
+    final selectedDate = DateTime(2026, 6, 22);
+    final matchingWalk = mockWalks.first.copyWith(
+      place: 'Парк Горького',
+      startsAt: DateTime(2026, 6, 22, 18),
+    );
+    final otherWalk = mockWalks.last.copyWith(
+      place: 'Сквер у дома',
+      startsAt: DateTime(2026, 6, 23, 18),
+    );
+    final controller = WalksController(
+      repository: _FakeWalksRepository(walks: [matchingWalk, otherWalk]),
+      initialState: AsyncValue<List<Walk>>.data([matchingWalk, otherWalk]),
+    );
+
+    await controller.updateFilters(WalkFilters(
+      date: selectedDate,
+      locationQuery: 'горького',
+      status: WalkStatusFilter.all,
+    ));
+
+    expect(controller.filters.date, selectedDate);
+    expect(controller.state.value, [matchingWalk]);
   });
 
   test('joinWalk updates walk state from repository result', () async {
@@ -100,6 +126,61 @@ void main() {
     expect(joined, WalkJoinStatus.failed);
     expect(controller.state.hasError, isTrue);
     expect(controller.state.error.toString(), contains('Walk join failed'));
+  });
+
+  test('leaveWalk updates joined walk state', () async {
+    final walk = mockWalks.first.copyWith(isJoined: true, participantCount: 3);
+    final controller = WalksController(
+      repository: _FakeWalksRepository(walks: [walk]),
+      initialState: AsyncValue<List<Walk>>.data([walk]),
+    );
+
+    final status = await controller.leaveWalk(walk.id);
+
+    expect(status, WalkJoinStatus.left);
+    expect(controller.state.value?.first.isJoined, isFalse);
+    expect(controller.state.value?.first.participantCount, 2);
+  });
+
+  test('createWalk validates required title', () async {
+    final controller = WalksController(
+      repository: const _FakeWalksRepository(),
+      initialState: const AsyncValue<List<Walk>>.data([]),
+    );
+
+    await expectLater(
+      controller.createWalk(
+        organizer: const AppUser(id: 'user-qa', email: 'qa@example.com'),
+        title: '',
+        place: 'Парк',
+        startsAt: DateTime.now().add(const Duration(days: 1)),
+        description: 'Описание прогулки',
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('createWalk prepends valid walk matching filters', () async {
+    final startsAt = DateTime.now().add(const Duration(days: 1));
+    final controller = WalksController(
+      repository: const _FakeWalksRepository(),
+      initialState: const AsyncValue<List<Walk>>.data([]),
+    );
+
+    await controller.createWalk(
+      organizer: const AppUser(
+        id: 'user-qa',
+        email: 'qa@example.com',
+        displayName: 'QA User',
+      ),
+      title: 'Вечерняя прогулка',
+      place: 'Парк',
+      startsAt: startsAt,
+      description: 'Спокойный маршрут для собак.',
+    );
+
+    expect(controller.state.value, hasLength(1));
+    expect(controller.state.value?.first.title, 'Вечерняя прогулка');
   });
 
   test('walksRepositoryProvider uses mock repository by default', () {
@@ -183,13 +264,16 @@ class _FakeWalksRepository implements WalksRepository {
   final Object? joinError;
 
   @override
-  Future<List<Walk>> fetchWalks({int limit = 20}) async {
+  Future<List<Walk>> fetchWalks({
+    int limit = 20,
+    WalkFilters filters = const WalkFilters(),
+  }) async {
     final error = fetchError;
     if (error != null) {
       throw error;
     }
 
-    return walks.take(limit).toList(growable: false);
+    return walks.where(filters.matches).take(limit).toList(growable: false);
   }
 
   @override

@@ -190,6 +190,9 @@ Implemented events:
 | `sign_up_started` | Registration controller starts sign-up | none |
 | `sign_in_success` | Email, post-sign-up or Google sign-in succeeds | `method` |
 | `feed_opened` | Feed screen is opened | none |
+| `search_performed` | Feed search query changes after debounce | `surface`, `query_length`, `has_query` |
+| `feed_filter_changed` | Feed search filter changes | `has_query` |
+| `walk_filter_changed` | Walk date/location/status filters change | `status`, `has_date`, `has_location` |
 | `post_created` | Post creation succeeds | `text_length`, `has_image` |
 | `post_liked` | A post is successfully liked | none |
 | `comment_added` | Comment creation succeeds | `text_length` |
@@ -203,6 +206,7 @@ Privacy notes:
 - Analytics events do not include raw user id, pet id, post id, walk id or comment id.
 - Tokens, passwords, Supabase keys and OAuth secrets are never sent to analytics.
 - Post and comment text is not sent; only coarse text length buckets such as `short`, `medium` or `long` are used.
+- Search text and location text are not sent; analytics stores only coarse query length or boolean filter flags.
 - The analytics service drops parameters with sensitive key names such as `email`, `user_id`, `token`, `password` and `secret`.
 - When `ANALYTICS_ENABLED=false`, events are ignored in production mode and only locally logged in debug mode.
 
@@ -248,6 +252,20 @@ supabase db push
 ```
 
 For hosted projects without CLI migration access, run `supabase/migrations/004_pet_images_storage.sql` in the Supabase SQL Editor and confirm the `pet-images` bucket and policies in Dashboard -> Storage.
+
+## Supabase CRUD Integration
+
+PetConnect uses Supabase auto REST API through `supabase_flutter` repositories rather than a custom CRUD server.
+
+Final required CRUD scenarios exposed in Flutter UI:
+
+- pets: create, read list/details, update own profile, delete own profile;
+- posts: create text post and delete own post;
+- comments: create/read comments in feed cards;
+- walks: create walk and read filtered walk list;
+- walk participants: join active walk and leave joined walk.
+
+Detailed CRUD/RLS evidence is maintained in `docs/crud_audit.md`. Owner-only actions are hidden in the UI when ownership is known, while PostgreSQL RLS remains the backend enforcement layer.
 
 ## Monitoring And Health Check
 

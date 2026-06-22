@@ -11,6 +11,10 @@ abstract class PetRepository {
 
   Future<Pet> createPet(CreatePetInput input);
 
+  Future<Pet> updatePet(UpdatePetInput input);
+
+  Future<void> deletePet(String petId);
+
   Future<Pet> uploadPetPhoto(UploadPetPhotoInput input);
 }
 
@@ -33,6 +37,26 @@ class CreatePetInput {
   final int age;
   final String description;
   final String? ownerName;
+  final String? photoEmoji;
+}
+
+class UpdatePetInput {
+  const UpdatePetInput({
+    required this.petId,
+    required this.name,
+    required this.animalType,
+    required this.breed,
+    required this.age,
+    required this.description,
+    this.photoEmoji,
+  });
+
+  final String petId;
+  final String name;
+  final String animalType;
+  final String breed;
+  final int age;
+  final String description;
   final String? photoEmoji;
 }
 

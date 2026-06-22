@@ -58,6 +58,24 @@ class ApiClient {
     );
   }
 
+  Future<T> putData<T>(
+    String path, {
+    Map<String, Object?>? body,
+  }) {
+    return _send<T>(
+      method: 'PUT',
+      path: path,
+      body: body,
+    );
+  }
+
+  Future<void> deleteData(String path) async {
+    await _send<Object?>(
+      method: 'DELETE',
+      path: path,
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getPosts({int? limit}) async {
     final data = await getData<List<dynamic>>(
       '/posts',
@@ -111,6 +129,21 @@ class ApiClient {
     return postData<Map<String, dynamic>>('/pets', body: input);
   }
 
+  Future<Map<String, dynamic>> updatePet(
+    String petId,
+    Map<String, Object?> input,
+  ) {
+    return putData<Map<String, dynamic>>('/pets/$petId', body: input);
+  }
+
+  Future<void> deletePet(String petId) {
+    return deleteData('/pets/$petId');
+  }
+
+  Future<void> deletePost(String postId) {
+    return deleteData('/posts/$postId');
+  }
+
   Future<List<Map<String, dynamic>>> getWalks({int? limit}) async {
     final data = await getData<List<dynamic>>(
       '/walks',
@@ -122,6 +155,14 @@ class ApiClient {
 
   Future<Map<String, dynamic>> joinWalk(String walkId) {
     return postData<Map<String, dynamic>>('/walks/$walkId/join');
+  }
+
+  Future<Map<String, dynamic>> createWalk(Map<String, Object?> input) {
+    return postData<Map<String, dynamic>>('/walks', body: input);
+  }
+
+  Future<Map<String, dynamic>> leaveWalk(String walkId) {
+    return postData<Map<String, dynamic>>('/walks/$walkId/leave');
   }
 
   Future<T> _send<T>({

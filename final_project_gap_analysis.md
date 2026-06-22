@@ -36,8 +36,8 @@ The main remaining gaps are not architectural blockers. They are mostly final-de
 
 - prove production after the latest OAuth/web startup fixes with a fresh Netlify redeploy and browser E2E;
 - expose Supabase Storage as a real user-facing pet image flow, not only buckets/policies;
-- add visible search/filter controls for posts or walks;
-- verify CRUD completeness for pets/posts/walks at UI/repository level;
+- verify the newly added visible search/filter controls for posts, walks and pets during final browser QA;
+- CRUD completeness for the required pets/posts/walks scenarios has been audited and the minimum missing UI/repository operations were implemented;
 - refresh final screenshots and documentation after the last production validation.
 
 ## Requirements table
@@ -46,16 +46,16 @@ The main remaining gaps are not architectural blockers. They are mostly final-de
 |---|---|---|---|
 | Frontend screens: minimum 3 main screens | Done | `HomeScreen` contains Feed, Pets, Walks and Chat destinations; auth routes exist in `lib/app/router.dart`; tests cover feed, pets, walks, chat and auth screens. | Keep Feed, Pets and Walks as the three mandatory screens in the final demo; use Auth and Chat as supporting screens. |
 | Adaptive layout | Partial | `HomeScreen` switches between bottom `NavigationBar` and `NavigationRail`; shared `ResponsiveCenter` constrains content width; screenshots exist in `docs/screenshots/`. | Re-run visual QA on mobile and desktop after final redeploy; update screenshots and fix any overflow/spacing issues found. |
-| Forms and interactive elements | Partial | Login/register forms; Google OAuth button; create-post bottom sheet; like/comment actions; walk join action. | Add or expose form flows for creating pets and creating walks if final demo needs full CRUD; add visible search/filter controls. |
+| Forms and interactive elements | Done | Login/register forms; Google OAuth button; create-post bottom sheet; pet create/edit/delete form/actions; like/comment/delete-post actions; walk create/join/leave actions; search/filter controls. | Re-run browser QA on desktop/mobile after final redeploy. |
 | Loading/error/empty/success states | Done | `AsyncContentView`, `EmptyState`, `ErrorState`; Riverpod `AsyncValue`; tests for feed, pets, walks and startup error states. | Keep current patterns; during final QA verify backend errors render friendly messages in production mode. |
 | Backend PostgreSQL tables: minimum 3 related tables | Done | `supabase/migrations/001_initial_schema.sql` creates profiles, pets, posts, comments, post_likes, walks, walk_participants, chats, chat_participants and messages with relationships. | No schema blocker; repeat Supabase validation before final handoff. |
-| CRUD/API operations | Partial | Supabase repositories implement feed read/create/comment/like, pets read/create, walks read/create/join/leave; RLS allows update/delete for several tables. UI exposes read/create post, comments, likes and walk join. | Verify and document exact CRUD demo matrix; add UI or controller methods for edit/delete where needed, especially pets/posts/walks. |
+| CRUD/API operations | Done | `docs/crud_audit.md` documents CRUD matrix. UI/repository covers pet create/read/update/delete, post create/read/delete, comments create/read, walk create/read, and walk participant join/leave. RLS keeps writes owner-scoped. | Keep post edit, comment delete UI, walk edit/delete UI and profile edit as scoped enhancements. |
 | Authentication | Done | `SupabaseAuthRepository`, protected `go_router` redirects, email/password login/register, profile upsert, auth tests. | Re-test seeded demo users and signup flow after redeploy; document demo credentials securely for reviewer if allowed. |
 | Data validation | Partial | PostgreSQL constraints, RLS checks, form validators, Supabase error mapper and friendly API exceptions; security audit fixed RLS validation gaps. | Add final validation checklist for forms and backend constraints; verify password/email and create-post/create-walk/pet constraints in production. |
 | OAuth2 authorization | Done | Google OAuth through Supabase Auth in `SupabaseAuthRepository.signInWithGoogle`; redirect docs in `integration_documentation.md`; OAuth redirect fix documented. | Verify hosted Supabase Dashboard Site URL/Redirect URLs and run a production Google OAuth smoke test after redeploy. |
 | Analytics | Done | Yandex Metrica config in `integration_documentation.md`; analytics events in `lib/core/analytics`; privacy filtering tests. | Confirm production `ANALYTICS_ENABLED`, provider and counter id in Netlify/GitHub settings; verify one event in Yandex Metrica dashboard if available. |
 | File storage | Done | `supabase/migrations/004_pet_images_storage.sql` creates public-read `pet-images`; Flutter Web lets pet owners select JPG/PNG/WebP up to 5 MB, uploads to owner/pet-scoped paths and stores `pets.photo_url`. | Run hosted Supabase smoke check after applying migration. |
-| Search and filters | Partial | Backend/repository queries filter public posts, active walks, owner pets and joined walk state; no clear user-facing search/filter UI. | Add a visible filter/search control for walks and/or feed; document the query behavior and add at least one widget/controller test. |
+| Search and filters | Done | Feed has debounced search by post text, author and pet; Walks filter by date, location and status; Pets filter by name and animal type; controller/widget tests cover empty and filtered states. | Re-check controls in production browser QA and final screenshots. |
 | CI/CD | Done | `.github/workflows/ci_cd.yml` runs security audit, format, analyze, tests, web build and Netlify deploy on `main`. | Run the workflow from the final branch and capture final status in `development_report.md`. |
 | Deployment | Partial | `netlify.toml`, Netlify URL, Supabase hosted project and deployment docs exist; README notes a previous production blank-screen blocker requiring redeploy. | Redeploy Netlify after latest OAuth/web startup hardening; repeat production E2E and update README/development report status. |
 | Monitoring | Partial | `/api/health` Netlify Function exists; `netlify.toml` routes `/api/health`; docs define checks and external monitor setup. | Check live `https://cool-duckanoo-d28d04.netlify.app/api/health`; optionally configure an external uptime monitor and document it. |
@@ -73,8 +73,8 @@ The main remaining gaps are not architectural blockers. They are mostly final-de
 
 | Area | Overall status | Notes |
 |---|---|---|
-| Frontend | Partial | Core screens and states are Done; final visual QA, search/filter UI and possibly create pet/create walk forms need polish. |
-| Backend | Partial | PostgreSQL/Auth/RLS/API are strong; CRUD completeness and final Supabase validation need a last pass. |
+| Frontend | Partial | Core screens, states and search/filter UI are Done; final visual QA and possibly create pet/create walk forms need polish. |
+| Backend | Partial | PostgreSQL/Auth/RLS/API are strong and CRUD completeness is documented; final Supabase lint/reset or hosted smoke validation still needs a last pass. |
 | Additional functions | Partial | OAuth2, analytics and monitoring are strong; Storage and search/filtering should be made more visible in the final demo. |
 | AI usage | Done | AI planning, design, coding, testing, debugging, audit, logging, CI/CD and performance work are documented. |
 | Delivery readiness | Partial | Documentation is strong, but production redeploy/E2E and final screenshots remain before teacher handoff. |
@@ -99,8 +99,8 @@ The recommended enhancements below align with the requested final-project improv
 |---|---|---|---|
 | P0 | Production redeploy and E2E verification | Without this, the final project can still look blocked despite strong implementation. | Netlify app opens, authenticated Supabase scenario works, health endpoint returns expected JSON. |
 | P1 | Supabase Storage for pet photos | Turns Storage from backend capability into visible product functionality. | User can upload a pet photo, file lands in `pet-images/<auth.uid()>/<pet-id>/...`, UI displays it. |
-| P1 | Search/filtering for walks or posts | Converts search/filtering from implicit query behavior into a demonstrable additional function. | User can filter active walks by text/place or filter feed posts; widget/controller test added. |
-| P1 | CRUD completeness check for pets/posts/walks | Final requirements mention CRUD; current UI does not expose all edit/delete paths. | Matrix documents Create/Read/Update/Delete per entity; missing critical operations are implemented or scoped clearly. |
+| P1 | Search/filtering for walks, posts and pets | Converts search/filtering from implicit query behavior into a demonstrable additional function. | Done: feed search, walk filters, pet filters and widget/controller tests added. |
+| P1 | CRUD completeness check for pets/posts/walks | Final requirements mention CRUD. | Done: `docs/crud_audit.md` documents matrix; missing critical operations were implemented, optional edit/delete flows are scoped clearly. |
 | P2 | Responsive UI polish | Final evaluator will likely check mobile and desktop. | Fresh screenshots show no overflow, clipped text or broken navigation at mobile and desktop widths. |
 | P2 | Final documentation and screenshots | Makes the portfolio project easier to assess. | README/project docs link final screenshots, demo flow, known limitations and validation results. |
 
@@ -108,12 +108,12 @@ The recommended enhancements below align with the requested final-project improv
 
 | Entity | Create | Read | Update | Delete | Current assessment |
 |---|---|---|---|---|---|
-| Pets | Repository supports create; UI exposure needs confirmation/polish | Pets list/profile implemented | RLS supports update; repository/UI update not clearly exposed | RLS supports delete; repository/UI delete not clearly exposed | Partial |
-| Posts | UI create post and repository create implemented | Feed read implemented | RLS supports update; repository/UI edit not exposed | RLS supports delete/soft delete; repository/UI delete not exposed | Partial |
+| Pets | UI/repository create implemented | Pets list/profile implemented | Owner-only UI/repository update implemented | Owner-only UI/repository delete implemented | Done |
+| Posts | UI create post and repository create implemented | Feed read implemented | RLS supports update; UI edit not exposed | Owner-only UI/repository delete implemented | Partial: update only |
 | Comments | UI add comment and repository create implemented | Comments shown in feed cards | Not required for MVP; update not exposed | RLS supports author delete, but UI not exposed | Partial |
 | Likes | Toggle like implemented as insert/delete | Like state read implemented | Not applicable | Unlike implemented through delete | Done for reaction use case |
-| Walks | Repository supports create; UI create flow not clearly exposed | Walks list implemented | RLS supports update; repository/UI update not exposed | RLS supports delete; repository/UI delete not exposed | Partial |
-| Walk participation | Join/leave repository exists; UI join exposed | Joined state read implemented | Not applicable | Leave repository exists; UI leave not clearly exposed | Partial |
+| Walks | UI/repository create implemented | Walks list implemented | RLS supports update; repository/UI update not exposed | RLS supports delete; repository/UI delete not exposed | Partial: update/delete only |
+| Walk participation | Join UI/repository implemented | Joined state read implemented | Not applicable | Leave UI/repository implemented | Done |
 | Chats/messages | Schema and basic chat list exist | Chat list screen exists | Full message send/update not final-demo ready | Delete not exposed | Partial/future scope |
 
 ## Final recommendation
@@ -124,5 +124,5 @@ PetConnect can pass the final project requirements if the final submission frame
 - Feed/Pets/Walks/Auth demo script;
 - one visible Storage flow for pet photos;
 - one visible search/filter feature;
-- CRUD matrix documented, with missing edit/delete operations either implemented or explicitly scoped as MVP limitations;
+- CRUD matrix documented in `docs/crud_audit.md`, with missing optional edit/delete operations explicitly scoped as MVP limitations;
 - refreshed screenshots and final validation results.

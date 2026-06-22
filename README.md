@@ -49,9 +49,12 @@ Mapping:
 - Email/password sign up, sign in and sign out through Supabase Auth in backend mode.
 - Google OAuth sign in through Supabase Auth. Google Client ID and Client Secret are configured only in Supabase Dashboard, not in Flutter code.
 - Protected routing with `go_router` and Riverpod auth state.
-- Pet social feed with posts, likes and comments.
-- Pet profiles and owner pets with Supabase Storage photo upload/display.
+- Pet social feed with posts, likes, comments and owner-only post deletion.
+- Debounced feed search by post text, author name and pet name.
+- Pet profiles with create/read/update/delete owner actions and Supabase Storage photo upload/display.
+- Pet list search by name and filter chips by animal type.
 - Walk list, walk creation and join/leave flow.
+- Walk filters by date, place/location and status: upcoming, completed or all.
 - Basic chat data model for chat list and messages.
 - Friendly loading, empty, error and success states through controllers/providers.
 - Mock mode for local UI checks and tests without Supabase credentials.
@@ -78,6 +81,7 @@ Final project documents:
 - `backend_documentation.md` - Supabase backend architecture, schema, RLS, Storage and API;
 - `integration_documentation.md` - Google OAuth, CI/CD, analytics, Netlify and monitoring;
 - `security_audit.md` - security findings, fixes and remaining risks.
+- `docs/crud_audit.md` - CRUD matrix for pets, posts, comments, walks, walk participants and profiles.
 
 ## Backend Architecture
 

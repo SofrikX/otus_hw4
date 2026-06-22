@@ -43,15 +43,16 @@ Reasoning:
 ### Pet profiles
 
 - Users can view pet lists and pet profile details.
-- Backend supports creating pets owned by the current user.
-- Editing and deleting pet profiles are planned UI/application enhancements.
+- Users can create pets owned by the current user.
+- Users can edit and delete their own pet profiles through owner-only UI actions.
 
 ### Feed and posts
 
 - Authenticated users can view recent non-deleted public posts.
 - Users can create a text post linked to a pet through the repository layer.
 - Post image upload is planned through Supabase Storage.
-- Editing and deleting own posts are planned UI/application enhancements; RLS policies support owner-scoped writes.
+- Users can delete their own posts through an owner-only action and confirmation dialog.
+- Editing own posts remains a planned UI/application enhancement; RLS policies support owner-scoped writes.
 
 ### Comments and likes
 
@@ -64,8 +65,9 @@ Reasoning:
 
 - Users can view active walks.
 - Users can join walks.
-- Repository/backend support walk creation and leave operations.
-- Full UI flow for creating/leaving/editing/deleting walks is planned.
+- Users can create walks through the Walks screen form.
+- Users can leave walks they joined.
+- Editing/deleting walks remains a planned enhancement.
 
 ### Chat
 
@@ -75,8 +77,12 @@ Reasoning:
 
 ### Search and filters
 
-- Backend/repository queries already filter active/non-deleted records.
-- Visible user-facing search/filter controls for feed or walks are planned.
+- Feed screen exposes a debounced search input.
+- Feed search matches post text, author name and pet name on the RLS-visible feed result set.
+- Walks screen exposes filters by date, location/place text and status: upcoming, completed or all.
+- Pets screen exposes search by pet name and animal type chips.
+- Filters are implemented through Riverpod controllers/providers and repository query objects, not direct backend calls from widgets.
+- Analytics tracks `search_performed`, `feed_filter_changed` and `walk_filter_changed` without raw query text or personal data.
 
 ### Image upload
 
@@ -235,19 +241,22 @@ PetConnect uses Supabase client operations and auto REST API rather than a custo
 | Auth | Sign up, sign in, sign out, Google OAuth | Done |
 | Profiles | Upsert profile after auth | Done |
 | Pets | Read list/details/owner pets | Done |
-| Pets | Create pet | Backend/repository done, UI flow planned |
+| Pets | Create pet | Done |
 | Pets | Update own pet photo | Done |
-| Pets | Update/delete own pet profile fields | Planned |
-| Feed | Read recent non-deleted posts | Done |
+| Pets | Update/delete own pet profile fields | Done |
+| Feed | Read recent non-deleted posts and search visible feed data | Done |
 | Feed | Create post | Done |
-| Feed | Update/delete own post | Planned |
+| Feed | Delete own post | Done |
+| Feed | Update own post | Planned |
 | Likes | Toggle own like | Done |
 | Comments | Add comment | Done |
 | Comments | Delete own comment | Planned |
-| Walks | Read active walks | Done |
-| Walks | Create walk | Backend/repository done, UI flow planned |
+| Walks | Read active walks with date/location/status filters | Done |
+| Walks | Create walk | Done |
 | Walks | Join walk | Done |
-| Walks | Leave walk | Backend/repository done, UI flow planned |
+| Walks | Leave walk | Done |
+| Walks | Update/delete own walk | Planned |
+| Pets | Filter visible pets by name and animal type | Done |
 | Chats | Read basic chat list from mock/domain scenario | Done for MVP UI |
 | Messages | Full send/update/delete message flow | Optional |
 

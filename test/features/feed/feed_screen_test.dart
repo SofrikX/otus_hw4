@@ -46,6 +46,24 @@ void main() {
     expect(find.text('Обновить ленту'), findsOneWidget);
   });
 
+  testWidgets('FeedScreen shows empty search state', (tester) async {
+    await tester.pumpWidget(_buildFeed());
+
+    await tester.enterText(
+      find.byKey(const Key('feed-search-input')),
+      'нет такого поста',
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ничего не найдено'), findsOneWidget);
+    expect(
+      find.text('Попробуйте другой запрос по посту, автору или питомцу.'),
+      findsOneWidget,
+    );
+    expect(find.text('Сбросить поиск'), findsOneWidget);
+  });
+
   testWidgets('FeedScreen shows friendly error state', (tester) async {
     await tester.pumpWidget(
       _buildFeed(
@@ -96,6 +114,30 @@ void main() {
     expect(find.text(comment), findsOneWidget);
     expect(find.text('${post.commentsCount + 1}'), findsOneWidget);
     expect(find.text('Комментарий добавлен'), findsOneWidget);
+  });
+
+  testWidgets('FeedScreen confirms and deletes own post', (tester) async {
+    final post = mockPosts.first.copyWith(authorId: 'mock-user');
+
+    await tester.pumpWidget(
+      _buildFeed(
+        controller: FeedController(initialPosts: [post]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('post-actions-${post.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Удалить'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Удалить пост?'), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('confirm-delete-post-${post.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(post.text), findsNothing);
+    expect(find.text('Пост удален'), findsOneWidget);
   });
 }
 

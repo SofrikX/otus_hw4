@@ -41,6 +41,74 @@ void main() {
     expect(find.text(mockPets[0].name), findsOneWidget);
   });
 
+  testWidgets('PetsScreen filters pets by name and animal type',
+      (tester) async {
+    await tester.pumpWidget(_buildPetsApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('pet-search-input')), 'мия');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Мия'), findsOneWidget);
+    expect(find.text('Бруно'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('pet-clear-filters')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('pet-type-Собака')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Бруно'), findsOneWidget);
+    expect(find.text('Рокки'), findsOneWidget);
+    expect(find.text('Мия'), findsNothing);
+  });
+
+  testWidgets('PetsScreen validates create pet form', (tester) async {
+    await tester.pumpWidget(_buildPetsApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-pet-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('save-pet-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('pet-form-error')), findsOneWidget);
+    expect(find.text('Укажите имя питомца.'), findsOneWidget);
+  });
+
+  testWidgets('PetsScreen creates pet and confirms delete', (tester) async {
+    await tester.pumpWidget(_buildPetsApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-pet-button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('pet-name-input')), 'Луна');
+    await tester.enterText(find.byKey(const Key('pet-breed-input')), 'Такса');
+    await tester.enterText(find.byKey(const Key('pet-age-input')), '2');
+    await tester.enterText(
+      find.byKey(const Key('pet-description-input')),
+      'Любит долгие прогулки и спокойные игры.',
+    );
+    await tester.tap(find.byKey(const Key('save-pet-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Луна'), findsOneWidget);
+    expect(find.text('Питомец добавлен'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('pet-actions-pet-4')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Удалить'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Удалить питомца?'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirm-delete-pet-pet-4')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Луна'), findsNothing);
+    expect(find.text('Питомец удален'), findsOneWidget);
+  });
+
   testWidgets('PetProfileScreen shows pet profile success', (tester) async {
     final pet = mockPets.first;
 
@@ -221,6 +289,41 @@ class _FakePetRepository implements PetRepository {
       photoEmoji: input.photoEmoji ?? '🐾',
       ownerName: input.ownerName ?? 'Владелец',
     );
+  }
+
+  @override
+  Future<Pet> updatePet(UpdatePetInput input) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    final pet = await getPetById(input.petId);
+    if (pet == null) {
+      throw StateError('Pet not found.');
+    }
+
+    return pet.copyWith(
+      name: input.name,
+      animalType: input.animalType,
+      breed: input.breed,
+      age: input.age,
+      description: input.description,
+      photoEmoji: input.photoEmoji,
+    );
+  }
+
+  @override
+  Future<void> deletePet(String petId) async {
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    final pet = await getPetById(petId);
+    if (pet == null) {
+      throw StateError('Pet not found.');
+    }
   }
 
   @override

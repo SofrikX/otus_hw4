@@ -85,7 +85,7 @@ Scope финальной работы:
 | Frontend UX | Проверить финальные production scenarios, mobile/desktop responsive layout и error states |
 | Backend validation | Повторить Supabase `db lint`, `db reset` или hosted SQL/RLS smoke checks перед сдачей |
 | File storage UX | Фото питомцев загружаются в Supabase Storage и отображаются в pet list/profile; emoji остается fallback |
-| Search/filtering | Уточнить и показать фильтрацию прогулок или ленты как дополнительную функцию проекта |
+| Search/filtering | Feed search, walk filters and pet filters exposed in the UI |
 | Notifications | Описать как future enhancement, если не будет реализовано в финальном scope |
 | Production QA | Повторить Netlify redeploy и E2E проверку после исправлений OAuth/web startup |
 | Portfolio readiness | Подготовить демонстрационный сценарий для преподавателя и финальный checklist |
@@ -110,8 +110,8 @@ Scope финальной работы:
 |---|---|---|
 | P0 | Production redeploy и browser E2E | Преподаватель открывает рабочий Netlify URL и проходит основной сценарий |
 | P1 | Supabase Storage для фото питомцев | Storage становится видимой пользовательской функцией, а не только backend bucket/policy |
-| P1 | Поиск/фильтрация постов или прогулок | Закрывает дополнительную функцию search/filtering на уровне UI |
-| P1 | CRUD completeness для pets/posts/walks | Понятно, какие Create/Read/Update/Delete операции реализованы, а какие оставлены как MVP limitation |
+| P1 | Поиск/фильтрация постов, прогулок и питомцев | Закрыто: feed search, walk filters and pet filters доступны в UI |
+| P1 | CRUD completeness для pets/posts/walks | Закрыт минимальный CRUD: pet create/read/update/delete, post create/delete, walk create/join/leave; детальная матрица в `docs/crud_audit.md` |
 | P2 | Responsive UI polish | Финальные mobile/desktop screenshots без overflow и визуальных дефектов |
 | P2 | Финальная документация и скриншоты | README/project docs содержат demo flow, gaps, validation status и актуальные изображения |
 
@@ -176,7 +176,7 @@ UI widgets do not call Supabase directly. Screens use Riverpod controllers/provi
 Оставшиеся UX-рекомендации перед финальной сдачей:
 
 - повторить desktop/mobile browser QA после production redeploy;
-- добавить видимый search/filter control для Feed или Walks;
+- повторить visual QA для новых search/filter controls на Feed, Pets и Walks;
 - отполировать create pet и create walk UI forms, если они войдут в финальный demo scope;
 - вывести реальные Supabase Storage images для питомцев или постов;
 - обновить финальные screenshots в `docs/screenshots/`.
@@ -208,16 +208,16 @@ PostgreSQL relations cover more than three connected tables: profiles own pets, 
 |---|---|
 | Frontend: minimum 3 main screens | Feed, Pets, Walks; additionally Auth, Home and Chat |
 | Frontend: responsive design | Shared `ResponsiveCenter`, mobile bottom navigation and desktop navigation rail |
-| Frontend: interactive elements/forms | Login/register forms, Google OAuth button, create post flow, like/comment actions, join/leave walk actions |
+| Frontend: interactive elements/forms | Login/register forms, Google OAuth button, create post flow, pet create/edit/delete flow, like/comment/delete-post actions, walk create/join/leave actions |
 | Frontend: loading/error states | `AsyncContentView`, `EmptyState`, `ErrorState`, Riverpod `AsyncValue` patterns |
 | Backend: PostgreSQL with 3 related tables | Supabase schema has profiles, pets, posts, comments, likes, walks, participants, chats and messages |
-| Backend: API with CRUD | Supabase auto REST API and Flutter SDK operations for feed, pets, comments, likes and walks |
+| Backend: API with CRUD | Supabase auto REST API and Flutter SDK operations for feed, pets, comments, likes, walks and walk participants; `docs/crud_audit.md` records exact CRUD coverage |
 | Backend: authentication | Supabase Auth email/password and Google OAuth |
 | Backend: data validation | PostgreSQL constraints, RLS checks, repository-side mapping and friendly error handling |
 | Additional: OAuth2 | Google OAuth through Supabase Auth |
 | Additional: analytics | Yandex Metrica events with privacy-safe params |
 | Additional: file storage | Supabase Storage bucket `pet-images` for pet photo upload/display, plus prepared buckets for avatars and post images |
-| Additional: search/filtering | Walk/feed data model supports query filters; final demo can emphasize active walks/feed filtering |
+| Additional: search/filtering | Feed supports debounced search by post text, author or pet name; Walks support date, location and status filters; Pets support name/type filters |
 | AI: planning/design | Documented in `docs/ai_workflow.md`, `prompts.md` and `development_report.md` |
 | AI: user stories/specification | `user_stories.md`, `technical_specification.md`, `project_documentation.md` |
 | AI: frontend/backend development | Codex-assisted repository, UI, Supabase and Netlify work documented in prompt journal |
@@ -237,4 +237,5 @@ Final requirements package:
 - Production Netlify frontend must be redeployed after the latest OAuth/web startup hardening and then checked end-to-end.
 - Supabase local lint/reset should be repeated when local Supabase services are running; hosted smoke checks already document previous validation.
 - Real pet photo upload/display through Supabase Storage is implemented for the final demo; post image upload remains a planned enhancement.
-- Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and search/filtering cover the required additional-function set.
+- Final minimum CRUD is implemented for pets, posts and walks; post editing, comment deletion UI, walk edit/delete UI and profile editing remain scoped enhancements.
+- Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and implemented search/filtering cover the required additional-function set.

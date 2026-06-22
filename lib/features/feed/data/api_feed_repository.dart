@@ -8,15 +8,23 @@ class ApiFeedRepository implements FeedRepository {
   final ApiClient _apiClient;
 
   @override
-  Future<List<PetPost>> fetchPosts({int limit = 20}) async {
+  Future<List<PetPost>> fetchPosts({
+    int limit = 20,
+    FeedSearchQuery query = const FeedSearchQuery(),
+  }) async {
     final posts = await _apiClient.getPosts(limit: limit);
-    return posts.map(_mapPost).toList(growable: false);
+    return posts.map(_mapPost).where(query.matches).toList(growable: false);
   }
 
   @override
   Future<PetPost> createPost(CreatePostInput input) async {
     final post = await _apiClient.createPost(input.toJson());
     return _mapPost(post);
+  }
+
+  @override
+  Future<void> deletePost(String postId) {
+    return _apiClient.deletePost(postId);
   }
 
   @override
@@ -40,6 +48,7 @@ class ApiFeedRepository implements FeedRepository {
       petId: json['petId'] as String? ?? '',
       petName: json['petName'] as String? ?? 'Питомец',
       authorName: json['authorName'] as String? ?? 'Владелец',
+      authorId: json['authorId'] as String?,
       petEmoji: json['petEmoji'] as String? ?? '🐾',
       imageEmoji: json['imageEmoji'] as String? ?? '📷',
       text: json['text'] as String? ?? '',

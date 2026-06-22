@@ -58,12 +58,18 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
   List<PetPost> _posts;
   final FeedRepository _repository;
   final AnalyticsService? _analytics;
+  FeedSearchQuery _query = const FeedSearchQuery();
+
+  FeedSearchQuery get query => _query;
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
 
     try {
-      final posts = await _repository.fetchPosts();
+      final posts = await _repository.fetchPosts(
+        limit: _query.hasText ? 100 : 20,
+        query: _query,
+      );
       _posts = List<PetPost>.unmodifiable(posts);
       state = AsyncValue.data(_posts);
     } catch (error, stackTrace) {
@@ -73,6 +79,32 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       );
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  Future<void> updateSearchQuery(String text) async {
+    final nextQuery = FeedSearchQuery(text: text);
+    if (nextQuery.normalizedText == _query.normalizedText) {
+      return;
+    }
+
+    _query = nextQuery;
+    await _analytics?.track(
+      AnalyticsEvent.searchPerformed,
+      params: {
+        'surface': 'feed',
+        'query_length': AnalyticsService.textLengthBucket(text),
+        'has_query': nextQuery.hasText,
+      },
+    );
+    await _analytics?.track(
+      AnalyticsEvent.feedFilterChanged,
+      params: {'has_query': nextQuery.hasText},
+    );
+    await refresh();
+  }
+
+  Future<void> clearSearch() {
+    return updateSearchQuery('');
   }
 
   void toggleLike(String postId) {
@@ -217,7 +249,37 @@ class FeedController extends StateNotifier<AsyncValue<List<PetPost>>> {
       Error.throwWithStackTrace(error, stackTrace);
     }
 
-    _setPosts([createdPost, ...posts]);
+    if (_query.matches(createdPost)) {
+      _setPosts([createdPost, ...posts]);
+    } else {
+      _setPosts(posts);
+    }
+  }
+
+  Future<void> deletePost({
+    required PetPost post,
+    required AppUser author,
+  }) async {
+    if (post.authorId != null && post.authorId != author.id) {
+      throw ArgumentError('Можно удалить только свой пост.');
+    }
+
+    final posts = state.asData?.value ?? _posts;
+    try {
+      await _repository.deletePost(post.id);
+    } catch (error, stackTrace) {
+      await _analytics?.trackBackendError(
+        operation: 'post_delete',
+        error: error,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+
+    _setPosts(
+      posts.where((candidate) => candidate.id != post.id).toList(
+            growable: false,
+          ),
+    );
   }
 
   static List<PetPost> _resolveInitialPosts(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,8 +7,10 @@ import '../../../../core/analytics/analytics_event.dart';
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/widgets/async_content_view.dart';
 import '../../../../core/widgets/responsive_center.dart';
+import '../../../auth/domain/app_user.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../application/feed_controller.dart';
+import '../../domain/pet_post.dart';
 import '../widgets/pet_stories_strip.dart';
 import '../widgets/post_card.dart';
 
@@ -18,6 +22,9 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -27,26 +34,35 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 
   @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final postsValue = ref.watch(feedControllerProvider);
     final controller = ref.read(feedControllerProvider.notifier);
+    final isSearching = controller.query.hasText;
 
     return AsyncContentView(
       value: postsValue,
       onRetry: controller.refresh,
       emptyIcon: Icons.dynamic_feed_outlined,
-      emptyTitle: 'В ленте пока пусто',
-      emptyMessage:
-          'Создайте первый пост через кнопку добавления или обновите ленту.',
-      emptyActionLabel: 'Обновить ленту',
-      onEmptyActionPressed: controller.refresh,
+      emptyTitle: isSearching ? 'Ничего не найдено' : 'В ленте пока пусто',
+      emptyMessage: isSearching
+          ? 'Попробуйте другой запрос по посту, автору или питомцу.'
+          : 'Создайте первый пост через кнопку добавления или обновите ленту.',
+      emptyActionLabel: isSearching ? 'Сбросить поиск' : 'Обновить ленту',
+      onEmptyActionPressed: isSearching ? _clearSearch : controller.refresh,
       isEmpty: (posts) => posts.isEmpty,
       dataBuilder: (posts) => ResponsiveCenter(
         child: RefreshIndicator(
           onRefresh: controller.refresh,
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-            itemCount: posts.length + 2,
+            itemCount: posts.length + 3,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               if (index == 0) {
@@ -54,13 +70,27 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               }
 
               if (index == 1) {
+                return _FeedSearchField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  onClear: _clearSearch,
+                );
+              }
+
+              if (index == 2) {
                 return const PetStoriesStrip();
               }
 
-              final post = posts[index - 2];
+              final post = posts[index - 3];
+              final currentUser = ref.watch(authStateProvider).valueOrNull;
+              final canDelete =
+                  currentUser != null && post.authorId == currentUser.id;
               return PostCard(
                 post: post,
                 onLike: () => controller.toggleLike(post.id),
+                onDelete: canDelete
+                    ? () => _confirmDeletePost(post, currentUser)
+                    : null,
                 onComment: (text) async {
                   try {
                     await controller.addComment(
@@ -99,6 +129,65 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       ),
     );
   }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      ref.read(feedControllerProvider.notifier).updateSearchQuery(value);
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    unawaited(ref.read(feedControllerProvider.notifier).clearSearch());
+  }
+
+  Future<void> _confirmDeletePost(PetPost post, AppUser currentUser) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить пост?'),
+        content:
+            const Text('Пост исчезнет из ленты. Это действие нельзя отменить.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            key: Key('confirm-delete-post-${post.id}'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await ref.read(feedControllerProvider.notifier).deletePost(
+            post: post,
+            author: currentUser,
+          );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Пост удален')),
+      );
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось удалить пост.')),
+      );
+    }
+  }
 }
 
 class _FeedHeader extends StatelessWidget {
@@ -131,6 +220,48 @@ class _FeedHeader extends StatelessWidget {
             tooltip: 'Уведомления',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FeedSearchField extends StatelessWidget {
+  const _FeedSearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      key: const Key('feed-search-input'),
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            if (value.text.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return IconButton(
+              key: const Key('feed-search-clear'),
+              onPressed: onClear,
+              icon: const Icon(Icons.close),
+              tooltip: 'Сбросить поиск',
+            );
+          },
+        ),
+        hintText: 'Поиск по постам, авторам и питомцам',
+        border: const OutlineInputBorder(),
       ),
     );
   }

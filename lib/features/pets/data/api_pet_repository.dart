@@ -47,6 +47,25 @@ class ApiPetRepository implements PetRepository {
     return _mapPet(pet);
   }
 
+  @override
+  Future<Pet> updatePet(UpdatePetInput input) async {
+    final pet = await _apiClient.updatePet(input.petId, {
+      'name': input.name,
+      'animalType': input.animalType,
+      'breed': input.breed,
+      'age': input.age,
+      'description': input.description,
+      'photoEmoji': input.photoEmoji,
+    });
+
+    return _mapPet(pet);
+  }
+
+  @override
+  Future<void> deletePet(String petId) {
+    return _apiClient.deletePet(petId);
+  }
+
   Pet _mapPet(Map<String, dynamic> json) {
     return Pet(
       id: json['id'] as String? ?? '',
