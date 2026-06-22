@@ -29,4 +29,31 @@ void main() {
 
     expect(likeTapped, isTrue);
   });
+
+  testWidgets('PostCard validates empty comment before closing sheet',
+      (tester) async {
+    final post = mockPosts.first;
+    var submittedComment = '';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PostCard(
+            post: post,
+            onLike: () {},
+            onComment: (value) => submittedComment = value,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(Key('comment-${post.id}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(Key('send-comment-${post.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Комментарий не может быть пустым.'), findsOneWidget);
+    expect(find.byKey(Key('comment-input-${post.id}')), findsOneWidget);
+    expect(submittedComment, isEmpty);
+  });
 }

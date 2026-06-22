@@ -1,6 +1,6 @@
 # PetConnect UI/UX And Responsive Audit
 
-Date: 22 June 2026
+Date: 23 June 2026
 
 Role: UI/UX Designer, Flutter Web Developer and Accessibility Reviewer.
 
@@ -67,8 +67,9 @@ The application covers the required minimum of three main screens through Feed, 
 ## Forms
 
 - Login and register forms have validators, disabled loading states and clear primary actions.
-- Create-post bottom sheet has a max length, helper text, keyboard-aware padding and a friendly success snackbar.
-- Remaining form gaps: create pet and create walk are supported at repository/backend level but not polished as full UI forms for final demo.
+- Create-post bottom sheet has inline empty-text validation, disabled submit during publishing, progress feedback, max length, helper text, keyboard-aware padding and a friendly success snackbar.
+- Comment bottom sheet validates empty comments before closing, limits comment length and keeps the user in context.
+- Create pet and create walk bottom sheets are centered on desktop, constrained to readable width, keyboard-aware on mobile and disable fields/actions while saving.
 
 ## Empty states
 
@@ -82,13 +83,15 @@ The application covers the required minimum of three main screens through Feed, 
 - Async screens use `AsyncContentView` and Riverpod `AsyncValue`.
 - Loading state uses `CircularProgressIndicator`.
 - Loading indicator now has a semantic label/live-region hint for assistive technologies.
+- Submit buttons for post publishing, pet save, walk save, pet photo upload and walk join/leave show compact in-button progress instead of blocking unrelated UI.
 
 ## Error states
 
 - Shared `ErrorState` provides title, friendly message and retry action.
 - `AsyncContentView` maps `ApiException` to user-facing messages.
 - Login/register show auth error banners.
-- Create-post failures now normalize `Exception:` prefixes before showing snackbar text.
+- Create-post failures now render inline in the sheet and normalize `Exception:` prefixes.
+- Empty post/comment validation is handled in the form instead of leaking technical controller errors to the user.
 - Remaining gap: backend-specific Supabase errors should continue to be checked in production QA to ensure no raw technical messages leak to users.
 
 ## Accessibility notes
@@ -96,6 +99,7 @@ The application covers the required minimum of three main screens through Feed, 
 - Material 3 controls provide baseline keyboard/focus semantics.
 - Icon buttons include tooltips for actions such as notifications, logout, like and comment.
 - Error states and auth error banners are semantic containers; shared error state now uses a live region.
+- Empty states are semantic containers and constrained to a readable width on wide screens.
 - Forms use labels and prefix icons.
 - Recommended follow-up: run screen-reader and keyboard-only smoke checks in Chrome after final deployment, including tab order across auth forms, navigation rail/bar and bottom sheets.
 
@@ -110,9 +114,12 @@ The application covers the required minimum of three main screens through Feed, 
 
 - Added contextual icons and optional actions to shared empty states.
 - Added semantic loading label and live-region semantics to shared loading/error states.
+- Constrained shared empty/error states to readable width for tablet and desktop layouts.
 - Added refresh actions to Feed, Pets and Walks empty states.
-- Improved create-post bottom sheet layout for desktop and keyboard scenarios.
-- Improved create-post error snackbar by removing raw `Exception:` prefixes.
+- Improved create-post bottom sheet with inline validation, disabled submit and in-button progress.
+- Improved comment bottom sheet with empty-state validation and readable desktop width.
+- Improved pet and walk form sheets with centered desktop layout and disabled fields while saving.
+- Improved walk join/leave action with disabled state and compact progress during async operations.
 - Updated project documentation, development report and prompt journal.
 
 ## Remaining recommendations
@@ -121,7 +128,7 @@ The application covers the required minimum of three main screens through Feed, 
 |---|---|---|
 | P0 | Re-run desktop and mobile browser QA after final Netlify redeploy. | Confirms no overflow, broken auth redirect or blank production startup. |
 | P1 | Add visible search/filter UI for Feed or Walks. | Final project gap analysis marks search/filtering as planned; a small filter would improve demo clarity. |
-| P1 | Expose create pet and create walk UI forms if time allows. | Repository/backend support exists, but final UX would feel more complete with visible forms. |
+| P1 | Re-check create pet/create walk forms in production browser QA. | Forms are implemented and polished locally; hosted Supabase validation should confirm final behavior. |
 | P1 | Display Supabase Storage pet/post images. | Makes Storage visible as a user-facing feature, not only backend configuration. |
 | P2 | Add screenshots for desktop and mobile final states. | Helps evaluator quickly verify responsive behavior. |
 | P2 | Do keyboard-only and screen-reader smoke checks. | Strengthens accessibility evidence for final handoff. |
@@ -134,6 +141,15 @@ After Flutter UI changes:
 dart format .
 flutter analyze
 flutter test
+```
+
+Latest local validation for the final product polish pass:
+
+```text
+dart format .: passed, 88 files checked
+flutter analyze: passed, No issues found
+flutter test test/features/feed test/features/pets test/features/walks test/features/auth: passed, 80 tests
+flutter test: passed, 98 tests
 ```
 
 For final launch QA:

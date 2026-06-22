@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/walk.dart';
 
-class WalkCard extends StatelessWidget {
+class WalkCard extends StatefulWidget {
   const WalkCard({
     required this.walk,
     required this.onJoin,
@@ -16,8 +16,16 @@ class WalkCard extends StatelessWidget {
   final Future<void> Function() onLeave;
 
   @override
+  State<WalkCard> createState() => _WalkCardState();
+}
+
+class _WalkCardState extends State<WalkCard> {
+  bool _isSubmitting = false;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final walk = widget.walk;
 
     return Card(
       child: Padding(
@@ -81,20 +89,42 @@ class WalkCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 key: Key('join-${walk.id}'),
-                onPressed: () async {
-                  if (walk.isJoined) {
-                    await onLeave();
-                  } else {
-                    await onJoin();
-                  }
-                },
-                icon: Icon(walk.isJoined ? Icons.logout : Icons.add),
-                label: Text(walk.isJoined ? 'Выйти' : 'Присоединиться'),
+                onPressed: _isSubmitting ? null : _submit,
+                icon: _isSubmitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(walk.isJoined ? Icons.logout : Icons.add),
+                label: Text(_buttonLabel(walk)),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      if (widget.walk.isJoined) {
+        await widget.onLeave();
+      } else {
+        await widget.onJoin();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  String _buttonLabel(Walk walk) {
+    if (_isSubmitting) {
+      return walk.isJoined ? 'Выход...' : 'Присоединение...';
+    }
+
+    return walk.isJoined ? 'Выйти' : 'Присоединиться';
   }
 }

@@ -3279,3 +3279,31 @@ PetConnect — финальный портфолио-проект.
 - Обновлены `technical_specification.md`, `backend_documentation.md`, `security_audit.md`, `project_documentation.md`, `README.md`, `development_report.md`, `user_stories.md`.
 - Проверки: `dart format .`, `flutter analyze`, `flutter test test/features/feed test/features/pets test/features/walks`, полный `flutter test` — успешно, 97 tests.
 - `supabase db lint` не подключился к локальному Postgres `127.0.0.1:54322`, потому что локальный Supabase не был запущен; требуется повторить после `supabase start` / local reset или через hosted smoke checks.
+
+## Prompt 71 — Финальный product polish интерфейса
+
+```markdown
+# Role
+Ты OpenAI Codex, Flutter Web UI Engineer и Product QA Reviewer.
+
+# Task
+Проведи финальный product polish интерфейса PetConnect.
+
+# Requirements
+- проверить Auth/Login/Register, Feed, Pets, Walks, Profile/Settings если есть;
+- улучшить responsive behavior, empty/loading/error states, forms, navigation и accessibility basics;
+- не менять core business logic;
+- обновить widget tests, docs/ui_ux_audit.md, project_documentation.md, README.md, development_report.md и prompts.md.
+```
+
+Результат:
+
+- Прочитаны обязательные документы и проверены `lib/app/`, `lib/core/`, `lib/features/`, `test/`; `lib/shared/` в проекте отсутствует.
+- Shared `EmptyState`/`ErrorState` получили semantic containers и readable max width для tablet/desktop.
+- Create-post bottom sheet получил inline validation, disabled submit и compact progress.
+- Comment sheet получил empty-comment validation, max length и desktop width constraint.
+- Pet/walk form sheets центрируются на desktop и блокируют поля при сохранении.
+- Walk join/leave button получил disabled async state и compact progress.
+- Добавлен widget test на empty comment validation.
+- Обновлены `docs/ui_ux_audit.md`, `project_documentation.md`, `README.md`, `development_report.md`, `prompts.md`.
+- Проверки: `dart format .`, `flutter analyze`, focused feature tests, полный `flutter test` — успешно, 98 tests.

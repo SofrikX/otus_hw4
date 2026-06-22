@@ -57,6 +57,7 @@ Mapping:
 - Walk filters by date, place/location and status: upcoming, completed or all.
 - Basic chat data model for chat list and messages.
 - Friendly loading, empty, error and success states through controllers/providers.
+- Final UI polish for responsive bottom sheets, inline form validation, disabled submit/progress states and retryable empty/error states.
 - Mock mode for local UI checks and tests without Supabase credentials.
 
 ## Final project scope
@@ -402,6 +403,14 @@ Reviewer smoke scenario after redeploy:
 7. Open a pet profile.
 8. Open walks and join a walk using `demo.mark@petconnect-demo.com` if Alina is already joined to all walks.
 9. Check mobile and desktop layouts.
+
+Latest local UI polish validation:
+
+```text
+dart format .: passed, 88 files checked
+flutter analyze: passed, No issues found
+flutter test: passed, 98 tests
+```
 
 Registration troubleshooting:
 

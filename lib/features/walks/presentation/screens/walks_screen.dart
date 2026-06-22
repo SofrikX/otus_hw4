@@ -400,100 +400,106 @@ class _WalkFormSheetState extends State<_WalkFormSheet> {
     final dateTime = _combinedDateTime();
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Создать прогулку',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('walk-title-input'),
-                controller: _titleController,
-                maxLength: 120,
-                decoration: const InputDecoration(
-                  labelText: 'Название',
-                  border: OutlineInputBorder(),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Создать прогулку',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                key: const Key('walk-place-input'),
-                controller: _placeController,
-                maxLength: 160,
-                decoration: const InputDecoration(
-                  labelText: 'Место',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ActionChip(
-                    key: const Key('walk-start-date-input'),
-                    avatar: const Icon(Icons.event_outlined, size: 18),
-                    label: Text(_formatDate(_startsAt)),
-                    onPressed: _isSaving ? null : _pickDate,
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('walk-title-input'),
+                  controller: _titleController,
+                  enabled: !_isSaving,
+                  maxLength: 120,
+                  decoration: const InputDecoration(
+                    labelText: 'Название',
+                    border: OutlineInputBorder(),
                   ),
-                  ActionChip(
-                    key: const Key('walk-start-time-input'),
-                    avatar: const Icon(Icons.schedule_outlined, size: 18),
-                    label: Text(_time.format(context)),
-                    onPressed: _isSaving ? null : _pickTime,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const Key('walk-place-input'),
+                  controller: _placeController,
+                  enabled: !_isSaving,
+                  maxLength: 160,
+                  decoration: const InputDecoration(
+                    labelText: 'Место',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ActionChip(
+                      key: const Key('walk-start-date-input'),
+                      avatar: const Icon(Icons.event_outlined, size: 18),
+                      label: Text(_formatDate(_startsAt)),
+                      onPressed: _isSaving ? null : _pickDate,
+                    ),
+                    ActionChip(
+                      key: const Key('walk-start-time-input'),
+                      avatar: const Icon(Icons.schedule_outlined, size: 18),
+                      label: Text(_time.format(context)),
+                      onPressed: _isSaving ? null : _pickTime,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Старт: ${_formatDate(dateTime)} ${_time.format(context)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('walk-description-input'),
+                  controller: _descriptionController,
+                  enabled: !_isSaving,
+                  maxLength: 500,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Описание',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    key: const Key('walk-form-error'),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Старт: ${_formatDate(dateTime)} ${_time.format(context)}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('walk-description-input'),
-                controller: _descriptionController,
-                maxLength: 500,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Описание',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  key: const Key('walk-form-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  key: const Key('save-walk-button'),
+                  onPressed: _isSaving ? null : _submit,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
                 ),
               ],
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('save-walk-button'),
-                onPressed: _isSaving ? null : _submit,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_outlined),
-                label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -265,41 +265,61 @@ class _CommentSheetState extends State<_CommentSheet> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Комментарий к посту ${widget.post.petName}',
-              style: Theme.of(context).textTheme.titleMedium,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
             ),
-            const SizedBox(height: 12),
-            TextField(
-              key: Key('comment-input-${widget.post.id}'),
-              controller: _controller,
-              autofocus: true,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Напишите добрый комментарий',
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Комментарий к посту ${widget.post.petName}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: Key('comment-input-${widget.post.id}'),
+                  controller: _controller,
+                  autofocus: true,
+                  maxLength: 300,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: 'Напишите добрый комментарий',
+                    errorText: _error,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  key: Key('send-comment-${widget.post.id}'),
+                  onPressed: _submit,
+                  icon: const Icon(Icons.send_outlined),
+                  label: const Text('Отправить'),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              key: Key('send-comment-${widget.post.id}'),
-              onPressed: () => Navigator.of(context).pop(_controller.text),
-              child: const Text('Отправить'),
-            ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  String? _error;
+
+  void _submit() {
+    final comment = _controller.text.trim();
+    if (comment.isEmpty) {
+      setState(() => _error = 'Комментарий не может быть пустым.');
+      return;
+    }
+
+    Navigator.of(context).pop(comment);
   }
 }

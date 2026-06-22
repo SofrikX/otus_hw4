@@ -384,96 +384,103 @@ class _PetFormSheetState extends State<_PetFormSheet> {
     final title = widget.pet == null ? 'Добавить питомца' : 'Редактировать';
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          8,
-          16,
-          MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('pet-name-input'),
-                controller: _nameController,
-                maxLength: 50,
-                decoration: const InputDecoration(
-                  labelText: 'Имя',
-                  border: OutlineInputBorder(),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('pet-name-input'),
+                  controller: _nameController,
+                  enabled: !_isSaving,
+                  maxLength: 50,
+                  decoration: const InputDecoration(
+                    labelText: 'Имя',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                key: const Key('pet-type-input'),
-                segments: const [
-                  ButtonSegment(value: 'dog', label: Text('Собака')),
-                  ButtonSegment(value: 'cat', label: Text('Кошка')),
-                  ButtonSegment(value: 'other', label: Text('Другой')),
-                ],
-                selected: {_animalType},
-                onSelectionChanged: _isSaving
-                    ? null
-                    : (value) => setState(() => _animalType = value.single),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('pet-breed-input'),
-                controller: _breedController,
-                maxLength: 80,
-                decoration: const InputDecoration(
-                  labelText: 'Порода',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                key: const Key('pet-age-input'),
-                controller: _ageController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Возраст',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('pet-description-input'),
-                controller: _descriptionController,
-                maxLength: 500,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Описание',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  key: const Key('pet-form-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                SegmentedButton<String>(
+                  key: const Key('pet-type-input'),
+                  segments: const [
+                    ButtonSegment(value: 'dog', label: Text('Собака')),
+                    ButtonSegment(value: 'cat', label: Text('Кошка')),
+                    ButtonSegment(value: 'other', label: Text('Другой')),
+                  ],
+                  selected: {_animalType},
+                  onSelectionChanged: _isSaving
+                      ? null
+                      : (value) => setState(() => _animalType = value.single),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('pet-breed-input'),
+                  controller: _breedController,
+                  enabled: !_isSaving,
+                  maxLength: 80,
+                  decoration: const InputDecoration(
+                    labelText: 'Порода',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const Key('pet-age-input'),
+                  controller: _ageController,
+                  enabled: !_isSaving,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Возраст',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('pet-description-input'),
+                  controller: _descriptionController,
+                  enabled: !_isSaving,
+                  maxLength: 500,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Описание',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _error!,
+                    key: const Key('pet-form-error'),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  key: const Key('save-pet-button'),
+                  onPressed: _isSaving ? null : _submit,
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
                 ),
               ],
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('save-pet-button'),
-                onPressed: _isSaving ? null : _submit,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_outlined),
-                label: Text(_isSaving ? 'Сохранение...' : 'Сохранить'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

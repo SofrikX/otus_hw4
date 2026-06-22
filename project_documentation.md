@@ -163,6 +163,7 @@ UI widgets do not call Supabase directly. Screens use Riverpod controllers/provi
 - responsive model подтверждена: mobile использует bottom navigation, desktop использует navigation rail и constrained content через `ResponsiveCenter`;
 - loading/error/empty states реализованы через `AsyncContentView`, `EmptyState` и `ErrorState`;
 - формы входа, регистрации и создания поста имеют validation/loading/error feedback;
+- формы создания поста, комментария, питомца и прогулки показывают inline validation, disabled submit/progress states и не закрывают пользователя в тупике при ошибке ввода;
 - accessibility baseline опирается на Material 3 semantics, labels, tooltips, semantic error containers и live-region loading/error states;
 - визуальная консистентность держится на единой Material 3 теме, карточках, чипах, иконках и shared state widgets.
 
@@ -170,14 +171,17 @@ UI widgets do not call Supabase directly. Screens use Riverpod controllers/provi
 
 - empty states получили contextual icons и refresh actions для Feed, Pets и Walks;
 - shared loading/error states получили semantic live-region hints;
-- create-post bottom sheet ограничен по ширине на desktop, учитывает keyboard insets и показывает более дружелюбные ошибки;
+- shared empty/error states ограничены по ширине для desktop/tablet readability;
+- create-post/comment bottom sheets ограничены по ширине на desktop, учитывают keyboard insets и показывают inline validation;
+- pet/walk form sheets центрируются на desktop и блокируют поля во время сохранения;
+- walk join/leave action показывает compact progress и блокирует повторные нажатия;
 - routing, repository layer и бизнес-логика не менялись.
 
 Оставшиеся UX-рекомендации перед финальной сдачей:
 
 - повторить desktop/mobile browser QA после production redeploy;
 - повторить visual QA для новых search/filter controls на Feed, Pets и Walks;
-- отполировать create pet и create walk UI forms, если они войдут в финальный demo scope;
+- проверить create pet и create walk flows на hosted Supabase после production redeploy;
 - вывести реальные Supabase Storage images для питомцев или постов;
 - обновить финальные screenshots в `docs/screenshots/`.
 

@@ -2094,3 +2094,40 @@ Supabase validation:
 - SQL migrations were inspected but not changed in this CRUD pass.
 - `supabase db lint` could not connect to local Postgres on `127.0.0.1:54322`; this is an environment blocker because local Supabase services were not running, not a SQL lint result.
 - RLS validation remains based on existing migrations and should be repeated with `supabase db lint` / `supabase db reset` when local Supabase services are running, or by hosted authenticated smoke checks.
+
+## 42. Финальный product polish интерфейса
+
+Дата изменения: 23 июня 2026.
+
+Цель: довести интерфейс PetConnect до финального product polish без переписывания архитектуры и без изменения core business logic.
+
+Роль Codex: Flutter Web UI Engineer и Product QA Reviewer.
+
+Перед изменениями прочитаны:
+
+- `docs/ui_ux_audit.md`, `final_project_gap_analysis.md`, `project_documentation.md`, `technical_specification.md`;
+- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `README.md`, `development_report.md`, `prompts.md`;
+- `lib/app/`, `lib/core/`, `lib/features/`, `test/`.
+
+Примечание: `lib/shared/` отсутствует; shared UI находится в `lib/core/widgets/`.
+
+Applied improvements:
+
+- shared empty/error states получили semantic containers и readable max width для tablet/desktop;
+- create-post sheet получил inline validation, disabled submit и progress в кнопке;
+- comment sheet больше не закрывается на пустом вводе, показывает inline validation и ограничивает длину;
+- pet/walk form sheets центрируются на desktop, учитывают keyboard insets и блокируют поля при сохранении;
+- walk join/leave action показывает compact progress и блокирует повторные нажатия;
+- обновлен widget test для empty comment validation.
+
+Бизнес-логика, routes, repository interfaces, Supabase queries и RLS не менялись.
+
+Validation:
+
+```text
+dart format .: passed, 88 files checked
+flutter analyze: passed, No issues found
+flutter test test/features/feed test/features/pets test/features/walks test/features/auth: passed, 80 tests
+flutter test: passed, 98 tests
+```

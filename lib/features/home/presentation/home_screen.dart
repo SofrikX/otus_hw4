@@ -113,87 +113,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    final textController = TextEditingController();
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  8,
-                  20,
-                  MediaQuery.viewInsetsOf(sheetContext).bottom + 20,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Новый пост',
-                      style:
-                          Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      key: const Key('create-post-input'),
-                      controller: textController,
-                      autofocus: true,
-                      minLines: 3,
-                      maxLines: 5,
-                      maxLength: 1000,
-                      decoration: const InputDecoration(
-                        labelText: 'Что нового у питомца?',
-                        helperText: 'Короткое обновление для общей ленты',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      key: const Key('submit-create-post'),
-                      onPressed: () async {
-                        try {
-                          await ref
-                              .read(feedControllerProvider.notifier)
-                              .createPost(
-                                author: author,
-                                text: textController.text,
-                              );
-                          if (!sheetContext.mounted) {
-                            return;
-                          }
-                          Navigator.of(sheetContext).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Пост опубликован')),
-                          );
-                        } on Object catch (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(_friendlyMessage(error))),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.send_outlined),
-                      label: const Text('Опубликовать'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+      builder: (sheetContext) => _CreatePostSheet(
+        onSubmit: (text) {
+          return ref.read(feedControllerProvider.notifier).createPost(
+                author: author,
+                text: text,
+              );
+        },
+      ),
     );
-
-    textController.dispose();
   }
 
   void _showMockNotification(BuildContext context) {
@@ -201,11 +133,125 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const SnackBar(content: Text('Новых уведомлений пока нет.')),
     );
   }
+}
+
+class _CreatePostSheet extends StatefulWidget {
+  const _CreatePostSheet({required this.onSubmit});
+
+  final Future<void> Function(String text) onSubmit;
+
+  @override
+  State<_CreatePostSheet> createState() => _CreatePostSheetState();
+}
+
+class _CreatePostSheetState extends State<_CreatePostSheet> {
+  final TextEditingController _textController = TextEditingController();
+  bool _isSaving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                8,
+                20,
+                MediaQuery.viewInsetsOf(context).bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Новый пост',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    key: const Key('create-post-input'),
+                    controller: _textController,
+                    autofocus: true,
+                    enabled: !_isSaving,
+                    minLines: 3,
+                    maxLines: 5,
+                    maxLength: 1000,
+                    decoration: InputDecoration(
+                      labelText: 'Что нового у питомца?',
+                      helperText: 'Короткое обновление для общей ленты',
+                      errorText: _error,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    key: const Key('submit-create-post'),
+                    onPressed: _isSaving ? null : _submit,
+                    icon: _isSaving
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send_outlined),
+                    label: Text(_isSaving ? 'Публикация...' : 'Опубликовать'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) {
+      setState(() => _error = 'Напишите текст поста.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
+
+    try {
+      await widget.onSubmit(text);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Пост опубликован')),
+      );
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = _friendlyMessage(error);
+        _isSaving = false;
+      });
+    }
+  }
 
   String _friendlyMessage(Object error) {
     final message = error.toString().replaceFirst('Exception: ', '').trim();
     if (message.isEmpty) {
-      return 'Не удалось выполнить действие. Попробуйте еще раз.';
+      return 'Не удалось опубликовать пост. Попробуйте еще раз.';
     }
     return message;
   }
