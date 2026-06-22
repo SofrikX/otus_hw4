@@ -203,6 +203,9 @@ Migrations находятся в `supabase/migrations/`.
 | `001_initial_schema.sql` | Tables, constraints, indexes, trigger functions, counter triggers, Storage buckets and Storage policies |
 | `002_rls_policies.sql` | RLS enablement and policies for application tables |
 | `003_api_grants.sql` | Grants for `authenticated` role so PostgREST can access tables while RLS still filters rows |
+| `004_pet_images_storage.sql` | Public-read `pet-images` bucket and authenticated owner/pet-scoped Storage policies |
+| `005_harden_remote_rls_policies.sql` | Corrective production migration that reapplies hardened post/comment/like/walk-participant policies after older `002` had already been applied remotely |
+| `006_fix_pet_images_storage_policy_path.sql` | Corrective production migration that makes `pet-images` policies read the pet id from `storage.objects.name` |
 
 Важные детали migration `001_initial_schema.sql`:
 
@@ -1015,7 +1018,9 @@ Manual hosted Supabase setup after pulling this change:
 supabase db push
 ```
 
-Если migration не применяется автоматически, выполните `supabase/migrations/004_pet_images_storage.sql` в Supabase SQL Editor. Затем проверьте Dashboard -> Storage: bucket `pet-images` должен быть public, а policies должны разрешать public select и authenticated owner-scoped insert/update/delete.
+Production backend deployment was completed on 23 June 2026 for project ref `fivtpxsjcjirddogngtl`. Remote migrations are aligned from `001` through `006`. Verification SQL and results are recorded in `docs/production_backend_verification.md`; the deployment checklist is recorded in `docs/backend_deployment_checklist.md`.
+
+Если migration не применяется автоматически, выполните pending migrations из `supabase/migrations/` в Supabase SQL Editor in order. Затем проверьте Dashboard -> Storage: bucket `pet-images` должен быть public, а policies должны разрешать public select и authenticated owner-scoped insert/update/delete.
 
 Blocking frontend issue:
 

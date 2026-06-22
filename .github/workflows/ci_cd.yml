@@ -145,7 +145,7 @@ jobs:
           SUPABASE_AUTH_REDIRECT_URL: https://cool-duckanoo-d28d04.netlify.app/
           ANALYTICS_ENABLED: ${{ vars.ANALYTICS_ENABLED || 'false' }}
           ANALYTICS_PROVIDER: ${{ vars.ANALYTICS_PROVIDER || 'yandex_metrica' }}
-          ANALYTICS_ID: ${{ vars.ANALYTICS_ID || '' }}
+          YANDEX_METRICA_COUNTER_ID: ${{ vars.YANDEX_METRICA_COUNTER_ID || '' }}
         run: |
           flutter build web --release \
             --dart-define=USE_SUPABASE_BACKEND=true \
@@ -154,7 +154,7 @@ jobs:
             --dart-define=SUPABASE_AUTH_REDIRECT_URL="$SUPABASE_AUTH_REDIRECT_URL" \
             --dart-define=ANALYTICS_ENABLED="$ANALYTICS_ENABLED" \
             --dart-define=ANALYTICS_PROVIDER="$ANALYTICS_PROVIDER" \
-            --dart-define=ANALYTICS_ID="$ANALYTICS_ID"
+            --dart-define=YANDEX_METRICA_COUNTER_ID="$YANDEX_METRICA_COUNTER_ID"
 
       - name: Deploy to Netlify
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

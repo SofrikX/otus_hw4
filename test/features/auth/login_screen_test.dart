@@ -16,6 +16,21 @@ void main() {
     expect(find.text('Войти через Google'), findsOneWidget);
   });
 
+  testWidgets('LoginScreen validates email and password before submit',
+      (tester) async {
+    final repository = _FakeAuthRepository();
+    await tester.pumpWidget(_buildLogin(repository));
+
+    await tester.enterText(find.byKey(const Key('login-email')), 'broken');
+    await tester.enterText(find.byKey(const Key('login-password')), '123');
+    await tester.tap(find.byKey(const Key('login-submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Проверьте email'), findsOneWidget);
+    expect(find.text('Минимум 6 символов'), findsOneWidget);
+    expect(repository.signInCalls, 0);
+  });
+
   testWidgets('LoginScreen shows loading state while signing in',
       (tester) async {
     final repository = _FakeAuthRepository();
@@ -98,6 +113,7 @@ class _FakeAuthRepository implements AuthRepository {
   final _signInCompleter = Completer<AppUser>();
 
   AppUser? _currentUser;
+  int signInCalls = 0;
   int googleSignInCalls = 0;
 
   @override
@@ -113,6 +129,7 @@ class _FakeAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {
+    signInCalls += 1;
     final error = signInError;
     if (error != null) {
       throw error;

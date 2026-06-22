@@ -103,7 +103,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       await _authRepository.registerWithEmailAndPassword(
         email: email,
         password: password,
-        displayName: displayName,
+        displayName: displayName?.trim(),
       );
       await _analytics?.track(
         AnalyticsEvent.signInSuccess,

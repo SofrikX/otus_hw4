@@ -112,7 +112,7 @@ flutter build web --release \
   --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/ \
   --dart-define=ANALYTICS_ENABLED=${{ vars.ANALYTICS_ENABLED }} \
   --dart-define=ANALYTICS_PROVIDER=${{ vars.ANALYTICS_PROVIDER }} \
-  --dart-define=ANALYTICS_ID=${{ vars.ANALYTICS_ID }}
+  --dart-define=YANDEX_METRICA_COUNTER_ID=${{ vars.YANDEX_METRICA_COUNTER_ID }}
 ```
 
 Deploy command:
@@ -138,6 +138,24 @@ Add these values in GitHub repository settings under Actions secrets:
 
 Do not add Supabase service role key, database password, JWT secret or private access tokens to the frontend CI/CD workflow.
 
+Add these values in GitHub repository settings under Actions variables:
+
+| Variable | Required for | Notes |
+|---|---|---|
+| `ANALYTICS_ENABLED` | Flutter Web release build | Use `true` for production analytics or `false` for disabled builds |
+| `ANALYTICS_PROVIDER` | Flutter Web release build | Current value: `yandex_metrica` |
+| `YANDEX_METRICA_COUNTER_ID` | Flutter Web release build | Public Yandex Metrica counter id, never hardcode in git |
+
+Netlify UI must contain the same frontend build environment variables:
+
+| Variable | Value |
+|---|---|
+| `SUPABASE_URL` | `<your-supabase-url>` |
+| `SUPABASE_PUBLISHABLE_KEY` | `<your-supabase-publishable-key>` |
+| `ANALYTICS_ENABLED` | `true` or `false` |
+| `ANALYTICS_PROVIDER` | `yandex_metrica` |
+| `YANDEX_METRICA_COUNTER_ID` | `<your-yandex-metrica-counter-id>` |
+
 ## Analytics Setup
 
 PetConnect Flutter Web uses Yandex Metrica for product analytics.
@@ -151,7 +169,7 @@ yandex_metrica
 Production counter id:
 
 ```text
-109987921
+<your-yandex-metrica-counter-id>
 ```
 
 Production frontend URL:
@@ -165,11 +183,11 @@ The Flutter app reads analytics configuration from build-time `dart-define` valu
 ```bash
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key> \
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
   --dart-define=ANALYTICS_ENABLED=true \
   --dart-define=ANALYTICS_PROVIDER=yandex_metrica \
-  --dart-define=ANALYTICS_ID=109987921
+  --dart-define=YANDEX_METRICA_COUNTER_ID=<your-yandex-metrica-counter-id>
 ```
 
 Set these as Netlify environment variables or GitHub repository variables:
@@ -178,7 +196,7 @@ Set these as Netlify environment variables or GitHub repository variables:
 |---|---|
 | `ANALYTICS_ENABLED` | `true` for production tracking, `false` for local/no-op builds |
 | `ANALYTICS_PROVIDER` | `yandex_metrica` |
-| `ANALYTICS_ID` | `109987921` |
+| `YANDEX_METRICA_COUNTER_ID` | `<your-yandex-metrica-counter-id>` |
 
 `web/index.html` contains a small loader function named `petconnectTrackAnalytics`. It does not hardcode the counter id. The Flutter analytics service calls this function only when analytics is enabled and the provider/id are configured. The loader then initializes Yandex Metrica and sends `reachGoal` events.
 
@@ -251,7 +269,9 @@ Manual setup:
 supabase db push
 ```
 
-For hosted projects without CLI migration access, run `supabase/migrations/004_pet_images_storage.sql` in the Supabase SQL Editor and confirm the `pet-images` bucket and policies in Dashboard -> Storage.
+Production deployment status on 23 June 2026: hosted Supabase project `fivtpxsjcjirddogngtl` has migrations `001`-`006` applied. The expected bucket `pet-images` exists, is public-read, and has authenticated owner/pet-scoped write/update/delete policies. Corrective migrations `005` and `006` hardened RLS drift and fixed Storage path policy qualification discovered during verification.
+
+For hosted projects without CLI migration access, run pending SQL files from `supabase/migrations/` in order in the Supabase SQL Editor and confirm the `pet-images` bucket and policies in Dashboard -> Storage.
 
 ## Supabase CRUD Integration
 
@@ -418,8 +438,8 @@ flutter analyze
 flutter test
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key> \
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key> \
   --dart-define=ANALYTICS_ENABLED=false
 ```
 

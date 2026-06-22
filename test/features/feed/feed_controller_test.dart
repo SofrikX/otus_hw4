@@ -116,6 +116,67 @@ void main() {
     expect(controller.state.value, hasLength(2));
   });
 
+  test('createPost rejects empty text before repository call', () async {
+    final repository = _FakeFeedRepository(posts: [mockPosts.first]);
+    final controller = FeedController(
+      repository: repository,
+      initialPosts: [mockPosts.first],
+    );
+
+    await expectLater(
+      controller.createPost(
+        author: const AppUser(id: 'user-qa', email: 'qa@example.com'),
+        text: '   ',
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+
+    expect(repository.createPostCalls, 0);
+    expect(controller.state.value, [mockPosts.first]);
+  });
+
+  test('createPost rejects missing reference pet', () async {
+    final repository = _FakeFeedRepository();
+    final controller = FeedController(
+      repository: repository,
+      initialPosts: const [],
+    );
+
+    await expectLater(
+      controller.createPost(
+        author: const AppUser(id: 'user-qa', email: 'qa@example.com'),
+        text: 'Новый пост',
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(repository.createPostCalls, 0);
+    expect(controller.state.value, isEmpty);
+  });
+
+  test('createPost surfaces repository failure without mutating feed',
+      () async {
+    final repository = _FakeFeedRepository(
+      posts: [mockPosts.first],
+      createError: Exception('Create failed'),
+    );
+    final controller = FeedController(
+      repository: repository,
+      initialPosts: [mockPosts.first],
+    );
+
+    await expectLater(
+      controller.createPost(
+        author: const AppUser(id: 'user-qa', email: 'qa@example.com'),
+        text: 'Новый пост',
+      ),
+      throwsA(isA<Exception>()),
+    );
+
+    expect(repository.createPostCalls, 1);
+    expect(controller.state.value, [mockPosts.first]);
+  });
+
   test('deletePost removes own post from state', () async {
     final post = mockPosts.first.copyWith(authorId: 'user-qa');
     final controller = FeedController(
@@ -202,15 +263,18 @@ PetPost? _firstPost(FeedController controller) {
 }
 
 class _FakeFeedRepository implements FeedRepository {
-  const _FakeFeedRepository({
+  _FakeFeedRepository({
     this.posts = const [],
     this.fetchError,
     this.commentError,
+    this.createError,
   });
 
   final List<PetPost> posts;
   final Object? fetchError;
   final Object? commentError;
+  final Object? createError;
+  int createPostCalls = 0;
 
   @override
   Future<List<PetPost>> fetchPosts({
@@ -227,6 +291,12 @@ class _FakeFeedRepository implements FeedRepository {
 
   @override
   Future<PetPost> createPost(CreatePostInput input) async {
+    createPostCalls += 1;
+    final error = createError;
+    if (error != null) {
+      throw error;
+    }
+
     return PetPost(
       id: 'created-post',
       petId: input.petId,

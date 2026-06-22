@@ -1395,8 +1395,8 @@ Production build command, documented with placeholders:
 ```bash
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 Фактический локальный build был выполнен против Supabase project URL `https://<project-ref>.supabase.co`; реальный publishable key использовался только в локальной CLI-команде и не записывался в tracked files.
@@ -1562,8 +1562,8 @@ flutter analyze
 flutter test
 flutter build web --release \
   --dart-define=USE_SUPABASE_BACKEND=true \
-  --dart-define=SUPABASE_URL=<production-supabase-project-url> \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+  --dart-define=SUPABASE_URL=<your-supabase-url> \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ```
 
 ## 30. Security Audit
@@ -1685,7 +1685,7 @@ AI использован для выбора событий по ключевы
 
 Что изменено:
 
-- добавлен `lib/core/analytics/analytics_service.dart` с конфигурацией через `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `ANALYTICS_ID`;
+- добавлен `lib/core/analytics/analytics_service.dart` с конфигурацией через `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `YANDEX_METRICA_COUNTER_ID`;
 - добавлен `AnalyticsEvent` со списком событий;
 - добавлен web dispatcher со stub fallback для тестов и не-web окружений;
 - `web/index.html` получил безопасный Yandex Metrica loader без hardcoded counter id;
@@ -2131,3 +2131,162 @@ flutter analyze: passed, No issues found
 flutter test test/features/feed test/features/pets test/features/walks test/features/auth: passed, 80 tests
 flutter test: passed, 98 tests
 ```
+
+## 43. Финальное усиление тестового покрытия
+
+Дата изменения: 23 июня 2026.
+
+Цель: усилить QA-покрытие перед финальной сдачей без хрупких browser E2E tests и без ослабления production code.
+
+Роль Codex: Flutter QA Engineer и Test Automation Specialist.
+
+Перед изменениями прочитаны:
+
+- `pubspec.yaml`, `lib/`, `test/`;
+- `project_documentation.md`, `technical_specification.md`, `user_stories.md`, `final_project_gap_analysis.md`;
+- `docs/crud_audit.md`, `docs/ui_ux_audit.md`, `security_audit.md`;
+- `development_report.md`, `prompts.md`, `README.md`;
+- project routing docs: `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`.
+
+Applied improvements:
+
+- создан `docs/testing_strategy.md` с аудитом текущих тестов, test pyramid, automated/manual границей и remaining gaps;
+- создан `docs/manual_qa_checklist.md` для регистрации, Google OAuth, feed, pets CRUD, image upload, walks, search/filters, analytics, health endpoint и responsive UI;
+- добавлены auth validation widget tests для login/register email/password validation;
+- добавлены `PetActions` unit tests для pet form validation, trim/normalization и owner-only guards;
+- расширены feed controller tests для empty post, missing reference pet и repository create error без мутации state;
+- добавлен HomeScreen widget test для inline validation пустого create-post bottom sheet;
+- расширены WalksController validation tests для place, future time window и description;
+- production code слегка улучшен: `AuthController.register` теперь trim-ит `displayName` перед отправкой в repository.
+
+Manual QA boundary:
+
+- Google OAuth, hosted Supabase Auth/RLS/Storage, Yandex Metrica dashboard, Netlify `/api/health` и responsive browser QA оставлены в manual checklist, потому что без стабильной E2E-инфраструктуры они были бы brittle.
+
+Validation status:
+
+```text
+flutter pub get: passed
+dart format --set-exit-if-changed .: passed, 91 files checked
+flutter analyze: passed, No issues found
+flutter test: passed, 109 tests
+```
+
+## 44. Production Supabase backend deployment
+
+Дата изменения: 23 июня 2026.
+
+Цель: применить финальные backend changes к hosted Supabase project `fivtpxsjcjirddogngtl` после QA stabilization и перед финальной документацией/защитой.
+
+Роль Codex: Supabase Release Engineer, DevOps Engineer и Production QA Reviewer.
+
+Preflight:
+
+- `git status --short`: рабочее дерево уже содержало локальные незакоммиченные изменения до deployment; существующие изменения не откатывались;
+- `supabase --version`: `2.106.0`;
+- Supabase CLI authenticated and linked to project `fivtpxsjcjirddogngtl`;
+- project status: `ACTIVE_HEALTHY`;
+- latest commit before deployment: `c045384 fix ui issue`.
+
+Deployment result:
+
+- `supabase db push` applied `004_pet_images_storage.sql`;
+- production verification found remote drift from the hardened local RLS policy model, so Codex created and applied `005_harden_remote_rls_policies.sql`;
+- production Storage policy verification found an ambiguous unqualified `name` reference, so Codex created and applied `006_fix_pet_images_storage_policy_path.sql`;
+- final `supabase migration list` confirmed local and remote migrations `001`-`006` are aligned.
+
+Production verification:
+
+- public tables exist: `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages`;
+- `pets.photo_url` exists;
+- `pet-images` bucket exists and is public-read;
+- public RLS policies are hardened for post visibility, owned pet checks, comment/like visibility inheritance and active-walk joins;
+- Storage policies are authenticated and owner/pet-scoped through `storage.objects.name`;
+- no production seed was executed;
+- no secrets, `.env`, service role key, database password or Supabase access token were committed.
+
+Documentation updates:
+
+- created `docs/backend_deployment_checklist.md`;
+- created `docs/production_backend_verification.md`;
+- updated README, backend, integration, project, security and manual QA documentation.
+
+Local validation after deployment:
+
+```text
+flutter pub get: passed
+dart format --set-exit-if-changed .: passed, 91 files checked, 0 changed
+flutter analyze: passed, No issues found
+flutter test: passed, 109 tests
+```
+
+## 45. Production frontend deployment synchronization
+
+Дата изменения: 23 июня 2026.
+
+Цель: синхронизировать Netlify и GitHub Actions production frontend build после production backend deploy.
+
+Роль Codex: Netlify Deployment Engineer, GitHub Actions Engineer и Flutter Web Release Reviewer.
+
+Проверено:
+
+- `netlify.toml`;
+- `.github/workflows/ci_cd.yml`;
+- `lib/core/config/backend_config.dart`;
+- `lib/core/analytics/analytics_service.dart`;
+- `netlify/functions/health.js`;
+- README, integration docs, production backend verification, backend deployment checklist, manual QA checklist, project docs, report and prompt journal.
+
+Dart defines found in code:
+
+- `USE_SUPABASE_BACKEND`;
+- `SUPABASE_URL`;
+- `SUPABASE_PUBLISHABLE_KEY`;
+- `SUPABASE_AUTH_REDIRECT_URL`;
+- `ANALYTICS_ENABLED`;
+- `ANALYTICS_PROVIDER`;
+- `YANDEX_METRICA_COUNTER_ID`;
+- legacy Firebase/API defines remain only for historical/mock/fallback modes.
+
+Applied synchronization:
+
+- Flutter analytics config now reads `YANDEX_METRICA_COUNTER_ID` for the Yandex Metrica counter.
+- Netlify build command now passes `YANDEX_METRICA_COUNTER_ID=$YANDEX_METRICA_COUNTER_ID`.
+- GitHub Actions build command now passes `YANDEX_METRICA_COUNTER_ID` from `vars.YANDEX_METRICA_COUNTER_ID`.
+- Netlify publish directory remains `build/web`.
+- Netlify functions directory remains `netlify/functions`.
+- `/api/health` continues to redirect to `/.netlify/functions/health` before the SPA fallback.
+- SPA fallback remains `/* -> /index.html` with status `200`.
+
+Required production frontend settings:
+
+- Netlify UI variables: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `YANDEX_METRICA_COUNTER_ID`;
+- GitHub Actions secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`;
+- GitHub Actions variables: `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER`, `YANDEX_METRICA_COUNTER_ID`.
+
+Real environment values were not added to git. Documentation uses placeholders such as `<your-supabase-url>`, `<your-supabase-publishable-key>` and `<your-yandex-metrica-counter-id>`.
+
+## 46. Production RLS fix for creating posts
+
+Дата изменения: 23 июня 2026.
+
+Цель: исправить production error при создании поста после backend RLS hardening.
+
+Проблема:
+
+- в production UI создание поста падало с `new row violates row-level security policy`;
+- `FeedController.createPost()` выбирал reference pet из первого поста общей ленты;
+- в hosted Supabase после hardening policy `posts_insert_own` разрешает создавать пост только для питомца, принадлежащего `auth.uid()`;
+- если первый пост в ленте принадлежал другому пользователю, frontend отправлял чужой `pet_id`, и RLS корректно блокировал insert.
+
+Решение:
+
+- `HomeScreen` перед созданием поста загружает питомцев текущего пользователя через `petsByOwnerProvider(author.id)`;
+- если питомцев нет, UI показывает дружелюбное сообщение `Сначала добавьте питомца для публикации.`;
+- post create теперь передает в `FeedController` reference pet, принадлежащий текущему пользователю;
+- raw `ApiException(...)` в create-post bottom sheet заменен на `ApiException.userMessage`.
+
+Regression test:
+
+- добавлен widget test `HomeScreen creates post with current user pet, not feed pet`;
+- test покрывает сценарий, где первый пост ленты связан с чужим `pet-1`, а текущий пользователь `user-2` создает пост для своего `pet-2`.

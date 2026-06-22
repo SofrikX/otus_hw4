@@ -32,7 +32,7 @@ class AnalyticsConfig {
     return const AnalyticsConfig(
       enabled: bool.fromEnvironment('ANALYTICS_ENABLED'),
       provider: String.fromEnvironment('ANALYTICS_PROVIDER'),
-      analyticsId: String.fromEnvironment('ANALYTICS_ID'),
+      analyticsId: String.fromEnvironment('YANDEX_METRICA_COUNTER_ID'),
     );
   }
 

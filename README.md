@@ -102,6 +102,9 @@ Database source of truth:
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_rls_policies.sql
 supabase/migrations/003_api_grants.sql
+supabase/migrations/004_pet_images_storage.sql
+supabase/migrations/005_harden_remote_rls_policies.sql
+supabase/migrations/006_fix_pet_images_storage_policy_path.sql
 ```
 
 Application tables:
@@ -136,6 +139,8 @@ RLS model:
 More details:
 
 - `backend_documentation.md`
+- `docs/backend_deployment_checklist.md`
+- `docs/production_backend_verification.md`
 - `docs/frontend_deployment.md`
 - `docs/supabase_setup.md`
 - `docs/database_schema.md`
@@ -176,11 +181,11 @@ The repository contains `netlify.toml` so Netlify can build and publish the Flut
 Configure these variables in Netlify UI, not in repository files:
 
 ```text
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_PUBLISHABLE_KEY=<production-supabase-publishable-key>
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_PUBLISHABLE_KEY=<your-supabase-publishable-key>
 ANALYTICS_ENABLED=true
 ANALYTICS_PROVIDER=yandex_metrica
-ANALYTICS_ID=109987921
+YANDEX_METRICA_COUNTER_ID=<your-yandex-metrica-counter-id>
 APP_VERSION=<optional-release-version-or-commit-sha>
 ```
 
@@ -207,12 +212,12 @@ flutter build web --release \
   --dart-define=SUPABASE_AUTH_REDIRECT_URL=https://cool-duckanoo-d28d04.netlify.app/ \
   --dart-define=ANALYTICS_ENABLED=$ANALYTICS_ENABLED \
   --dart-define=ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER \
-  --dart-define=ANALYTICS_ID=$ANALYTICS_ID
+  --dart-define=YANDEX_METRICA_COUNTER_ID=$YANDEX_METRICA_COUNTER_ID
 ```
 
 ### Analytics Configuration
 
-PetConnect Flutter Web uses Yandex Metrica for product analytics. The production counter id is `109987921`, but the app reads it only from `--dart-define=ANALYTICS_ID`.
+PetConnect Flutter Web uses Yandex Metrica for product analytics. The app reads the counter id only from `--dart-define=YANDEX_METRICA_COUNTER_ID`.
 
 Local disabled run:
 
@@ -229,7 +234,7 @@ flutter run -d chrome \
   --dart-define=USE_SUPABASE_BACKEND=false \
   --dart-define=ANALYTICS_ENABLED=true \
   --dart-define=ANALYTICS_PROVIDER=yandex_metrica \
-  --dart-define=ANALYTICS_ID=109987921
+  --dart-define=YANDEX_METRICA_COUNTER_ID=<your-yandex-metrica-counter-id>
 ```
 
 `web/index.html` contains a small Yandex Metrica loader function. It does not hardcode the counter id and loads `https://mc.yandex.ru/metrika/tag.js` only after Flutter sends an enabled analytics event.
@@ -325,7 +330,7 @@ flutter build web --release \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
   --dart-define=ANALYTICS_ENABLED=${{ vars.ANALYTICS_ENABLED }} \
   --dart-define=ANALYTICS_PROVIDER=${{ vars.ANALYTICS_PROVIDER }} \
-  --dart-define=ANALYTICS_ID=${{ vars.ANALYTICS_ID }}
+  --dart-define=YANDEX_METRICA_COUNTER_ID=${{ vars.YANDEX_METRICA_COUNTER_ID }}
 ```
 
 Deploy command on `push` to `main`:
@@ -353,7 +358,7 @@ Required GitHub repository variables:
 |---|---|
 | `ANALYTICS_ENABLED` | Enables or disables frontend analytics, usually `true` in production and `false` in local smoke builds |
 | `ANALYTICS_PROVIDER` | Analytics provider id, currently `yandex_metrica` |
-| `ANALYTICS_ID` | Public Yandex Metrica counter id, currently `109987921` |
+| `YANDEX_METRICA_COUNTER_ID` | Public Yandex Metrica counter id |
 
 Do not commit real secret values. `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are public Flutter Web client configuration, but they still belong in GitHub/Netlify environment settings for reproducible builds. Supabase service role key, database password and private tokens must not be added to GitHub Actions secrets for frontend deployment.
 
@@ -676,10 +681,20 @@ Do not claim production deployment is verified until the project, migrations, se
 Run after Flutter/Dart changes:
 
 ```bash
-dart format .
+flutter pub get
+dart format --set-exit-if-changed .
 flutter analyze
 flutter test
 ```
+
+Focused test strategy and final manual QA checklist are documented in:
+
+- `docs/testing_strategy.md`
+- `docs/manual_qa_checklist.md`
+
+Current automated coverage includes auth validation, pet/post/walk validation, search/filter state, disabled analytics mode, logger sanitization, repository/API error mapping, loading/empty/error widget states and delete confirmation dialogs.
+
+Latest local stabilization pass: `flutter pub get`, `dart format --set-exit-if-changed .`, `flutter analyze` and `flutter test` passed; full suite result was 109 tests.
 
 Run after Supabase SQL/RLS changes when Supabase CLI is configured:
 

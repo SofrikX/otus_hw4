@@ -160,6 +160,65 @@ void main() {
     );
   });
 
+  test('createWalk validates place, schedule window and description', () async {
+    final controller = WalksController(
+      repository: const _FakeWalksRepository(),
+      initialState: const AsyncValue<List<Walk>>.data([]),
+    );
+    const organizer = AppUser(id: 'user-qa', email: 'qa@example.com');
+
+    await expectLater(
+      controller.createWalk(
+        organizer: organizer,
+        title: 'Вечерняя прогулка',
+        place: ' ',
+        startsAt: DateTime.now().add(const Duration(days: 1)),
+        description: 'Описание прогулки',
+      ),
+      throwsA(
+        isA<ArgumentError>().having(
+          (error) => error.message,
+          'message',
+          'Укажите место прогулки.',
+        ),
+      ),
+    );
+
+    await expectLater(
+      controller.createWalk(
+        organizer: organizer,
+        title: 'Вечерняя прогулка',
+        place: 'Парк',
+        startsAt: DateTime.now().add(const Duration(minutes: 5)),
+        description: 'Описание прогулки',
+      ),
+      throwsA(
+        isA<ArgumentError>().having(
+          (error) => error.message,
+          'message',
+          'Выберите время хотя бы на 15 минут вперед.',
+        ),
+      ),
+    );
+
+    await expectLater(
+      controller.createWalk(
+        organizer: organizer,
+        title: 'Вечерняя прогулка',
+        place: 'Парк',
+        startsAt: DateTime.now().add(const Duration(days: 1)),
+        description: ' ',
+      ),
+      throwsA(
+        isA<ArgumentError>().having(
+          (error) => error.message,
+          'message',
+          'Добавьте короткое описание прогулки.',
+        ),
+      ),
+    );
+  });
+
   test('createWalk prepends valid walk matching filters', () async {
     final startsAt = DateTime.now().add(const Duration(days: 1));
     final controller = WalksController(

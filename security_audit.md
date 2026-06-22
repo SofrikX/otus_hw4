@@ -252,7 +252,7 @@ Mitigations:
 
 ## 8. Remaining Risks
 
-- Re-run `supabase db lint` and `supabase db reset` with local Supabase running.
+- Production Supabase RLS and Storage policies were re-verified on 23 June 2026 after applying corrective migrations `005` and `006`; re-run `supabase db lint` and `supabase db reset` with local Supabase running for local validation.
 - Verify hosted Supabase Auth redirect URLs in Dashboard before final submission.
 - Consider adding a tested Content Security Policy for Flutter Web after confirming CanvasKit/passkeys/Supabase runtime needs.
 - Consider removing historical Firebase Functions from production deployment scope or clearly marking it as archived if it is not needed for HW5/HW6.

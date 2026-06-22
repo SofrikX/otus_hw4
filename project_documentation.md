@@ -77,6 +77,11 @@ Scope финальной работы:
 | Tests | Flutter tests for auth, feed, pets, walks, chat, analytics, logging, router and network mapping |
 | Documentation | README, backend documentation, integration documentation, security audit, AI workflow and prompt journal |
 
+Testing documentation:
+
+- `docs/testing_strategy.md` records the final automated test audit, test pyramid and remaining manual boundaries.
+- `docs/manual_qa_checklist.md` records final browser QA for registration, Google OAuth, feed, pets CRUD, image upload, walks, search/filters, analytics, health endpoint and responsive UI.
+
 ## Что будет доработано в рамках проектной работы
 
 | Направление | Доработка |
@@ -202,9 +207,16 @@ Backend source of truth:
 - `supabase/migrations/001_initial_schema.sql`;
 - `supabase/migrations/002_rls_policies.sql`;
 - `supabase/migrations/003_api_grants.sql`;
+- `supabase/migrations/004_pet_images_storage.sql`;
+- `supabase/migrations/005_harden_remote_rls_policies.sql`;
+- `supabase/migrations/006_fix_pet_images_storage_policy_path.sql`;
 - `supabase/seed.sql`.
 
 PostgreSQL relations cover more than three connected tables: profiles own pets, profiles and pets own posts, posts have comments and likes, walks have participants, chats have participants and messages.
+
+Production backend deployment was completed on 23 June 2026 for Supabase project `fivtpxsjcjirddogngtl`. Verification confirmed public tables, `pets.photo_url`, hardened RLS policies, bucket `pet-images`, and Storage policies. Details are in `docs/backend_deployment_checklist.md` and `docs/production_backend_verification.md`.
+
+Production frontend deployment configuration was synchronized after the backend deploy: Netlify and GitHub Actions build Flutter Web with `USE_SUPABASE_BACKEND`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER` and `YANDEX_METRICA_COUNTER_ID`; Netlify publishes `build/web`, routes `/api/health` to the health function and keeps the SPA fallback.
 
 ## Requirements coverage
 
@@ -239,7 +251,7 @@ Final requirements package:
 ## Remaining gaps
 
 - Production Netlify frontend must be redeployed after the latest OAuth/web startup hardening and then checked end-to-end.
-- Supabase local lint/reset should be repeated when local Supabase services are running; hosted smoke checks already document previous validation.
+- Supabase local lint/reset should be repeated when local Supabase services are running; hosted SQL verification was completed after production migrations `001`-`006`.
 - Real pet photo upload/display through Supabase Storage is implemented for the final demo; post image upload remains a planned enhancement.
 - Final minimum CRUD is implemented for pets, posts and walks; post editing, comment deletion UI, walk edit/delete UI and profile editing remain scoped enhancements.
 - Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and implemented search/filtering cover the required additional-function set.

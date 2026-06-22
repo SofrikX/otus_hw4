@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_error.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../chat/presentation/screens/chat_screen.dart';
 import '../../feed/application/feed_controller.dart';
+import '../../feed/domain/pet_post.dart';
 import '../../feed/presentation/screens/feed_screen.dart';
+import '../../pets/application/pets_provider.dart';
 import '../../pets/presentation/screens/pets_screen.dart';
 import '../../walks/presentation/screens/walks_screen.dart';
 
@@ -118,10 +121,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) => _CreatePostSheet(
-        onSubmit: (text) {
+        onSubmit: (text) async {
+          final pets = await ref.read(petsByOwnerProvider(author.id).future);
+          if (pets.isEmpty) {
+            throw StateError('Сначала добавьте питомца для публикации.');
+          }
+
+          final pet = pets.first;
           return ref.read(feedControllerProvider.notifier).createPost(
                 author: author,
                 text: text,
+                referencePost: PetPost(
+                  id: 'reference-${pet.id}',
+                  petId: pet.id,
+                  petName: pet.name,
+                  authorName:
+                      author.displayName ?? author.email ?? pet.ownerName,
+                  authorId: author.id,
+                  petEmoji: pet.photoEmoji,
+                  imageEmoji: '📷',
+                  text: '',
+                  createdAt: DateTime.now(),
+                  likesCount: 0,
+                  commentsCount: 0,
+                  isLiked: false,
+                ),
               );
         },
       ),
@@ -249,6 +273,16 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
   }
 
   String _friendlyMessage(Object error) {
+    if (error is ApiException) {
+      return error.userMessage;
+    }
+    if (error is StateError || error is ArgumentError) {
+      final message = error.toString().replaceFirst(RegExp(r'^[^:]+:\s*'), '');
+      return message.trim().isEmpty
+          ? 'Не удалось опубликовать пост. Попробуйте еще раз.'
+          : message.trim();
+    }
+
     final message = error.toString().replaceFirst('Exception: ', '').trim();
     if (message.isEmpty) {
       return 'Не удалось опубликовать пост. Попробуйте еще раз.';
