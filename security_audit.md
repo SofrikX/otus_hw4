@@ -1,26 +1,31 @@
 # PetConnect Security Audit
 
-Date: 19 June 2026
+Date: 23 June 2026
 
-Scope: Flutter Web frontend, Supabase migrations/configuration, Netlify/GitHub Actions configuration, historical Firebase Functions package dependencies and project documentation.
+Scope: final pre-submission security and performance audit for Flutter Web frontend, Supabase migrations/configuration, Supabase Storage, Netlify/GitHub Actions configuration, Yandex Metrica analytics, health endpoint, historical Firebase Functions package dependencies and project documentation.
 
 ## 1. Summary
 
-This audit checked PetConnect for hardcoded secrets, frontend exposure of Supabase keys, RLS coverage, OAuth redirect configuration, Flutter Web XSS risks, SQL injection risks, insecure logging and dependency vulnerabilities.
+This final audit checked PetConnect for hardcoded secrets, frontend exposure of Supabase keys, Google OAuth secret leakage, Yandex Metrica privacy, RLS coverage, CRUD authorization, Storage upload risks, OAuth redirect configuration, Flutter Web XSS risks, SQL injection risks, insecure logging, dependency vulnerabilities and production readiness/performance issues.
 
 Overall result:
 
 - No tracked service role key, `sb_secret_`, live payment key, Google API key or real token-like Supabase publishable key was found in tracked source or documentation.
 - `.env.example` is tracked intentionally; real `.env` files are ignored by `.gitignore`.
 - A local ignored `.env.deploy` exists and contains local deployment values, including a public Supabase frontend key. It is not tracked by git and should stay local.
+- No Google Client Secret was found in tracked source or documentation. The docs correctly route it to Supabase Dashboard and Google Cloud Console only.
+- Yandex Metrica integration uses a build-time counter id, lazy loader and coarse event params. The final code hardening now drops broad raw identifiers and user-content-style analytics keys such as `*_id`, `raw_id`, `*_text`, `content` and `display_name`.
 - RLS is enabled for all PetConnect application tables in `supabase/migrations/002_rls_policies.sql`.
 - Service role keys are not used by Flutter frontend code, Netlify config or GitHub Actions.
 - Supabase publishable key is used only as frontend client configuration through `--dart-define` / CI env.
-- `flutter analyze` passed.
+- Netlify/GitHub Actions use secrets only from CI/provider settings. `netlify.toml` omits only public browser configuration keys from Netlify secret scanning.
+- The health endpoint returns status/check metadata and does not return Supabase URL, publishable key, service role key or environment values.
+- Production info-log volume is constrained: Flutter `AppLogger.info` is skipped in release mode; analytics disabled mode is silent; health check logs are structured and sanitized.
+- `flutter analyze` and `flutter test` must be re-run after this final audit; the validation section records current command results.
 - `npm audit` initially found a moderate vulnerability chain in the historical Firebase Functions dependencies. It was fixed by updating `firebase-admin` within the compatible peer range and adding a `uuid` override.
 - `supabase db lint` could not run because local Supabase Postgres was not running on `127.0.0.1:54322`; this is an environment blocker, not a SQL lint result.
 
-Files inspected included `pubspec.yaml`, `pubspec.lock`, `functions/package.json`, `functions/package-lock.json`, `netlify.toml`, `.github/workflows/`, `supabase/migrations/`, `supabase/seed.sql`, `README.md`, `backend_documentation.md`, `integration_documentation.md`, `lib/`, `web/` and `docs/`.
+Files inspected included `README.md`, `project_documentation.md`, `ai_development_process.md`, `final_project_gap_analysis.md`, `user_stories.md`, `technical_specification.md`, `backend_documentation.md`, `integration_documentation.md`, `development_report.md`, `prompts.md`, `docs/`, `.github/workflows/`, `netlify.toml`, `netlify/functions/`, `supabase/migrations/`, `lib/`, `test/`, `pubspec.yaml` and `pubspec.lock`.
 
 ## 2. Audit Commands
 
@@ -80,6 +85,37 @@ The grep gate intentionally scans runtime/configuration paths rather than docume
 | SEC-007 | Low | Secrets hygiene | Ignored local `.env.deploy` contains real local deployment values. It is not tracked, but must not be copied into docs or commits. | Documented |
 | SEC-008 | Low | Flutter Web | `web/index.html` loads an external Corbado/passkeys bundle required by the current web auth setup. This is a supply-chain/CSP consideration rather than direct XSS in app code. | Remaining risk |
 | SEC-009 | Medium | File upload | Pet photo upload can introduce oversized files, unexpected file types or public profile image exposure if unconstrained. | Mitigated |
+| SEC-010 | Low | Analytics privacy | Analytics sanitizer previously blocked obvious secret/user keys but not all raw id or content-style keys. | Fixed |
+| SEC-011 | Low | Documentation consistency | Some older documentation still referred to the previous bright UI direction while final UX is premium dark. | Documented |
+
+## 3.1 Final Security Audit Findings
+
+| Area | Result |
+|---|---|
+| Hardcoded secrets | No tracked service role key, `sb_secret_`, `SUPABASE_SERVICE`, live key, Google API key or Google Client Secret value found. Matches are documentation examples or sanitizer code. |
+| `.env` files | Only `.env.example` is tracked. Local `.env.deploy` exists and remains ignored; keep it out of screenshots, prompts and commits. |
+| Supabase key naming | Runtime uses `SUPABASE_PUBLISHABLE_KEY`. Legacy `SUPABASE_ANON_KEY` appears only in documentation as a deprecated naming note. |
+| Google OAuth | Flutter code does not store provider secret. Dashboard must keep exact Netlify and localhost redirects; no wildcard redirect was added in repo config. |
+| Yandex Metrica | Counter id is public config; event params are coarse. Sanitizer now drops broad id/content/name/text keys before dispatch. |
+| RLS and CRUD auth | RLS is enabled on application tables. Owner writes are enforced for pets/posts/walks/participants and chat reads are participant-scoped. UI owner checks are UX only; RLS is the security boundary. |
+| Storage upload | Pet image upload validates extension/content type and 5 MB max client-side; Storage policies require authenticated owner/pet-scoped paths. Public read is accepted for public pet profile photos. |
+| Logs | Flutter release skips info logs. Warnings/errors and health logs are structured and sanitized. No tokens, email, raw ids or user-generated content should be logged. |
+| Health endpoint | `/api/health` reports check status, HTTP status and duration only. It does not return environment values. Optional posts query uses publishable key only. |
+| Netlify/GitHub Actions | Secrets are consumed via provider secret stores. Netlify secret scan omit list contains only public browser config keys. |
+
+## 3.2 Final Performance Audit Findings
+
+| Area | Result |
+|---|---|
+| Flutter Web build size | Previous release observation: `build/web` around 41 MB and `main.dart.js` around 2.7 MB with Material icons tree-shaken. Re-check after final audit with a release build if production bundle size is required in the submission. |
+| Premium dark redesign | No broad architecture rewrite was introduced. The redesign uses shared widgets/tokens and existing Riverpod controllers. Remaining risk is visual complexity increasing widget cost on low-end devices; browser QA should include mobile viewport checks. |
+| Rebuilds | Static story strip had already been changed away from unnecessary provider subscription. Current `ConsumerWidget`/`ref.watch` usage is concentrated around async screens, auth state and filters. |
+| Production logs | `AppLogger.info` is skipped in release mode, disabled analytics is silent and health logs are concise. Keep additional diagnostics out of release unless warning/error only. |
+| Images | Pet images use constrained `Image.network` rendering and emoji/gradient placeholders for missing images. Upload size is capped at 5 MB. Post images remain placeholder/future scope. |
+| Analytics overhead | Yandex Metrica script is lazy-loaded only after an enabled event with configured provider/id. Disabled analytics does not dispatch or log. |
+| Search/filter performance | Feed/pet/walk filters use controller/provider state and bounded repository queries. Feed search operates on the RLS-visible feed result set; current MVP limits reduce client cost. |
+| Responsive UI | Mobile bottom navigation and desktop navigation rail remain. Manual QA should re-check `390x844`, `768x1024` and `1440x900` after final redeploy. |
+| Health endpoint | Netlify function performs bounded 5s fetches and a limit-1 optional posts query. It should not become a heavy synthetic transaction. |
 
 ## 4. Fixes Applied
 
@@ -102,39 +138,55 @@ OAuth redirect fix in `supabase/config.toml`:
 - Added the exact production Netlify URL.
 - No wildcard redirect URLs were added.
 
+Analytics privacy hardening in `lib/core/analytics/analytics_service.dart`:
+
+- Event params now drop broad raw identifier keys such as `id`, `*_id` and `raw_id`.
+- Event params now drop user-content-style keys such as `text`, `*_text`, `content`, `name`, `*_name` and `display_name`.
+- Existing safe coarse params such as `text_length`, `query_length`, `has_query`, `status_code`, `error_code`, `method` and boolean filter flags remain allowed.
+
 ## 5. Validation Results
 
 ```text
-flutter pub outdated
+flutter pub get
 ```
 
-Result: completed. Some Flutter packages have newer resolvable or latest versions. No direct security advisory is reported by this command. Major upgrades such as Riverpod/go_router should be planned separately because they can require API changes.
+Result: passed. 25 packages have newer versions incompatible with current constraints; this is a dependency freshness item, not a blocking audit failure.
+
+```text
+dart format --set-exit-if-changed .
+```
+
+Result: passed, 99 files checked, 0 changed.
 
 ```text
 flutter analyze
 ```
 
-Result: `No issues found!`
+Result: passed, `No issues found!`.
 
 ```text
-cd functions && npm audit
+flutter test
 ```
 
-Initial result: moderate `uuid` advisory through Firebase Functions transitive dependencies.
-
-Final result after dependency fix: `found 0 vulnerabilities`.
+Result: passed, 110 tests.
 
 ```text
-cd functions && npm run build
+flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false
 ```
 
-Result: TypeScript build passed.
+Result: passed and built `build/web` without production secrets. Non-blocking warnings remained for future WebAssembly compatibility from transitive `ua_client_hints` using `dart:html`, and a CupertinoIcons font metadata warning. The normal JavaScript Flutter Web release build succeeded.
+
+```text
+tracked-source secret scan
+```
+
+Result: no real service role key, `sb_secret_`, Google Client Secret, private token or hardcoded production credential found. Matches were documentation examples, Supabase CLI comments, health/logger sanitizer code or deprecated naming notes.
 
 ```text
 supabase db lint
 ```
 
-Result: failed to connect to local Postgres on `127.0.0.1:54322`. Run `supabase start` or `supabase db reset` locally, then repeat `supabase db lint`.
+Result: not re-run in this final pass because local Supabase services were not part of the requested Flutter validation run. Previous note remains: run `supabase start` or `supabase db reset` locally, then repeat `supabase db lint`.
 
 ## 6. Security Review Details
 
@@ -240,21 +292,24 @@ Mitigations:
 - `pets.photo_url` updates go through RLS-protected `pets_update_own`;
 - no service role key is used in frontend upload.
 
-## 7. OWASP Top 10 Mapping
+## 7. OWASP Top 10 Review
 
-| OWASP area | PetConnect audit result |
-|---|---|
-| Injection | No raw SQL concatenation found. Supabase client query builder is used. RLS checks were tightened for indirect object reference style risks. |
-| Broken Auth | Supabase Auth is the target identity provider. Frontend does not use service role keys. Redirect URLs now use exact values. |
-| Sensitive Data Exposure | No tracked real secrets found. `.env.*` is ignored. Publishable key is documented as public client config, not a secret. |
-| Security Misconfiguration | RLS is enabled on all app tables. Redirect URL config and RLS policy gaps were fixed. Supabase lint still needs local DB running. |
-| XSS | No direct HTML/DOM injection found in Flutter code. External script remains a supply-chain/CSP risk to monitor. |
+| OWASP area | PetConnect audit result | Status |
+|---|---|---|
+| Injection | Flutter repositories use Supabase query builder methods such as `.select()`, `.eq()`, `.insert()`, `.update()`, `.delete()` and a manually escaped `ilike` location filter. No raw SQL concatenation or client-controlled SQL RPC was found in Flutter code. | No blocking finding |
+| Broken Authentication | Supabase Auth is the identity provider for email/password and Google OAuth. Flutter stores no Google Client Secret and no service role key. OAuth redirect URLs must remain exact in Supabase Dashboard. | Manual redirect verification remains |
+| Broken Access Control | RLS is enabled on all application tables. Corrective policies prevent using another user's pet for posts, restrict private/deleted post visibility for comments/likes and require active walks for joins. Owner-only UI is not treated as the security boundary. | No blocking finding |
+| Sensitive Data Exposure | No tracked private credentials were found. `.env.deploy` is local/ignored. Logs and analytics sanitizers remove tokens, emails, raw ids and user content; the final audit hardened analytics key filtering further. | Local secret hygiene remains |
+| Security Misconfiguration | Netlify/GitHub Actions use provider secrets, SPA routing is configured, health endpoint avoids env leakage and Netlify secret scan omit list contains public browser config only. Supabase local lint/reset still require local services. | Manual environment checks remain |
+| XSS | No `innerHtml`, `setInnerHtml`, `eval` or user-controlled DOM insertion was found in `lib/`. Analytics loader parses only app-generated JSON params. External scripts remain a CSP/supply-chain consideration. | Remaining risk |
+| Vulnerable Components | Flutter dependency audit uses `flutter pub outdated`; historical Firebase Functions package is covered by `npm audit` in CI when lockfile exists. Major Flutter package upgrades should be planned separately. | Monitor |
+| Logging and Monitoring | `AppLogger.info` is disabled in release mode; warnings/errors are structured and sanitized. `/api/health` gives monitoring signal without secrets. No penetration test or external uptime monitor is claimed by this audit. | No blocking finding |
 
 ## 8. Remaining Risks
 
 - Production Supabase RLS and Storage policies were re-verified on 23 June 2026 after applying corrective migrations `005` and `006`; re-run `supabase db lint` and `supabase db reset` with local Supabase running for local validation.
 - Verify hosted Supabase Auth redirect URLs in Dashboard before final submission.
 - Consider adding a tested Content Security Policy for Flutter Web after confirming CanvasKit/passkeys/Supabase runtime needs.
-- Consider removing historical Firebase Functions from production deployment scope or clearly marking it as archived if it is not needed for HW5/HW6.
+- Keep historical Firebase Functions outside the production deployment scope or clearly mark them as archived/reference-only material.
 - Plan Flutter dependency upgrades separately; `flutter pub outdated` shows several major-version updates that may require code changes.
 - Keep local `.env.deploy` private and rotate any value immediately if it is accidentally pasted into docs, screenshots or commits.

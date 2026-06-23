@@ -8,7 +8,7 @@ Role: UI/UX Designer, Flutter Web Developer and Accessibility Reviewer.
 
 Reviewed files and folders:
 
-- `docs/documents_index.md`, `docs/current_homework_scope.md`, `docs/ai_agent_rules.md`;
+- `docs/documents_index.md`, `docs/ai_agent_rules.md`;
 - `README.md`;
 - `project_documentation.md`;
 - `final_project_gap_analysis.md`;
@@ -23,9 +23,9 @@ Note: `lib/shared/` does not exist in this repository. Shared UI widgets are loc
 
 ## Summary
 
-PetConnect already has a clear MVP UI foundation for the final project: Material 3, protected routes, bottom navigation on mobile, navigation rail on desktop, responsive content constraints, and reusable loading, empty and error state widgets.
+PetConnect has a clear final UI foundation for the project: Material 3, protected routes, bottom navigation on mobile, navigation rail on desktop, responsive content constraints, reusable loading/empty/error state widgets and a premium dark visual redesign.
 
-The application covers the required minimum of three main screens through Feed, Pets and Walks. Auth and Chat are additional supporting flows. The main UX gaps are not architectural blockers: create pet/walk flows are not fully exposed in UI, Storage images are still represented mostly by emoji placeholders, visible search/filter controls are planned rather than implemented, and final browser QA screenshots should be refreshed after production redeploy.
+The application covers the required minimum of three main screens through Feed, Pets and Walks. Auth and Chat are additional supporting flows. Create post, create/edit pet, pet image upload, create walk, join/leave walk, search and filters are visible enough for the final demo. The remaining UX work is production verification and screenshot freshness rather than core implementation.
 
 ## Main screens
 
@@ -76,7 +76,7 @@ The application covers the required minimum of three main screens through Feed, 
 - Shared `EmptyState` is used for feed, pets, walks and chat.
 - Empty states now support contextual icons and optional actions.
 - Feed, Pets and Walks provide refresh actions in their empty states.
-- Remaining gap: empty states for not-yet-exposed create pet/create walk flows should become creation CTAs only after those UI flows are complete.
+- Remaining gap: some empty-state CTAs can still be expanded, but the core final flows are reachable from the main screens.
 
 ## Loading states
 
@@ -105,10 +105,10 @@ The application covers the required minimum of three main screens through Feed, 
 
 ## Visual consistency
 
-- The app uses one Material 3 theme with a warm bright social-network direction.
-- Cards, chips, icons and typography are consistent across Feed, Pets and Walks.
+- The app now uses one premium dark Material 3 theme with navy/black surfaces, violet/blue gradients, glass cards and semantic accent colors.
+- Cards, chips, icons and typography are consistent across Auth, Feed, Pets, Walks, Pet Profile and Chat.
 - Shared state components reduce mismatch across loading, empty and error screens.
-- Current visual limitation: real pet/post imagery is not yet visible in the core UI; emoji placeholders are acceptable for MVP but Supabase Storage images would make the final demo stronger.
+- Current visual limitation: uploaded pet photos render through Supabase Storage, but mock post media still uses placeholders; post image upload remains future scope.
 
 ## Safe improvements applied
 
@@ -127,9 +127,9 @@ The application covers the required minimum of three main screens through Feed, 
 | Priority | Recommendation | Reason |
 |---|---|---|
 | P0 | Re-run desktop and mobile browser QA after final Netlify redeploy. | Confirms no overflow, broken auth redirect or blank production startup. |
-| P1 | Add visible search/filter UI for Feed or Walks. | Final project gap analysis marks search/filtering as planned; a small filter would improve demo clarity. |
 | P1 | Re-check create pet/create walk forms in production browser QA. | Forms are implemented and polished locally; hosted Supabase validation should confirm final behavior. |
-| P1 | Display Supabase Storage pet/post images. | Makes Storage visible as a user-facing feature, not only backend configuration. |
+| P1 | Re-check search/filter UI in production browser QA. | Feed, Pets and Walks filtering should remain responsive with hosted data. |
+| P1 | Refresh screenshots that show Supabase Storage pet images. | Makes Storage visible as a user-facing feature in the final portfolio package. |
 | P2 | Add screenshots for desktop and mobile final states. | Helps evaluator quickly verify responsive behavior. |
 | P2 | Do keyboard-only and screen-reader smoke checks. | Strengthens accessibility evidence for final handoff. |
 
@@ -197,3 +197,22 @@ Remaining visual limitations:
 
 - uploaded pet photos render through Supabase Storage, but mock post media still uses emoji placeholders;
 - final screenshots in `docs/screenshots/` should be refreshed after production redeploy and browser QA.
+
+## Final performance audit
+
+Review date: 23 June 2026.
+
+Performance observations:
+
+- the premium dark redesign is implemented through shared widgets and theme tokens rather than duplicated per-screen styling;
+- main screens continue to use existing Riverpod controllers and bounded list rendering via `ListView.separated`;
+- release info logs are disabled through `AppLogger`, reducing browser console overhead in production;
+- Yandex Metrica is lazy-loaded only after analytics is enabled and the first event is dispatched;
+- pet images are rendered in constrained containers with placeholder fallback, reducing layout shift risk;
+- search and filters are exposed through controller/provider state rather than direct backend calls from widgets.
+
+Remaining QA:
+
+- re-check mobile/tablet/desktop viewports after Netlify redeploy;
+- refresh screenshots after the production browser pass;
+- watch browser console/network waterfall for excessive analytics, image or health-check traffic.

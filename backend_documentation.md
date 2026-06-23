@@ -1,22 +1,22 @@
-# PetConnect Backend Documentation: Supabase Backend for HW5
+# PetConnect Backend Documentation: Supabase Backend
 
 ## 1. Название и цель
 
-Документ описывает backend-часть PetConnect для сдачи ДЗ 5: архитектуру, развертывание Supabase, PostgreSQL schema, SQL migrations, Row Level Security, Supabase Storage, API operations, frontend integration, testing и процесс разработки с OpenAI Codex.
+Документ описывает backend-часть PetConnect как финального полнофункционального веб-приложения: архитектуру, развертывание Supabase, PostgreSQL schema, SQL migrations, Row Level Security, Supabase Storage, API operations, frontend integration, testing и процесс разработки с OpenAI Codex.
 
-PetConnect - Flutter-приложение для владельцев домашних животных. MVP включает социальную ленту питомцев, профили питомцев, прогулки, присоединение к прогулкам и базовый чат-сценарий. Для ДЗ 5 frontend MVP подключается к реальному backend через Supabase Free Tier.
+PetConnect - Flutter Web приложение для владельцев домашних животных. Финальная версия включает социальную ленту питомцев, профили питомцев, прогулки, присоединение к прогулкам, базовый чат-сценарий, поиск/фильтры и загрузку фото питомцев через Supabase Storage. Frontend подключается к реальному backend через Supabase Free Tier.
 
 Документ может содержать публичный Supabase Project URL для production frontend, но не содержит реальных `SUPABASE_PUBLISHABLE_KEY`, secret key, database password, service role key, JWT secret или access tokens.
 
-## 2. Почему Supabase выбран вместо Firebase
+## 2. Architecture Decision: Supabase Backend
 
 На предыдущем этапе техническая спецификация PetConnect ориентировалась на Firebase. Поэтому в проекте была исследована Firebase-ветка: Firebase Auth, Firestore, Storage, Security Rules, Cloud Functions и Emulator Suite. Эта работа помогла выделить доменные сущности, repository layer, API operations и security model.
 
-На финальном этапе ДЗ 5 backend decision изменен на Supabase Free Tier. Причины:
+В финальной архитектуре production backend выбран Supabase Free Tier. Причины:
 
 - исходное задание прямо допускает Supabase как backend option;
 - Firebase Cloud Functions production deploy может требовать Blaze/pay-as-you-go plan;
-- учебной сдаче нужен бесплатный и воспроизводимый hosted backend;
+- финальному проекту нужен бесплатный и воспроизводимый hosted backend;
 - Supabase дает проверяемые SQL migrations, PostgreSQL constraints, RLS policies и auto REST API;
 - для MVP операций не нужен отдельный платный serverless layer.
 
@@ -1065,7 +1065,7 @@ All AI-generated changes were checked against project rules: no secrets in repos
 - Chat read/message policies exist, but client-side chat creation is intentionally not open without a trusted RPC or server operation.
 - Feed, pets and walks use denormalized display fields such as `author_name`, `pet_name` and `owner_name`; future production work can add stricter server-side consistency.
 - Fresh sign-up and create-post browser click-through should be repeated by the student with local hosted credentials before final demo.
-- The app remains an MVP: moderation, notifications, search, pagination UX and production observability are outside the current homework scope.
+- The app remains an MVP: moderation, notifications, advanced pagination UX and extended production observability are scoped as future enhancements.
 
 ## 17. Финальный Checklist
 

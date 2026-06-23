@@ -109,3 +109,15 @@ Use this checklist after `flutter test` passes and before final submission. Reco
 - [ ] Bottom sheets handle keyboard insets.
 - [ ] Loading, empty and error states are readable on all viewports.
 - [ ] Refresh final screenshots after production QA.
+
+## Final Security And Performance QA
+
+- [ ] Run tracked-source secret scan and confirm matches are documentation examples or sanitizer code only.
+- [ ] Confirm local `.env.deploy` or other real env files are not tracked by Git and are not included in screenshots/prompts.
+- [ ] Confirm Netlify secret scan omit list does not include service role keys, database passwords, JWT secrets or private tokens.
+- [ ] Confirm `/api/health` response does not include Supabase URL, publishable key, service key, tokens, cookies, email or raw user ids.
+- [ ] Confirm production browser console has no excessive info logs during normal feed/pets/walks usage.
+- [ ] Confirm analytics events contain no email, raw ids, names, post/comment text, search text or location text.
+- [ ] Confirm pet image placeholders and uploaded images do not shift layout or overflow on mobile/tablet/desktop.
+- [ ] Confirm feed search, pet filters and walk filters remain responsive on the production dataset.
+- [ ] Confirm final premium dark UI screenshots are refreshed after successful production redeploy.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes service integrations added for HW6, "CI/CD and service integration". It is safe for git: it contains no real Netlify tokens, Supabase publishable keys, service role keys, database passwords or private access tokens.
+This document describes the final PetConnect service integrations for production-style delivery. It is safe for git: it contains no real Netlify tokens, Supabase publishable keys, service role keys, database passwords or private access tokens.
 
 Current production stack:
 
@@ -486,3 +486,29 @@ Non-blocking build notes:
 
 - Flutter reported wasm dry-run incompatibility from a transitive web dependency using `dart:html`; the normal JavaScript Flutter Web release build still succeeded.
 - Flutter reported that CupertinoIcons font was referenced in dependency metadata but not bundled; PetConnect uses Material icons and `uses-material-design: true`, so the release build remained successful.
+
+## Final Security And Performance Review
+
+Review date: 23 June 2026.
+
+Integration security conclusions:
+
+- Google OAuth provider credentials stay outside Flutter, Netlify and GitHub Actions; only Supabase Dashboard and Google Cloud Console should store the Client Secret.
+- GitHub Actions uses `${{ secrets.* }}` for Netlify and Supabase build values and `${{ vars.* }}` for public analytics toggles/counter id.
+- Netlify `SECRETS_SCAN_OMIT_KEYS` contains only public browser configuration values: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `YANDEX_METRICA_COUNTER_ID`.
+- The health function sanitizes logs and response data; it does not return or log environment variable values, publishable keys, service keys, authorization headers, emails or raw ids.
+- Yandex Metrica remains lazy-loaded and receives only sanitized/coarse event params. The final sanitizer hardening drops raw id, name, content and text-style keys before dispatch.
+
+Integration performance conclusions:
+
+- `/api/health` uses bounded 5 second outbound checks and a limit-1 optional posts query.
+- Analytics script loading remains deferred until the first enabled event with configured provider/id.
+- Flutter release logging is reduced to warnings/errors, so normal production usage should not flood browser logs.
+- Pet image loading uses constrained UI surfaces; missing images fall back to lightweight placeholders.
+
+Remaining integration risks:
+
+- production OAuth redirect settings must be confirmed in Supabase Dashboard after each URL/domain change;
+- live `/api/health` should be checked after Netlify redeploy;
+- Yandex Metrica dashboard event arrival is manual and was not replaced by a brittle automated test;
+- local Supabase `db lint`/`db reset` still depend on local Supabase services being available.

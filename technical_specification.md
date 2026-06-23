@@ -464,7 +464,7 @@ AI was used as a requirements engineering partner, not only as a code generator.
 
 AI contributions:
 
-- analyzed earlier homework documents, current implementation and final project gaps;
+- analyzed earlier course-stage documents, current implementation and final project gaps;
 - converted broad course requirements into product-level user story groups;
 - separated implemented features from planned and optional features;
 - reconciled historical Firebase specification with the current Supabase architecture decision;

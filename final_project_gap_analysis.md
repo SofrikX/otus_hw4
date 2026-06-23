@@ -1,18 +1,18 @@
-# Final Project Gap Analysis - PetConnect
+# Final Project Readiness Review - PetConnect
 
-Date: 22 June 2026
+Date: 23 June 2026
 
-Role: AI Project Reviewer, QA Lead, Technical Product Manager.
+Role: AI Project Reviewer, QA Lead and Technical Product Manager.
 
-Scope: gap analysis for the final project requirements of the course "Разработка полнофункционального веб-приложения с использованием AI-агентов".
+Scope: final readiness review for the course project "Разработка полнофункционального веб-приложения с использованием AI-агентов".
 
-## Review inputs
+## Review Inputs
 
 Reviewed project materials:
 
+- `README.md`;
 - `project_documentation.md`;
 - `ai_development_process.md`;
-- `README.md`;
 - `backend_documentation.md`;
 - `integration_documentation.md`;
 - `security_audit.md`;
@@ -20,109 +20,66 @@ Reviewed project materials:
 - `prompts.md`;
 - `pubspec.yaml`;
 - `lib/`;
-- `supabase/`;
+- `supabase/migrations/`;
 - `netlify.toml`;
 - `.github/workflows/`;
 - `test/`;
 - `docs/`.
 
-No application code was changed during this review.
+## Executive Summary
 
-## Executive summary
+PetConnect is documented and implemented as a final full-stack portfolio project, not as a collection of intermediate course-stage artifacts. The final architecture is Flutter Web frontend, Supabase Auth/PostgreSQL/RLS/Storage backend, Google OAuth, Yandex Metrica analytics, Netlify deployment, GitHub Actions CI/CD, Netlify health endpoint and structured logging.
 
-PetConnect is a strong candidate for the final project. The core full-stack path is present: Flutter Web frontend, Supabase Auth, Google OAuth, PostgreSQL schema, RLS, Supabase repositories, Netlify hosting configuration, GitHub Actions CI/CD, analytics, monitoring, logging, security audit and AI process documentation.
+The remaining work is operational rather than architectural: keep production browser QA current after each deploy, verify external dashboards without exposing private data, and refresh screenshots when the UI changes.
 
-The main remaining gaps are not architectural blockers. They are mostly final-delivery gaps:
+## Requirements Coverage
 
-- prove production after the latest OAuth/web startup fixes with a fresh Netlify redeploy and browser E2E;
-- expose Supabase Storage as a real user-facing pet image flow, not only buckets/policies;
-- verify the newly added visible search/filter controls for posts, walks and pets during final browser QA;
-- CRUD completeness for the required pets/posts/walks scenarios has been audited and the minimum missing UI/repository operations were implemented;
-- refresh final screenshots and documentation after the last production validation.
-
-## Requirements table
-
-| Requirement | Status | Evidence in project | Planned action |
-|---|---|---|---|
-| Frontend screens: minimum 3 main screens | Done | `HomeScreen` contains Feed, Pets, Walks and Chat destinations; auth routes exist in `lib/app/router.dart`; tests cover feed, pets, walks, chat and auth screens. | Keep Feed, Pets and Walks as the three mandatory screens in the final demo; use Auth and Chat as supporting screens. |
-| Adaptive layout | Partial | `HomeScreen` switches between bottom `NavigationBar` and `NavigationRail`; shared `ResponsiveCenter` constrains content width; screenshots exist in `docs/screenshots/`. | Re-run visual QA on mobile and desktop after final redeploy; update screenshots and fix any overflow/spacing issues found. |
-| Forms and interactive elements | Done | Login/register forms; Google OAuth button; create-post bottom sheet; pet create/edit/delete form/actions; like/comment/delete-post actions; walk create/join/leave actions; search/filter controls. | Re-run browser QA on desktop/mobile after final redeploy. |
-| Loading/error/empty/success states | Done | `AsyncContentView`, `EmptyState`, `ErrorState`; Riverpod `AsyncValue`; tests for feed, pets, walks and startup error states. | Keep current patterns; during final QA verify backend errors render friendly messages in production mode. |
-| Backend PostgreSQL tables: minimum 3 related tables | Done | `supabase/migrations/001_initial_schema.sql` creates profiles, pets, posts, comments, post_likes, walks, walk_participants, chats, chat_participants and messages with relationships. | No schema blocker; repeat Supabase validation before final handoff. |
-| CRUD/API operations | Done | `docs/crud_audit.md` documents CRUD matrix. UI/repository covers pet create/read/update/delete, post create/read/delete, comments create/read, walk create/read, and walk participant join/leave. RLS keeps writes owner-scoped. | Keep post edit, comment delete UI, walk edit/delete UI and profile edit as scoped enhancements. |
-| Authentication | Done | `SupabaseAuthRepository`, protected `go_router` redirects, email/password login/register, profile upsert, auth tests. | Re-test seeded demo users and signup flow after redeploy; document demo credentials securely for reviewer if allowed. |
-| Data validation | Partial | PostgreSQL constraints, RLS checks, form validators, Supabase error mapper and friendly API exceptions; security audit fixed RLS validation gaps. | Add final validation checklist for forms and backend constraints; verify password/email and create-post/create-walk/pet constraints in production. |
-| OAuth2 authorization | Done | Google OAuth through Supabase Auth in `SupabaseAuthRepository.signInWithGoogle`; redirect docs in `integration_documentation.md`; OAuth redirect fix documented. | Verify hosted Supabase Dashboard Site URL/Redirect URLs and run a production Google OAuth smoke test after redeploy. |
-| Analytics | Done | Yandex Metrica config in `integration_documentation.md`; analytics events in `lib/core/analytics`; privacy filtering tests. | Confirm production `ANALYTICS_ENABLED`, provider and counter id in Netlify/GitHub settings; verify one event in Yandex Metrica dashboard if available. |
-| File storage | Done | `supabase/migrations/004_pet_images_storage.sql` creates public-read `pet-images`; Flutter Web lets pet owners select JPG/PNG/WebP up to 5 MB, uploads to owner/pet-scoped paths and stores `pets.photo_url`. | Run hosted Supabase smoke check after applying migration. |
-| Search and filters | Done | Feed has debounced search by post text, author and pet; Walks filter by date, location and status; Pets filter by name and animal type; controller/widget tests cover empty and filtered states. | Re-check controls in production browser QA and final screenshots. |
-| CI/CD | Done | `.github/workflows/ci_cd.yml` runs security audit, format, analyze, tests, web build and Netlify deploy on `main`. | Run the workflow from the final branch and capture final status in `development_report.md`. |
-| Deployment | Partial | `netlify.toml`, Netlify URL, Supabase hosted project and deployment docs exist; README notes a previous production blank-screen blocker requiring redeploy. | Redeploy Netlify after latest OAuth/web startup hardening; repeat production E2E and update README/development report status. |
-| Monitoring | Partial | `/api/health` Netlify Function exists; `netlify.toml` routes `/api/health`; docs define checks and external monitor setup. | Check live `https://cool-duckanoo-d28d04.netlify.app/api/health`; optionally configure an external uptime monitor and document it. |
-| Logging | Done | `AppLogger` provides structured logs; Netlify health function logs JSON; `docs/logging.md` documents log inspection and AI log prompts; tests cover sanitizer behavior. | During final production QA, capture only sanitized example logs if needed; do not paste secrets or personal data. |
-| Security audit | Done | `security_audit.md` covers secrets, RLS, OAuth redirects, XSS, SQL injection, logging and dependencies; CI security gate exists. | Re-run `flutter analyze`, `npm audit` and Supabase lint/reset when environment is available; verify hosted OAuth redirect config. |
-| AI usage documentation | Done | `ai_development_process.md`, `docs/ai_workflow.md`, `prompts.md`, `development_report.md` document AI planning, implementation, debugging, CI/CD, audit and optimization. | Continue updating prompt/result entries for each final validation or implementation task. |
-| README | Done | README includes stack, Supabase decision, final project scope, Netlify, CI/CD, health check, production verification and troubleshooting. | Update final QA status after redeploy; remove stale "not ready" wording once production E2E passes. |
-| Project documentation | Done | `project_documentation.md` defines idea, audience, problem, scenarios, final scope, stack, architecture and requirements coverage. | Add final delivery results and screenshot references after implementation/QA pass. |
-| Tests | Done | `test/` covers app router, startup, analytics, logging, network, auth, feed, pets, walks and chat. Development report records `flutter test` passing 77 tests previously. | Run `flutter test` before final submission; add tests for new Storage/search/CRUD UI if implemented. |
-| Health check endpoint | Done | `netlify/functions/health.js` checks Netlify function reachability, Supabase URL, Auth, REST and optional posts query without exposing env values. | Verify live endpoint after redeploy and include status in final report. |
-| Structured AI log analysis | Done | `docs/logging.md` includes AI prompt templates for auth, RLS, Netlify deploy, Supabase API and analytics diagnostics. | Use only sanitized logs in final debugging documentation. |
-| Screenshots/final visuals | Partial | Existing screenshots in `docs/screenshots/petconnect_desktop.png` and `docs/screenshots/petconnect_mobile.png`. | Refresh screenshots after final UI and production redeploy; reference them in README/project documentation if needed. |
-
-## Mandatory requirements status
-
-| Area | Overall status | Notes |
+| Requirement | Final status | Evidence |
 |---|---|---|
-| Frontend | Partial | Core screens, states and search/filter UI are Done; final visual QA and possibly create pet/create walk forms need polish. |
-| Backend | Partial | PostgreSQL/Auth/RLS/API are strong and CRUD completeness is documented; final Supabase lint/reset or hosted smoke validation still needs a last pass. |
-| Additional functions | Partial | OAuth2, analytics and monitoring are strong; Storage and search/filtering should be made more visible in the final demo. |
-| AI usage | Done | AI planning, design, coding, testing, debugging, audit, logging, CI/CD and performance work are documented. |
-| Delivery readiness | Partial | Documentation is strong, but production redeploy/E2E and final screenshots remain before teacher handoff. |
+| Flutter Web frontend | Done | `lib/`, `pubspec.yaml`, `netlify.toml`, GitHub Actions web build. |
+| Minimum three main screens | Done | Feed, Pets and Walks are the main demo screens; Auth and Chat support the flow. |
+| Authentication | Done | Supabase email/password auth, Google OAuth and protected `go_router` redirects. |
+| PostgreSQL database | Done | `supabase/migrations/001_initial_schema.sql` creates profiles, pets, posts, comments, likes, walks, walk participants, chats and messages. |
+| Row Level Security | Done | RLS policies and corrective hardening migrations are documented in `security_audit.md` and `docs/production_backend_verification.md`. |
+| CRUD flows | Done for final scope | Pets, posts and walks have user-facing CRUD/interaction flows documented in `docs/crud_audit.md`; optional edit/delete extensions remain scoped enhancements. |
+| Supabase Storage | Done | `pet-images` bucket and Flutter pet photo upload/display flow. |
+| Search and filters | Done | Feed search, pet filters and walk filters are implemented and tested. |
+| OAuth2 integration | Done | Google OAuth via Supabase Auth, with redirect configuration documented in `integration_documentation.md`. |
+| Analytics | Done | Yandex Metrica integration with privacy filtering and tests. |
+| CI/CD | Done | `.github/workflows/ci_cd.yml` runs security scan, format, analyze, tests, build and Netlify deployment. |
+| Deployment | Done | Netlify frontend configuration and Supabase hosted backend are documented. |
+| Health check | Done | `netlify/functions/health.js` and `/api/health` route. |
+| Security audit | Done | `security_audit.md` includes secrets review, RLS review, OWASP review and remaining risks. |
+| Performance audit | Done | Performance notes are documented in `security_audit.md`, `project_documentation.md` and `development_report.md`. |
+| AI usage documentation | Done | `ai_development_process.md`, `development_report.md` and `prompts.md`. |
+| Screenshots documentation | Done | `docs/screenshots/README.md` plus desktop/mobile screenshot assets. |
 
-## Minimal final delivery plan
+## Final Demo Scope
 
-These are the minimum actions needed for final submission confidence:
+Recommended reviewer demo flow:
 
-1. Redeploy Netlify from the current branch after OAuth/web startup hardening.
-2. Run production browser E2E: login, feed load, create post, like, comment, pets screen/profile, walks screen, join walk, logout.
-3. Verify live `/api/health` and record result.
-4. Run validation commands: `dart format .`, `flutter analyze`, `flutter test`, `flutter build web --release`.
-5. Run or document Supabase validation: `supabase db lint`, `supabase db reset`, or hosted SQL/RLS smoke checks.
-6. Update README and `development_report.md` from "needs redeploy" to actual final QA status.
-7. Refresh desktop/mobile screenshots for the final documentation.
+1. Open the Netlify production URL.
+2. Sign in or register through Supabase Auth.
+3. Verify Google OAuth button is present.
+4. Open Feed, search/filter content, create a post and interact with like/comment actions.
+5. Open Pets, create or edit a pet and upload a pet image.
+6. Open Walks, filter walks and join/leave a walk.
+7. Open `/api/health` and confirm the health endpoint returns a non-secret status payload.
+8. Show GitHub Actions pipeline and Netlify production deploy status.
+9. Show Supabase tables, RLS policies and Storage bucket without exposing private credentials.
+10. Show Yandex Metrica overview without user-level private data.
 
-## Recommended implementation plan
+## Remaining Risks
 
-The recommended enhancements below align with the requested final-project improvement set.
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Production browser behavior can drift after deploys | Auth redirects, CanvasKit assets or environment variables may break only in hosted mode. | Run manual QA after each final deploy using `docs/manual_qa_checklist.md`. |
+| OAuth redirect settings live outside git | Repository review cannot prove Supabase Dashboard and Google Cloud Console settings. | Verify dashboards manually before submission and never screenshot secrets. |
+| External analytics dashboard may contain private data | Screenshots could leak personal or visitor data. | Use overview-only screenshots and blur or avoid user-level details. |
+| Supabase bucket metadata does not enforce MIME/size | Client validation handles JPG/PNG/WebP and 5 MB, but backend bucket metadata is more permissive. | Keep frontend validation, consider bucket-level limits if Supabase project settings support them. |
+| No penetration test was performed | Security review is code/configuration audit, not adversarial testing. | State this limitation plainly in final docs. |
+| Optional UX extensions remain outside final scope | Post edit UI, comment delete UI, walk edit/delete UI and full chat messaging are not the main final demo. | Keep them documented as future enhancements, not blockers. |
 
-| Priority | Work item | Why it matters | Acceptance check |
-|---|---|---|---|
-| P0 | Production redeploy and E2E verification | Without this, the final project can still look blocked despite strong implementation. | Netlify app opens, authenticated Supabase scenario works, health endpoint returns expected JSON. |
-| P1 | Supabase Storage for pet photos | Turns Storage from backend capability into visible product functionality. | User can upload a pet photo, file lands in `pet-images/<auth.uid()>/<pet-id>/...`, UI displays it. |
-| P1 | Search/filtering for walks, posts and pets | Converts search/filtering from implicit query behavior into a demonstrable additional function. | Done: feed search, walk filters, pet filters and widget/controller tests added. |
-| P1 | CRUD completeness check for pets/posts/walks | Final requirements mention CRUD. | Done: `docs/crud_audit.md` documents matrix; missing critical operations were implemented, optional edit/delete flows are scoped clearly. |
-| P2 | Responsive UI polish | Final evaluator will likely check mobile and desktop. | Fresh screenshots show no overflow, clipped text or broken navigation at mobile and desktop widths. |
-| P2 | Final documentation and screenshots | Makes the portfolio project easier to assess. | README/project docs link final screenshots, demo flow, known limitations and validation results. |
+## Final Recommendation
 
-## CRUD completeness matrix
-
-| Entity | Create | Read | Update | Delete | Current assessment |
-|---|---|---|---|---|---|
-| Pets | UI/repository create implemented | Pets list/profile implemented | Owner-only UI/repository update implemented | Owner-only UI/repository delete implemented | Done |
-| Posts | UI create post and repository create implemented | Feed read implemented | RLS supports update; UI edit not exposed | Owner-only UI/repository delete implemented | Partial: update only |
-| Comments | UI add comment and repository create implemented | Comments shown in feed cards | Not required for MVP; update not exposed | RLS supports author delete, but UI not exposed | Partial |
-| Likes | Toggle like implemented as insert/delete | Like state read implemented | Not applicable | Unlike implemented through delete | Done for reaction use case |
-| Walks | UI/repository create implemented | Walks list implemented | RLS supports update; repository/UI update not exposed | RLS supports delete; repository/UI delete not exposed | Partial: update/delete only |
-| Walk participation | Join UI/repository implemented | Joined state read implemented | Not applicable | Leave UI/repository implemented | Done |
-| Chats/messages | Schema and basic chat list exist | Chat list screen exists | Full message send/update not final-demo ready | Delete not exposed | Partial/future scope |
-
-## Final recommendation
-
-PetConnect can pass the final project requirements if the final submission frames the current implementation honestly and completes the P0/P1 items. The smallest credible final package is:
-
-- production app redeployed and E2E verified;
-- Feed/Pets/Walks/Auth demo script;
-- one visible Storage flow for pet photos;
-- one visible search/filter feature;
-- CRUD matrix documented in `docs/crud_audit.md`, with missing optional edit/delete operations explicitly scoped as MVP limitations;
-- refreshed screenshots and final validation results.
+PetConnect is ready to be presented as a final portfolio project if the submission includes the final README, project documentation, AI development process, development report, prompt journal, security/performance audit, manual QA checklist and screenshots checklist. The project should be evaluated on the implemented Flutter Web + Supabase + Netlify stack, with Firebase treated only as historical architecture research.

@@ -1,230 +1,263 @@
-# AI Development Process
+# PetConnect AI Development Process
 
-## AI agent
+Date: 23 June 2026
 
-PetConnect is developed with OpenAI Codex as AI Product Manager, Solution Architect, Flutter/Supabase coding agent, QA Engineer, DevSecOps reviewer and Technical Writer.
+PetConnect was developed with OpenAI Codex as an AI-assisted product, architecture, implementation, QA, security and documentation partner. Human review remained responsible for accepting changes, protecting secrets, validating production settings and deciding project scope.
 
-The permanent agent rules are stored in `AGENTS.md`. Supporting workflow documents are `docs/ai_agent_rules.md`, `docs/ai_workflow.md`, `docs/documents_index.md`, `prompts.md` and `development_report.md`.
+## AI Usage Overview
 
-## How AI agents were used
+| Stage | AI usage | Result |
+|---|---|---|
+| Planning | Interpreted course requirements and turned them into a product/release plan | Final Flutter Web + Supabase portfolio scope |
+| Idea and product analysis | Clarified target users, problem, solution and demo story | Pet owner social app positioning |
+| User stories | Structured features with acceptance criteria and priority | `user_stories.md` |
+| Technical specification | Defined stack, architecture, data model, integrations and non-functional requirements | `technical_specification.md` |
+| UI/UX concept | Reviewed MVP screens and guided final premium dark redesign | `docs/ui_ux_audit.md`, redesigned Flutter UI |
+| Frontend implementation | Generated/refined Riverpod controllers, repository usage, forms, states and tests | Feature-first Flutter Web app |
+| Backend/database design | Designed PostgreSQL schema, relationships, constraints, indexes and counters | Supabase migrations |
+| RLS and Storage | Created and audited owner/visibility-scoped policies and pet image bucket policies | Hardened Supabase authorization |
+| Testing | Added and maintained unit/widget/repository tests | 110 passing Flutter tests |
+| Debugging | Diagnosed auth, RLS, deployment and frontend issues from sanitized logs/errors | Targeted fixes without weakening security |
+| Security audit | Checked secrets, RLS, Storage, logs, analytics, health endpoint and CI secrets | `security_audit.md` |
+| Performance optimization | Reviewed bundle size, production logs, analytics loading, rebuilds and images | Lazy analytics, reduced release logs, shared UI patterns |
+| CI/CD | Configured GitHub Actions and Netlify deployment flow | Automated security/build/test/deploy pipeline |
+| Log analysis | Created safe logging strategy and AI prompt templates | `docs/logging.md` |
+| Documentation | Produced README, project docs, backend/integration docs, reports and prompt journal | Final submission package |
 
-| Area | AI usage in PetConnect |
-|---|---|
-| Idea generation | Codex helped turn the homework MVP into a product concept: a social web app for pet owners with feed, profiles, walks and chat scenarios |
-| Requirements analysis | Codex compared homework requirements, earlier Firebase-oriented specification and current Supabase/Netlify stack |
-| User stories | Codex structured roles, must-have scenarios and acceptance criteria in `docs/user_stories.md` |
-| Technical specification | Codex prepared and evolved technical documentation, then separated historical Firebase decisions from current Supabase architecture |
-| Database design | Codex designed PostgreSQL tables, relationships, constraints, indexes, counters and seed data |
-| RLS/security design | Codex created and reviewed RLS policies for profile ownership, pet ownership, posts, comments, likes, walks and chats |
-| Code generation | Codex generated Flutter repository implementations, Riverpod controllers/providers, auth flow, analytics, logging and Netlify health endpoint changes |
-| Refactoring | Codex kept feature-first structure, moved logic into controllers/repositories and preserved mock repositories for tests/fallback |
-| Tests | Codex added and maintained Flutter tests for feed, pets, walks, auth, chat, analytics, logging, router and API/Supabase mapping |
-| CI/CD | Codex configured GitHub Actions quality gates, security audit job, Flutter Web build and Netlify deploy command |
-| Security audit | Codex checked secrets hygiene, Supabase key exposure, RLS gaps, OAuth redirects, dependency audit and Flutter Web risks |
-| Log analysis | Codex introduced structured logs and created prompt templates for AI-assisted analysis of auth, RLS, Netlify, Supabase and analytics issues |
-| Performance optimization | Codex reviewed bundle size, logging overhead, analytics loading, rebuilds and image-loading risks; safe optimizations were applied |
+## Planning Stage
 
-## Generation of the idea
+AI helped convert a sequence of course tasks into one final product narrative. The final project was framed as a full-stack Flutter Web application with Supabase backend, Netlify deployment, CI/CD, security review, analytics, monitoring and AI-documented workflow.
 
-The product idea started from homework tasks around a pet owner application. AI-assisted product analysis shaped it into PetConnect: a social network for owners who want to share pet content, maintain pet profiles, find walks and communicate with nearby owners.
+Human review decisions:
 
-Codex helped formulate:
+- keep Flutter Web as the final frontend;
+- use Supabase as final backend;
+- keep Netlify as hosting;
+- avoid paid services and committed secrets;
+- preserve mock mode for tests and local demo.
 
-- the target audience;
-- the user problem;
-- core user journeys;
-- MVP boundaries;
-- portfolio-ready final project positioning.
+## Idea And Product Analysis
 
-## Requirements analysis
+The initial pet-owner app idea was shaped into a compact product:
 
-Codex read and reconciled:
+- pet profiles;
+- social feed;
+- local walks;
+- lightweight chat;
+- media upload;
+- community interactions.
 
-- `README.md`;
-- `AGENTS.md`;
-- `docs/documents_index.md`;
-- `docs/current_homework_scope.md`;
-- `docs/project_description.md`;
-- `docs/technical_specification.md`;
-- `docs/user_stories.md`;
-- `backend_documentation.md`;
-- `integration_documentation.md`;
-- `security_audit.md`;
-- `development_report.md`;
-- `prompts.md`;
-- `pubspec.yaml`;
-- `netlify.toml`;
-- `.github/workflows/`;
-- `supabase/`;
-- `lib/`;
-- `test/`;
-- `docs/`.
+AI output included target audience, problem statement, solution framing and demo flow. Human review kept the MVP focused and scoped notifications/payments as non-final enhancements.
 
-The main architectural clarification was that Firebase remains a historical research branch, while the final project uses Supabase Free Tier for Auth, PostgreSQL, RLS, Storage and auto REST API.
+## User Stories And Technical Specification
 
-## User stories and product scenarios
+AI created structured user stories for:
 
-AI was used to structure user stories in a consistent format:
+- authentication;
+- pet profiles;
+- feed/posts;
+- comments and likes;
+- walks;
+- search/filters;
+- image upload;
+- analytics;
+- monitoring.
 
-- guest registration and login;
-- pet profile creation;
-- feed viewing and post creation;
-- likes and comments;
-- chat scenario;
-- nearby walk discovery and joining;
-- future notifications and search improvements.
+AI also produced the technical specification covering frontend architecture, backend schema, CRUD/API matrix, RLS, integrations, deployment, CI/CD, security and testing.
 
-These stories drive the frontend screens, PostgreSQL schema, RLS model and test scenarios.
+## UI/UX Concept And Final Visual Redesign
 
-## Database design
+AI reviewed the existing MVP UI and final requirements, then guided a premium dark redesign:
 
-Codex designed a relational Supabase schema instead of a document-oriented Firebase schema.
+- dark navy/black design tokens;
+- violet/blue gradients;
+- glass cards;
+- redesigned auth, feed, pets, walks, pet profile and chat surfaces;
+- responsive mobile/desktop behavior;
+- shared loading/empty/error states.
 
-Key AI-supported decisions:
+Human review constrained the redesign: no routing rewrite, no backend schema change, no RLS change and no replacement of Riverpod/repository architecture.
 
-- split users into Supabase Auth users and public `profiles`;
-- model pets as rows owned by profiles;
-- model posts with pet and author references;
-- separate comments and likes for queryability and RLS;
-- model walks and participants as many-to-many relation;
-- model chats through chat metadata, participants and messages;
-- use constraints for string length, enums, non-negative counters and uniqueness;
-- use triggers for likes, comments and participant counters where atomicity matters.
+## Frontend Implementation
 
-## Code generation
+AI helped implement and refine:
 
-Codex generated or evolved code in small slices:
+- feature-first folders under `lib/features`;
+- shared widgets under `lib/core/widgets`;
+- auth controller and protected routes;
+- feed controller and post/comment/like flows;
+- pet CRUD and photo upload flow;
+- walk create/join/leave/filter flow;
+- analytics and logging services;
+- error/loading/empty states.
 
-- repository interfaces in domain layers;
-- Supabase repository implementations in data layers;
-- mock repositories for local/test modes;
-- Riverpod controllers/providers;
-- auth controllers and protected routing;
-- typed backend error mapping;
-- analytics service and dispatcher;
-- structured app logger;
-- Netlify health function.
+Implementation rule: widgets call controllers/providers; controllers use repository interfaces; repositories talk to Supabase or mock data.
 
-The implementation rule was constant: UI calls controllers/providers, controllers call repositories, repositories talk to Supabase or mock data.
+## Backend And Database Design
 
-## Refactoring
+AI designed a relational Supabase model:
 
-Refactoring focused on preserving architecture rather than rewriting the app:
+- `profiles`;
+- `pets`;
+- `posts`;
+- `comments`;
+- `post_likes`;
+- `walks`;
+- `walk_participants`;
+- `chats`;
+- `chat_participants`;
+- `messages`.
 
-- feature-first folders stayed under `lib/features`;
-- shared widgets stayed under `lib/core/widgets`;
-- backend configuration stayed in `lib/core/config`;
-- Supabase initialization stayed in `lib/core/supabase`;
-- mock repositories stayed available for tests and no-credential local runs;
-- business logic stayed out of widgets where controller/provider methods existed.
+AI-generated migration work included constraints, indexes, timestamp triggers and counter triggers for likes, comments and participants.
+
+## Supabase Migrations And RLS
+
+AI assisted with:
+
+- initial schema migration;
+- RLS policy migration;
+- authenticated grants for PostgREST;
+- `pet-images` Storage migration;
+- production corrective migrations for policy drift and Storage path checks.
+
+Important security decisions:
+
+- no service role key in Flutter Web;
+- owner-scoped writes;
+- visible-post checks for comments and likes;
+- active-walk check for joining;
+- participant-scoped chat/message visibility;
+- owner/pet-scoped Storage object paths.
 
 ## Testing
 
-AI-assisted tests cover:
+AI-assisted automated tests cover:
 
-- auth controller and login screen behavior;
-- Google OAuth button and error state;
-- feed loading, post cards, likes, comments and controller logic;
-- pets list/profile states and Supabase mapping;
-- walks list, join flow and Supabase mapping;
-- chat screen rendering;
-- router protected redirect behavior;
-- analytics service filtering;
-- structured logging sanitization;
-- API client/error mapping.
+- auth validation and controller state;
+- router redirects;
+- feed loading/empty/error/success states;
+- post create/delete, comments and likes;
+- pet CRUD and filters;
+- walks create/join/leave/filter flows;
+- analytics privacy filtering;
+- logger sanitization;
+- Supabase/API error mapping.
 
-Validation commands used across the project:
+Manual test boundaries remain for Google OAuth, hosted Supabase/RLS smoke checks, real Storage upload, Yandex Metrica dashboard and production responsive browser QA.
 
-```bash
-dart format .
-flutter analyze
-flutter test
-flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false
-```
+## Debugging
 
-Supabase validation commands for local backend checks:
+AI debugging examples:
 
-```bash
-supabase db lint
-supabase db reset
-```
+- diagnosed RLS error on create post caused by selecting a pet owned by another user;
+- fixed create-post flow to use current user's pet without weakening RLS;
+- reviewed OAuth redirect configuration;
+- reviewed health endpoint behavior;
+- checked analytics/log privacy.
+
+Debugging used sanitized logs and avoided raw tokens, emails, user ids or secrets.
+
+## Security Audit
+
+AI security review covered:
+
+- hardcoded secrets;
+- `.env` files;
+- service role keys and `sb_secret_` markers;
+- Google Client Secret leakage;
+- Yandex Metrica privacy;
+- unsafe logs;
+- OAuth redirect notes;
+- Supabase Storage upload risks;
+- RLS policies;
+- CRUD authorization;
+- analytics privacy;
+- health endpoint leakage;
+- Netlify/GitHub Actions secret usage.
+
+Result: no tracked private credentials were found; final fixes hardened analytics param filtering and documentation.
+
+## Performance Optimization
+
+AI reviewed:
+
+- Flutter Web release build behavior;
+- excessive logs;
+- analytics overhead;
+- unnecessary Riverpod rebuilds;
+- image loading and placeholders;
+- search/filter cost;
+- responsive layout complexity;
+- health endpoint cost.
+
+Applied safe optimizations:
+
+- release `info` logs are skipped;
+- disabled analytics is silent;
+- analytics loads lazily;
+- shared UI primitives reduce duplication;
+- pet images are constrained.
 
 ## CI/CD
 
-Codex configured GitHub Actions as the automated quality gate:
+AI configured GitHub Actions:
 
-- security audit job before build/deploy;
-- secret marker scanning for runtime/configuration files;
-- `.env*` and `.DS_Store` blocking;
-- Flutter dependency check;
-- npm audit for the historical Firebase Functions package;
-- Dart formatting check;
-- Flutter analysis and tests;
+- security audit job;
+- secret marker scan;
+- `.env*` and `.DS_Store` gate;
+- dependency checks;
+- Dart formatting;
+- Flutter analysis;
+- Flutter tests;
 - Flutter Web release build;
-- Netlify production deploy from `build/web` on `main`.
+- Netlify deploy.
 
-Secrets are stored in GitHub/Netlify settings, not in repository files.
+Human review keeps real Netlify and Supabase values in provider secret stores, not in the repository.
 
-## Security audit
+## Log Analysis
 
-AI-assisted security work included:
+AI produced `docs/logging.md` with:
 
-- checking tracked files for service role keys, secret markers and real env files;
-- documenting that Supabase publishable key is public client configuration, not the security boundary;
-- tightening RLS policies for post ownership, private post visibility, comment/like access and active walk joining;
-- reviewing OAuth redirect URLs;
-- reviewing Flutter Web DOM/XSS risk;
-- auditing dependency vulnerabilities;
-- adding CI security gates.
+- structured log format;
+- safe/unsafe fields;
+- Netlify and Supabase log inspection notes;
+- prompt templates for auth errors, RLS denial, deploy failures, API errors and analytics missing events.
 
-The main security boundary is Supabase Auth plus PostgreSQL RLS and Storage policies.
+## Documentation
 
-## Log analysis
+AI generated and maintained:
 
-Codex introduced structured logs with:
+- `README.md`;
+- `project_documentation.md`;
+- `user_stories.md`;
+- `technical_specification.md`;
+- `backend_documentation.md`;
+- `integration_documentation.md`;
+- `security_audit.md`;
+- `docs/testing_strategy.md`;
+- `docs/manual_qa_checklist.md`;
+- `docs/screenshots/README.md`;
+- `docs/submission_package.md`;
+- `development_report.md`;
+- `prompts.md`.
 
-- levels `info`, `warning`, `error`;
-- component/event fields;
-- no secrets, tokens, emails, raw user ids or user-generated text;
-- Netlify health check JSON logs;
-- AI prompt templates for auth errors, RLS permission denied, Netlify deploy failures, Supabase API errors and missing analytics events.
+## Prompt Examples
 
-This lets the developer paste sanitized logs into Codex and ask for root-cause analysis without exposing sensitive data.
+| Prompt category | Goal | AI output | Human review | Result |
+|---|---|---|---|---|
+| Planning | Turn course requirements into a final project plan | Scope, stack, artifacts and validation plan | Confirmed free-tier and Flutter Web constraints | Supabase + Netlify final architecture |
+| Backend | Design schema and RLS | SQL migrations, policies and docs | Reviewed for owner scoping and no secrets | PostgreSQL/RLS backend |
+| Frontend | Add feature flows through repositories/controllers | Riverpod controllers, widgets and tests | Checked architecture boundaries | Feed, pets, walks and auth flows |
+| CI/CD | Configure automated delivery | GitHub Actions workflow and Netlify config | Verified secret handling | Build/test/deploy pipeline |
+| Security | Audit secrets, RLS, logs and analytics | Findings, fixes and remaining risks | Accepted only safe small fixes | Final security audit |
+| Visual redesign | Create premium portfolio UI | Theme tokens, shared widgets and redesigned screens | Preserved behavior and tests | Final dark UI |
+| QA | Stabilize tests and manual checklist | Automated tests and manual QA matrix | Kept external flows manual | 110 passing tests |
+| Documentation | Package final project | README, reports and submission docs | Removed stale course-stage framing | Portfolio-ready docs |
 
-## Performance optimization
+## Lessons Learned
 
-Codex reviewed:
-
-- Flutter Web release bundle size;
-- unnecessary Riverpod rebuilds;
-- verbose production logs;
-- analytics loading overhead;
-- future image loading from Supabase Storage.
-
-Applied safe changes documented in `development_report.md`:
-
-- `AppLogger.info` is skipped in Flutter release mode;
-- disabled analytics no longer logs every dropped event;
-- static stories strip no longer subscribes to Riverpod;
-- release build remains tree-shaken.
-
-## How AI will be used next
-
-For the final project handoff, Codex should be used to:
-
-- run a final documentation consistency pass;
-- verify Netlify production after redeploy;
-- repeat Supabase smoke checks;
-- inspect CI failures if any;
-- analyze sanitized health check logs;
-- prepare a concise demo script for the reviewer;
-- update `prompts.md` and `development_report.md` after each final validation task.
-
-## Safety rules for future AI work
-
-- Do not add secrets, service role keys, database passwords or private tokens to repository files.
-- Do not replace Flutter/Supabase/Netlify with another stack unless explicitly requested.
-- Do not reselect Firebase as production backend; keep it as historical exploration.
-- Do not bypass repository/controller architecture by calling Supabase directly from widgets.
-- Do not remove tests to make validation pass.
-- Do not include personal data or production user content in prompts, logs or screenshots.
+- AI is strongest when prompts include role, context, constraints and validation commands.
+- Human review is essential for secrets, production settings and scope control.
+- RLS should be treated as the backend security boundary, not UI ownership checks.
+- Documentation must be updated as architecture evolves, otherwise historical decisions look like contradictions.
+- Final portfolio packaging needs a different tone from internal development logs.

@@ -73,3 +73,23 @@ flutter run -d chrome
 - Google OAuth and Yandex Metrica dashboard verification are intentionally manual because they depend on external browser redirects and third-party dashboards.
 - Hosted Supabase RLS validation should be repeated manually or with SQL smoke scripts after migrations are applied to the target project.
 - Full browser E2E can be added later with seeded test accounts and cleanup, but it is intentionally out of scope for this stabilization pass.
+
+## Final Security And Performance Audit Tests
+
+Final review date: 23 June 2026.
+
+Automated checks added or confirmed during the final audit:
+
+- analytics sanitizer test now verifies that raw identifiers, display names and content/text-style params are dropped before Yandex Metrica dispatch;
+- logger tests continue to verify that structured logs remove secrets, personal data and user content;
+- CI security gate continues to block real `.env*` files, `.DS_Store` files and Supabase secret markers in executable/configuration paths;
+- Flutter validation remains `flutter pub get`, `dart format --set-exit-if-changed .`, `flutter analyze` and `flutter test`.
+
+Manual checks still required for production readiness:
+
+- Supabase Dashboard OAuth redirect URL review;
+- two-user RLS smoke check on hosted Supabase;
+- Storage upload/download/delete behavior with real browser files;
+- Netlify `/api/health` response body review for secret leakage;
+- Yandex Metrica dashboard review for coarse params only;
+- mobile/tablet/desktop performance and overflow smoke check after final redeploy.

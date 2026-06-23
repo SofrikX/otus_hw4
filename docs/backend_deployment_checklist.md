@@ -56,5 +56,5 @@ Results:
 ## Known Limitations
 
 - `supabase db lint` / `supabase db reset` were not run during this deployment because the task targeted the hosted production project and local Supabase services were not started.
-- Google OAuth redirect settings and real pet image upload still need browser/manual QA after the next frontend redeploy.
+- Google OAuth redirect settings and real pet image upload should be checked in browser/manual QA after each production frontend redeploy.
 - `file_size_limit` and `allowed_mime_types` are `NULL` in bucket metadata; Flutter enforces JPG/PNG/WebP and 5 MB before upload.

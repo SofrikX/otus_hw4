@@ -15,7 +15,7 @@ Log levels:
 
 | Level | Usage |
 |---|---|
-| `info` | normal lifecycle events such as app startup, Supabase initialization, analytics disabled/skipped |
+| `info` | normal lifecycle events such as app startup and Supabase initialization; release builds suppress verbose info logs |
 | `warning` | recoverable failures such as auth failure, optional health-check query skipped, degraded service |
 | `error` | failed startup, Supabase request errors, analytics dispatch errors, required health-check failure |
 
@@ -78,7 +78,7 @@ Important events currently logged:
 | `supabase_request_error` | `supabase` | `error` |
 | `auth_success` | `auth` | `info` |
 | `auth_failure` | `auth` | `warning` |
-| `analytics_disabled` | `analytics` | `info` |
+| `analytics_not_configured` | `analytics` | `warning` |
 | `analytics_dispatch_error` | `analytics` | `error` |
 | `health_check` | `petconnect-health` | `info`, `warning`, `error` |
 

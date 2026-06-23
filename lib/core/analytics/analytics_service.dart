@@ -164,8 +164,17 @@ class AnalyticsService {
   bool _isSensitiveKey(String key) {
     final normalized = key.toLowerCase();
     return normalized.contains('email') ||
+        normalized == 'id' ||
+        normalized.endsWith('_id') ||
+        normalized.contains('raw_id') ||
         normalized.contains('user_id') ||
         normalized.contains('userid') ||
+        normalized == 'text' ||
+        normalized.endsWith('_text') ||
+        normalized.contains('content') ||
+        normalized == 'name' ||
+        normalized.endsWith('_name') ||
+        normalized.contains('display_name') ||
         normalized.contains('token') ||
         normalized.contains('password') ||
         normalized.contains('secret');

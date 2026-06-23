@@ -76,6 +76,11 @@ void main() {
         'text_length': 'short',
         'email': 'owner@example.com',
         'user_id': 'user-1',
+        'post_id': 'post-1',
+        'raw_id': 'raw-1',
+        'display_name': 'Alina',
+        'post_text': 'Raw post text',
+        'content': 'Raw content',
         'token': 'secret-token',
       },
     );

@@ -1,282 +1,319 @@
 # PetConnect Project Documentation
 
-## Название проекта
+Date: 23 June 2026
 
-PetConnect - полнофункциональное веб-приложение для владельцев домашних животных.
+PetConnect is a full-stack Flutter Web portfolio project for pet owners. The application combines authentication, pet profiles, a pet social feed, comments, likes, walks, basic chat, image upload, analytics, monitoring and AI-documented engineering workflow.
 
-## Идея
+## Project Overview
 
-PetConnect объединяет социальную ленту питомцев, профили животных, прогулки, базовые чаты и активность сообщества в одном Flutter Web приложении. Пользователь может зарегистрироваться, добавить питомца, публиковать посты, реагировать на публикации, находить прогулки и взаимодействовать с другими владельцами.
+PetConnect helps pet owners keep profiles for their pets, publish updates, react to community posts and discover local walks. The final implementation is built as a browser-first Flutter Web application backed by Supabase and deployed on Netlify.
 
-## Целевая аудитория
+Public project links:
 
-| Аудитория | Потребность |
+| Resource | URL |
 |---|---|
-| Владельцы собак | Найти компанию для прогулок и локальное pet-friendly сообщество |
-| Владельцы кошек и других питомцев | Публиковать истории и фото питомцев в тематической ленте |
-| Новые владельцы животных | Получить поддержку, идеи активностей и контакты владельцев рядом |
-| Активные пользователи социальных сервисов | Использовать привычные механики ленты, лайков, комментариев и сообщений |
+| Production app | https://cool-duckanoo-d28d04.netlify.app |
+| Health check | https://cool-duckanoo-d28d04.netlify.app/api/health |
+| GitHub repository | https://github.com/SofrikX/otus_hw4/tree/hw5-sb |
+| Defense script | docs/defense_script.md |
 
-## Проблема
+## Target Audience
 
-Владельцы домашних животных часто используют разные сервисы для общения, публикаций, поиска прогулок и хранения информации о питомцах. Из-за этого локальное pet-сообщество распадается на отдельные каналы, а пользователю сложно быстро найти владельцев рядом, договориться о прогулке или показать профиль питомца.
-
-PetConnect решает эту проблему через единое веб-приложение с авторизацией, профилями питомцев, социальной лентой и прогулками.
-
-## Основные сценарии использования
-
-1. Гость регистрируется по email/password или входит через Google OAuth.
-2. Пользователь создает или просматривает профиль питомца.
-3. Пользователь открывает ленту и видит публикации питомцев.
-4. Пользователь создает пост, ставит лайк и добавляет комментарий.
-5. Пользователь открывает список прогулок, создает прогулку или присоединяется к существующей.
-6. Пользователь просматривает базовый список чатов и сообщений.
-7. Проверяющий открывает production Flutter Web build на Netlify и проверяет Supabase-backed сценарии.
-
-## Final project scope
-
-Финальная проектная работа переводит PetConnect из набора домашних заданий в портфолио-проект курса "Разработка полнофункционального веб-приложения с использованием AI-агентов".
-
-Scope финальной работы:
-
-- оформить PetConnect как цельный продуктовый кейс с идеей, аудиторией, user stories и технической спецификацией;
-- сохранить Flutter Web frontend на Material 3, Riverpod и `go_router`;
-- использовать Supabase как production backend: Auth, Google OAuth, PostgreSQL, RLS, Storage и auto REST API;
-- подтвердить минимум 3 основных экрана: feed, pets, walks, а также auth и chat как дополнительные сценарии;
-- обеспечить CRUD/API операции для питомцев, постов, комментариев, лайков и прогулок через repository layer;
-- оставить mock repositories только для тестов, fallback и локальной разработки;
-- использовать Netlify hosting и GitHub Actions CI/CD для production frontend;
-- включить analytics через Yandex Metrica без персональных данных;
-- поддержать health check endpoint, structured logging, security audit и AI-assisted debugging;
-- зафиксировать AI workflow: planning, design, code generation, tests, debugging, CI/CD, security audit и performance optimization.
-
-Финальные документы требований:
-
-- `user_stories.md` - сгруппированные финальные user stories с acceptance criteria, priority и status;
-- `technical_specification.md` - актуальное техническое задание для Flutter Web + Supabase project scope;
-- `final_project_gap_analysis.md` - честная проверка Done/Planned/Optional перед финальной сдачей.
-
-Исторические документы `docs/user_stories.md` и `docs/technical_specification.md` сохранены как материалы ранних домашних заданий и Firebase/mobile scope. Для финальной проектной работы приоритет имеют корневые `user_stories.md` и `technical_specification.md`.
-
-## Что уже реализовано
-
-| Область | Реализовано |
+| Audience | Need |
 |---|---|
-| Frontend | Flutter Web MVP с Material 3, адаптивной навигацией, feed, pets, walks, auth и chat screens |
-| State management | Riverpod providers/controllers, `AsyncValue`, loading/error/empty/success states |
-| Routing | `go_router`, protected routes для backend mode |
-| Auth | Supabase Auth email/password, Google OAuth через Supabase Auth |
-| Backend schema | SQL migrations для `profiles`, `pets`, `posts`, `comments`, `post_likes`, `walks`, `walk_participants`, `chats`, `chat_participants`, `messages` |
-| Security | RLS policies для application tables, Storage policies, security audit |
-| API integration | Supabase repositories for feed, pets and walks; legacy API repositories preserved as historical Firebase branch support |
-| Storage | Supabase buckets `avatars`, `pet-photos`, `post-images` описаны; `pet-images` добавлен для пользовательской загрузки фото питомцев |
-| Hosting | Netlify configuration, SPA redirects, health endpoint |
-| CI/CD | GitHub Actions: security audit, format, analyze, tests, web build, Netlify deploy on `main` |
-| Analytics | Yandex Metrica events with privacy filtering |
-| Logging | Structured app logs and Netlify health check logs without secrets or personal data |
-| Tests | Flutter tests for auth, feed, pets, walks, chat, analytics, logging, router and network mapping |
-| Documentation | README, backend documentation, integration documentation, security audit, AI workflow and prompt journal |
+| Dog owners | Find company for walks and local pet-friendly activities. |
+| Cat and other pet owners | Share stories, photos and pet profiles in a focused social feed. |
+| New pet owners | Get a lightweight community space and discover nearby activities. |
+| Course reviewers and employers | Evaluate a complete AI-assisted full-stack Flutter Web project. |
 
-Testing documentation:
+## Problem And Solution
 
-- `docs/testing_strategy.md` records the final automated test audit, test pyramid and remaining manual boundaries.
-- `docs/manual_qa_checklist.md` records final browser QA for registration, Google OAuth, feed, pets CRUD, image upload, walks, search/filters, analytics, health endpoint and responsive UI.
+Pet owners often split communication between generic messengers, social networks and notes. Pet profiles, posts, local activities and owner interactions are not connected in one product experience.
 
-## Что будет доработано в рамках проектной работы
+PetConnect solves this with one web application:
 
-| Направление | Доработка |
-|---|---|
-| Product packaging | Свести документы ДЗ в единую финальную проектную историю |
-| Frontend UX | Проверить финальные production scenarios, mobile/desktop responsive layout и error states |
-| Backend validation | Повторить Supabase `db lint`, `db reset` или hosted SQL/RLS smoke checks перед сдачей |
-| File storage UX | Фото питомцев загружаются в Supabase Storage и отображаются в pet list/profile; emoji остается fallback |
-| Search/filtering | Feed search, walk filters and pet filters exposed in the UI |
-| Notifications | Описать как future enhancement, если не будет реализовано в финальном scope |
-| Production QA | Повторить Netlify redeploy и E2E проверку после исправлений OAuth/web startup |
-| Portfolio readiness | Подготовить демонстрационный сценарий для преподавателя и финальный checklist |
+- authenticated user access;
+- pet profiles with owner-controlled CRUD;
+- feed posts tied to pets;
+- likes and comments;
+- walk creation and participation;
+- pet image upload through Supabase Storage;
+- search and filters for feed, pets and walks;
+- responsive premium dark UI.
 
-## Final delivery plan
+## Main Features
 
-Финальная сдача должна быть сфокусирована не на смене архитектуры, а на доведении уже собранного full-stack проекта до проверяемого demo state.
+- Email/password authentication through Supabase Auth.
+- Google OAuth through Supabase Auth.
+- Protected routing with `go_router`.
+- Pet profiles: create, read, update, delete and photo upload.
+- Feed: read posts, create posts for owned pets, like/unlike, comment and delete own posts.
+- Walks: create walks, filter walks, join and leave.
+- Search/filter UI for feed, pets and walks.
+- Basic chat list scenario and relational chat/message schema.
+- Yandex Metrica analytics with privacy-safe event params.
+- Netlify `/api/health` endpoint.
+- Structured sanitized logging.
+- GitHub Actions CI/CD.
 
-Минимальный план:
+## Final Visual Design
 
-1. Выполнить fresh Netlify redeploy текущей ветки после OAuth/web startup hardening.
-2. Проверить production E2E: login, feed load, create post, like, comment, pets screen/profile, walks screen, join walk, logout.
-3. Проверить `https://cool-duckanoo-d28d04.netlify.app/api/health` и зафиксировать статус.
-4. Запустить `dart format .`, `flutter analyze`, `flutter test`, `flutter build web --release`.
-5. Повторить Supabase validation: `supabase db lint`, `supabase db reset` или hosted SQL/RLS smoke checks.
-6. Обновить README и `development_report.md` фактическим финальным QA status.
-7. Обновить desktop/mobile screenshots в `docs/screenshots/`.
+The final UI uses a premium dark pet social app direction:
 
-Рекомендуемый план доработок:
+- deep navy/black backgrounds;
+- violet/blue gradient accents;
+- glassmorphism cards;
+- polished auth landing, feed, pets, walks, pet profile and chat screens;
+- mobile bottom navigation;
+- desktop navigation rail and constrained dashboard content;
+- shared loading, empty and error states.
 
-| Priority | Доработка | Результат |
-|---|---|---|
-| P0 | Production redeploy и browser E2E | Преподаватель открывает рабочий Netlify URL и проходит основной сценарий |
-| P1 | Supabase Storage для фото питомцев | Storage становится видимой пользовательской функцией, а не только backend bucket/policy |
-| P1 | Поиск/фильтрация постов, прогулок и питомцев | Закрыто: feed search, walk filters and pet filters доступны в UI |
-| P1 | CRUD completeness для pets/posts/walks | Закрыт минимальный CRUD: pet create/read/update/delete, post create/delete, walk create/join/leave; детальная матрица в `docs/crud_audit.md` |
-| P2 | Responsive UI polish | Финальные mobile/desktop screenshots без overflow и визуальных дефектов |
-| P2 | Финальная документация и скриншоты | README/project docs содержат demo flow, gaps, validation status и актуальные изображения |
+The visual redesign did not change routing, Supabase integration, RLS, analytics, repository boundaries or CRUD flows.
 
-Detailed gap tracking is maintained in `final_project_gap_analysis.md`.
-
-## Стек технологий
-
-| Слой | Технологии |
-|---|---|
-| Frontend | Flutter Web, Dart, Material 3 |
-| State/routing | Riverpod, `flutter_riverpod`, `go_router` |
-| Architecture | Feature-first structure, Clean Architecture principles, repository layer |
-| Auth | Supabase Auth, Google OAuth through Supabase |
-| Database | Supabase PostgreSQL |
-| Security | Row Level Security, Storage policies, CI security gates |
-| API | Supabase auto REST API / PostgREST, `supabase_flutter` |
-| File storage | Supabase Storage |
-| Hosting | Netlify |
-| CI/CD | GitHub Actions, Netlify CLI |
-| Analytics | Yandex Metrica |
-| Monitoring | Netlify Function `/api/health`, structured logs |
-| Tests | `flutter_test`, `mocktail` |
-| AI agent | OpenAI Codex |
-
-## Frontend architecture
-
-```text
-lib/
-  app/                 # app shell, theme, router, startup fallback
-  core/                # config, analytics, logging, network, Supabase, shared widgets
-  features/
-    auth/              # auth repository, controller, login/register UI
-    feed/              # posts, likes, comments, feed controller/UI
-    pets/              # pet profiles, pet repositories/providers/UI
-    walks/             # walk list, create/join flows, controller/UI
-    chat/              # basic chat list and domain model
-    home/              # main shell/navigation
-```
-
-UI widgets do not call Supabase directly. Screens use Riverpod controllers/providers, controllers call repository interfaces, and data implementations choose Supabase or mock mode through `BackendConfig`.
-
-## UI/UX audit
-
-Финальный UI/UX audit сохранен в `docs/ui_ux_audit.md`.
-
-Итог аудита:
-
-- основные экраны финального демо: Auth, Feed, Pets, Pet profile, Walks и Chat;
-- responsive model подтверждена: mobile использует bottom navigation, desktop использует navigation rail и constrained content через `ResponsiveCenter`;
-- loading/error/empty states реализованы через `AsyncContentView`, `EmptyState` и `ErrorState`;
-- формы входа, регистрации и создания поста имеют validation/loading/error feedback;
-- формы создания поста, комментария, питомца и прогулки показывают inline validation, disabled submit/progress states и не закрывают пользователя в тупике при ошибке ввода;
-- accessibility baseline опирается на Material 3 semantics, labels, tooltips, semantic error containers и live-region loading/error states;
-- визуальная консистентность держится на единой Material 3 теме, карточках, чипах, иконках и shared state widgets.
-
-Безопасные улучшения после аудита:
-
-- empty states получили contextual icons и refresh actions для Feed, Pets и Walks;
-- shared loading/error states получили semantic live-region hints;
-- shared empty/error states ограничены по ширине для desktop/tablet readability;
-- create-post/comment bottom sheets ограничены по ширине на desktop, учитывают keyboard insets и показывают inline validation;
-- pet/walk form sheets центрируются на desktop и блокируют поля во время сохранения;
-- walk join/leave action показывает compact progress и блокирует повторные нажатия;
-- routing, repository layer и бизнес-логика не менялись.
-
-Оставшиеся UX-рекомендации перед финальной сдачей:
-
-- повторить desktop/mobile browser QA после production redeploy;
-- повторить visual QA для новых search/filter controls на Feed, Pets и Walks;
-- проверить create pet и create walk flows на hosted Supabase после production redeploy;
-- вывести реальные Supabase Storage images для питомцев или постов;
-- обновить финальные screenshots в `docs/screenshots/`.
-
-## Backend architecture
+## Frontend Architecture
 
 ```text
 Flutter Web
+  -> Material 3 UI
   -> Riverpod controllers/providers
   -> repository interfaces
-  -> Supabase repository implementations
-  -> supabase_flutter client
-  -> Supabase Auth / PostgREST / Storage
-  -> PostgreSQL tables protected by RLS
+  -> Supabase or mock repository implementations
 ```
 
-Backend source of truth:
+Source layout:
 
-- `supabase/migrations/001_initial_schema.sql`;
-- `supabase/migrations/002_rls_policies.sql`;
-- `supabase/migrations/003_api_grants.sql`;
-- `supabase/migrations/004_pet_images_storage.sql`;
-- `supabase/migrations/005_harden_remote_rls_policies.sql`;
-- `supabase/migrations/006_fix_pet_images_storage_policy_path.sql`;
-- `supabase/seed.sql`.
+```text
+lib/
+  app/                 # app shell, router, theme, startup fallback
+  core/                # analytics, config, logging, network, Supabase, shared widgets
+  features/
+    auth/
+    feed/
+    pets/
+    walks/
+    chat/
+    home/
+```
 
-PostgreSQL relations cover more than three connected tables: profiles own pets, profiles and pets own posts, posts have comments and likes, walks have participants, chats have participants and messages.
+Architecture rules:
 
-Production backend deployment was completed on 23 June 2026 for Supabase project `fivtpxsjcjirddogngtl`. Verification confirmed public tables, `pets.photo_url`, hardened RLS policies, bucket `pet-images`, and Storage policies. Details are in `docs/backend_deployment_checklist.md` and `docs/production_backend_verification.md`.
+- widgets do not call Supabase directly;
+- business logic stays in controllers/providers and repositories;
+- domain models and repository interfaces stay outside widgets;
+- mock repositories remain for tests and local no-credential runs;
+- Supabase repositories are used when `USE_SUPABASE_BACKEND=true`.
 
-Production frontend deployment configuration was synchronized after the backend deploy: Netlify and GitHub Actions build Flutter Web with `USE_SUPABASE_BACKEND`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ANALYTICS_ENABLED`, `ANALYTICS_PROVIDER` and `YANDEX_METRICA_COUNTER_ID`; Netlify publishes `build/web`, routes `/api/health` to the health function and keeps the SPA fallback.
+## Frontend Screens
 
-## Requirements coverage
+| Screen | Purpose | Status |
+|---|---|---|
+| Auth landing/login/register | Email auth, Google OAuth entry, protected app access | Done |
+| Feed | Posts, likes, comments, search, create/delete own post | Done |
+| Pets | Pet list, filters, create/edit/delete pet | Done |
+| Pet profile | Pet details and owner photo upload | Done |
+| Walks | Walk list, filters, create/join/leave flows | Done |
+| Chat | Basic chat list scenario | Done for MVP scope |
+| Startup error | Friendly bootstrap failure fallback | Done |
 
-| Requirement | How PetConnect covers it |
+## Database Model
+
+Supabase PostgreSQL stores the application data.
+
+Core tables:
+
+- `profiles`
+- `pets`
+- `posts`
+- `comments`
+- `post_likes`
+- `walks`
+- `walk_participants`
+- `chats`
+- `chat_participants`
+- `messages`
+
+Important relationships:
+
+- `profiles.id` matches Supabase Auth user id;
+- `pets.owner_id` references `profiles.id`;
+- `posts.author_id` references `profiles.id`;
+- `posts.pet_id` references `pets.id`;
+- `comments.post_id` references `posts.id`;
+- `post_likes` and `walk_participants` enforce uniqueness per user/action;
+- chats and messages are participant-scoped.
+
+Storage:
+
+- `pet-images` is the visible pet profile photo bucket;
+- `avatars`, `pet-photos` and `post-images` remain prepared or historical buckets.
+
+## Backend And API
+
+PetConnect uses Supabase auto REST API and `supabase_flutter`, not a custom production API server.
+
+Implemented API operations:
+
+| Area | Operations |
 |---|---|
-| Frontend: minimum 3 main screens | Feed, Pets, Walks; additionally Auth, Home and Chat |
-| Frontend: responsive design | Shared `ResponsiveCenter`, mobile bottom navigation and desktop navigation rail |
-| Frontend: interactive elements/forms | Login/register forms, Google OAuth button, create post flow, pet create/edit/delete flow, like/comment/delete-post actions, walk create/join/leave actions |
-| Frontend: loading/error states | `AsyncContentView`, `EmptyState`, `ErrorState`, Riverpod `AsyncValue` patterns |
-| Backend: PostgreSQL with 3 related tables | Supabase schema has profiles, pets, posts, comments, likes, walks, participants, chats and messages |
-| Backend: API with CRUD | Supabase auto REST API and Flutter SDK operations for feed, pets, comments, likes, walks and walk participants; `docs/crud_audit.md` records exact CRUD coverage |
-| Backend: authentication | Supabase Auth email/password and Google OAuth |
-| Backend: data validation | PostgreSQL constraints, RLS checks, repository-side mapping and friendly error handling |
-| Additional: OAuth2 | Google OAuth through Supabase Auth |
-| Additional: analytics | Yandex Metrica events with privacy-safe params |
-| Additional: file storage | Supabase Storage bucket `pet-images` for pet photo upload/display, plus prepared buckets for avatars and post images |
-| Additional: search/filtering | Feed supports debounced search by post text, author or pet name; Walks support date, location and status filters; Pets support name/type filters |
-| AI: planning/design | Documented in `docs/ai_workflow.md`, `prompts.md` and `development_report.md` |
-| AI: user stories/specification | `user_stories.md`, `technical_specification.md`, `project_documentation.md` |
-| AI: frontend/backend development | Codex-assisted repository, UI, Supabase and Netlify work documented in prompt journal |
-| AI: testing/debugging/security/performance | Flutter tests, security audit, log analysis prompts, CI/CD and performance optimization documented |
+| Auth | sign up, sign in, Google OAuth, sign out, profile upsert |
+| Pets | list, details, owner pets, create, update, delete, upload photo |
+| Feed | list posts, create post, delete own post, like/unlike, add comments |
+| Walks | list/filter walks, create walk, join, leave |
+| Chat | basic chat list model and schema |
 
-Final requirements package:
+Detailed CRUD evidence is in `docs/crud_audit.md`.
 
-| Document | Role |
+## Authentication
+
+Supabase Auth is the final identity provider.
+
+Supported flows:
+
+- email/password registration;
+- email/password sign in;
+- Google OAuth through Supabase provider configuration;
+- sign out;
+- session restore;
+- profile row upsert after auth.
+
+Google Client Secret is stored only in Supabase Dashboard and Google Cloud Console. It is not used in Flutter, Netlify, GitHub Actions or repository files.
+
+## Authorization And RLS
+
+PostgreSQL Row Level Security is the backend authorization boundary.
+
+Key RLS rules:
+
+- users create/update/delete only their own pets;
+- posts can be created only for pets owned by the current user;
+- users delete only their own posts;
+- comments and likes require visible target posts;
+- users join only active walks and delete only their own walk participation rows;
+- chats/messages are visible only to participants;
+- `pet-images` writes require authenticated owner/pet-scoped paths.
+
+UI owner checks improve UX, but RLS remains the enforcement layer.
+
+## Integrations
+
+| Integration | Purpose |
 |---|---|
-| `user_stories.md` | Product requirements grouped by Authentication, Pet profiles, Feed, Comments/Likes, Walks, Search, Image upload, Analytics, Monitoring and Admin/Maintenance |
-| `technical_specification.md` | Technical requirements, architecture, database entities, API/CRUD matrix, RLS/security, integrations, deployment, CI/CD, monitoring and testing |
-| `project_documentation.md` | Product overview and requirement coverage |
-| `final_project_gap_analysis.md` | Delivery gap tracking and honest final readiness status |
+| Supabase Auth | Email/password and Google OAuth identity |
+| Supabase PostgreSQL | Relational app data |
+| Supabase Storage | Pet profile image upload |
+| Supabase PostgREST | Auto REST API used through Flutter SDK |
+| Netlify | Flutter Web static hosting and health function |
+| GitHub Actions | CI/CD and production deploy |
+| Yandex Metrica | Privacy-safe product analytics |
+| OpenAI Codex | AI-assisted planning, implementation, QA and documentation |
 
-## Remaining gaps
+## Deployment
 
-- Production Netlify frontend must be redeployed after the latest OAuth/web startup hardening and then checked end-to-end.
-- Supabase local lint/reset should be repeated when local Supabase services are running; hosted SQL verification was completed after production migrations `001`-`006`.
-- Real pet photo upload/display through Supabase Storage is implemented for the final demo; post image upload remains a planned enhancement.
-- Final minimum CRUD is implemented for pets, posts and walks; post editing, comment deletion UI, walk edit/delete UI and profile editing remain scoped enhancements.
-- Notifications and payments are not part of the committed final scope; analytics, OAuth2, storage and implemented search/filtering cover the required additional-function set.
+Production split:
 
-## Final visual redesign
+| Layer | Target |
+|---|---|
+| Frontend | Flutter Web release build |
+| Hosting | Netlify |
+| Backend | Supabase Auth, PostgreSQL, RLS, Storage, auto REST API |
+| Health endpoint | Netlify Function `/api/health` |
 
-On 23 June 2026 PetConnect received a final portfolio-level UI redesign in the requested modern dark pet social app direction.
+Netlify publishes `build/web`, routes `/api/health` to `netlify/functions/health.js` and uses SPA fallback for Flutter routing.
 
-Implemented design system updates:
+## CI/CD
 
-- dark navy/black background tokens, violet/blue gradients and semantic success/warning/error colors;
-- shared spacing/radius tokens in `lib/core/theme/`;
-- reusable `AppCard`, `GlassCard`, `GradientButton` and `AppScreenBackground` widgets in `lib/core/widgets/`;
-- updated global Material 3 theme with dark inputs, chips, buttons, navigation, dialogs, snackbars and bottom sheets.
+GitHub Actions workflow: `.github/workflows/ci_cd.yml`.
 
-Screens polished:
+Pipeline:
 
-- Auth uses a hero landing layout with PetConnect branding, feature chips and glass login/register forms.
-- Home shell uses a branded title, dark gradient background, bottom navigation on mobile and a glass navigation rail on desktop.
-- Feed uses a premium header, integrated search panel, polished stories strip and modern post cards.
-- Pets uses a dashboard header, glass filters, richer pet cards and polished create/edit form shell.
-- Walks uses a premium header, glass filter controls, map-like activity preview cards and consistent join/leave CTA.
-- Pet Profile and Chat were visually aligned with the new glass card system.
+- security audit job;
+- secret marker scan;
+- `.env*` and `.DS_Store` hygiene checks;
+- dependency checks;
+- `dart format --set-exit-if-changed .`;
+- `flutter analyze`;
+- `flutter test`;
+- Flutter Web release build;
+- Netlify deploy on `push` to `main`.
 
-Functional constraints preserved:
+Secrets are stored only in GitHub/Netlify settings. Service role keys and database passwords are not part of the frontend workflow.
 
-- no backend schema, Supabase migration, RLS or Storage policy changes;
-- existing routes, auth flow, Google OAuth integration, Supabase repositories, CRUD flows, search/filter logic, analytics events and tests remain active.
+## Security And Privacy
+
+Security controls:
+
+- no service role key in Flutter Web;
+- no real secrets in repository files;
+- RLS enabled on application tables;
+- Storage writes owner/pet-scoped;
+- analytics params are sanitized;
+- logs exclude tokens, emails, raw ids and user-generated text;
+- health endpoint does not return environment values;
+- CI blocks secret markers and real env files.
+
+Full security/performance review: `security_audit.md`.
+
+## Testing
+
+Automated coverage includes:
+
+- auth controller and forms;
+- router protection;
+- feed state, likes, comments and delete confirmation;
+- pet CRUD, filters and photo-related mapping;
+- walks create/join/leave/filter flows;
+- analytics sanitizer;
+- logger sanitizer;
+- API/Supabase error mapping;
+- startup error fallback.
+
+Latest local validation:
+
+```text
+flutter pub get: passed
+dart format --set-exit-if-changed .: passed, 99 files checked, 0 changed
+flutter analyze: passed, no issues found
+flutter test: passed, 110 tests
+flutter build web --release --dart-define=USE_SUPABASE_BACKEND=false --dart-define=ANALYTICS_ENABLED=false: passed
+```
+
+Manual QA checklist: `docs/manual_qa_checklist.md`.
+
+## Monitoring And Logging
+
+Monitoring:
+
+- production health URL: `https://cool-duckanoo-d28d04.netlify.app/api/health`;
+- checks Netlify Function reachability, Supabase URL config, Auth endpoint, REST endpoint and optional limit-1 posts query.
+
+Logging:
+
+- Flutter uses `AppLogger` structured JSON logs;
+- Netlify health function logs structured JSON;
+- release mode skips Flutter info logs;
+- logs are sanitized for AI-assisted analysis.
+
+Detailed logging guide: `docs/logging.md`.
+
+## Final Requirements Coverage
+
+| Requirement | Coverage |
+|---|---|
+| Full-stack web app | Flutter Web + Supabase + Netlify |
+| Minimum 3 screens | Feed, Pets, Walks; plus Auth, Chat and Pet Profile |
+| Auth | Supabase email/password and Google OAuth |
+| Database | PostgreSQL schema with related domain tables |
+| CRUD/API | Pets, posts, comments, likes, walks and participation operations |
+| Authorization | RLS and Storage policies |
+| File storage | Supabase Storage pet image upload |
+| Search/filters | Feed, pets and walks |
+| Analytics | Yandex Metrica privacy-safe events |
+| Monitoring | Netlify health endpoint and structured logs |
+| CI/CD | GitHub Actions + Netlify deploy |
+| Testing | Flutter unit/widget tests and manual QA checklist |
+| AI process | `ai_development_process.md`, `development_report.md`, `prompts.md` |
+| Portfolio documentation | README, project docs, technical spec, screenshots package, submission package, defense script and final release checklist |
+
+## Conclusions And Recommendations
+
+PetConnect is packaged as a final portfolio project rather than a set of intermediate course artifacts. The final architecture is Flutter Web + Supabase + Netlify + GitHub Actions. The final submission entry points are `README.md`, `docs/submission_package.md`, `docs/defense_script.md` and `final_release_checklist.md`. The main remaining work is operational rather than architectural: run final production browser QA after deploys, refresh screenshots and keep secrets out of public artifacts.

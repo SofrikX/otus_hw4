@@ -164,7 +164,7 @@ Results:
 - [x] No RLS disabling or data deletion was performed.
 - [ ] Run browser QA: sign in, create pet, upload pet photo, create post, like/comment, create/join/leave walk.
 - [ ] Verify Google OAuth redirect URLs in Supabase Dashboard.
-- [ ] Redeploy Netlify frontend after backend verification and run production E2E.
+- [ ] Run production E2E after the final Netlify frontend deploy.
 
 ## Frontend Deployment Sync
 
