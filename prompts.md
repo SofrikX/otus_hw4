@@ -44,7 +44,7 @@ Recurring constraints:
 | QA | Stabilize tests and manual checklist | `docs/testing_strategy.md`, `docs/manual_qa_checklist.md` | 110 passing Flutter tests |
 | Security audit | Review secrets, RLS, Storage, logs, analytics, CI | `security_audit.md`, sanitizer hardening | Final audit complete |
 | Visual redesign | Create premium dark portfolio UI | theme tokens, shared widgets, redesigned screens | Final visual style |
-| Documentation | Package final project | README, submission package, defense script, release checklist, reports | Portfolio-ready docs |
+| Documentation | Package final project | README, refreshed screenshots docs, submission package, defense script, release checklist, reports | Portfolio-ready docs |
 
 ## Key Prompt Examples
 
@@ -122,7 +122,7 @@ Recurring constraints:
 
 **Goal:** Make the repository understandable to a reviewer, employer and developer.
 
-**AI output:** portfolio README, project documentation, AI process, development report, screenshot checklist, defense script, submission package and final release checklist.
+**AI output:** portfolio README, project documentation, AI process, development report, refreshed screenshot checklist, defense script, submission package and final release checklist.
 
 **Human review:** removed stale temporary notes, demo credentials and course-stage wording.
 

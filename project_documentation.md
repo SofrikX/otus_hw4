@@ -312,8 +312,8 @@ Detailed logging guide: `docs/logging.md`.
 | CI/CD | GitHub Actions + Netlify deploy |
 | Testing | Flutter unit/widget tests and manual QA checklist |
 | AI process | `ai_development_process.md`, `development_report.md`, `prompts.md` |
-| Portfolio documentation | README, project docs, technical spec, screenshots package, submission package, defense script and final release checklist |
+| Portfolio documentation | README, project docs, technical spec, refreshed screenshots package, submission package, defense script and final release checklist |
 
 ## Conclusions And Recommendations
 
-PetConnect is packaged as a final portfolio project rather than a set of intermediate course artifacts. The final architecture is Flutter Web + Supabase + Netlify + GitHub Actions. The final submission entry points are `README.md`, `docs/submission_package.md`, `docs/defense_script.md` and `final_release_checklist.md`. The main remaining work is operational rather than architectural: run final production browser QA after deploys, refresh screenshots and keep secrets out of public artifacts.
+PetConnect is packaged as a final portfolio project rather than a set of intermediate course artifacts. The final architecture is Flutter Web + Supabase + Netlify + GitHub Actions. The final submission entry points are `README.md`, `docs/submission_package.md`, `docs/defense_script.md`, `docs/screenshots/README.md` and `final_release_checklist.md`. App screenshots were refreshed after the final visual redesign using demo/mock-safe UI data. The main remaining work is operational rather than architectural: run final production browser QA after deploys, refresh external dashboard screenshots manually and keep secrets out of public artifacts.

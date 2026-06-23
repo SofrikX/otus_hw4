@@ -211,7 +211,7 @@ Final security audit covered:
 13. Показать Netlify production deployment status.
 14. Показать Supabase tables и Storage bucket без row-level private data и без secrets.
 15. Открыть `/api/health`.
-16. Показать документацию: `README.md`, `docs/submission_package.md`, `ai_development_process.md`, `security_audit.md`, `docs/manual_qa_checklist.md`.
+16. Показать документацию: `README.md`, `docs/submission_package.md`, `docs/screenshots/README.md`, `ai_development_process.md`, `security_audit.md`, `docs/manual_qa_checklist.md`.
 
 ## Экраны Для Показа
 
@@ -230,6 +230,8 @@ Final security audit covered:
 | Supabase | Tables, RLS policies, Storage bucket без приватных значений. |
 | Health endpoint | Production readiness signal без leakage. |
 | Documentation | Пакет сдачи и AI evidence. |
+
+Если live browser demo нестабилен из-за внешних сервисов или OAuth dashboard settings, использовать refreshed screenshots `docs/screenshots/01`-`09` как безопасный visual fallback. Они показывают финальный dark UI без приватных данных.
 
 ## Технические Решения
 

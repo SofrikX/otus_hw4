@@ -47,12 +47,19 @@ The redesign preserved routing, Supabase integration, Riverpod controllers, repo
 
 ## Screenshots
 
-Current screenshots are stored in [docs/screenshots](docs/screenshots).
+Current screenshots are stored in [docs/screenshots](docs/screenshots). App screenshots were refreshed after the final premium dark visual redesign and use demo/mock-safe UI data without credentials or private dashboard values.
 
 | View | Screenshot |
 |---|---|
-| Desktop, 1440 x 900 | ![PetConnect desktop screenshot](docs/screenshots/petconnect_desktop.png) |
-| Mobile, 390 x 844 | ![PetConnect mobile screenshot](docs/screenshots/petconnect_mobile.png) |
+| Desktop feed, 1440 x 1000 | ![PetConnect desktop feed screenshot](docs/screenshots/02_feed_desktop.png) |
+| Mobile feed, 390 x 844 | ![PetConnect mobile feed screenshot](docs/screenshots/09_mobile_app.png) |
+| Auth desktop | [docs/screenshots/01_landing_auth_desktop.png](docs/screenshots/01_landing_auth_desktop.png) |
+| Create post desktop | [docs/screenshots/03_create_post_desktop.png](docs/screenshots/03_create_post_desktop.png) |
+| Pets desktop | [docs/screenshots/04_pets_desktop.png](docs/screenshots/04_pets_desktop.png) |
+| Pet photo upload desktop | [docs/screenshots/05_pet_image_upload_desktop.png](docs/screenshots/05_pet_image_upload_desktop.png) |
+| Walks desktop | [docs/screenshots/06_walks_desktop.png](docs/screenshots/06_walks_desktop.png) |
+| Active filters desktop | [docs/screenshots/07_search_filters_desktop.png](docs/screenshots/07_search_filters_desktop.png) |
+| Auth mobile | [docs/screenshots/08_mobile_auth.png](docs/screenshots/08_mobile_auth.png) |
 
 Screenshot capture checklist and privacy rules are documented in [docs/screenshots/README.md](docs/screenshots/README.md).
 

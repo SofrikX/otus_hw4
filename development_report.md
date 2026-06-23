@@ -169,7 +169,7 @@ Manual QA remains for:
 - Google OAuth redirect confirmation;
 - real Supabase Storage upload;
 - Yandex Metrica dashboard event arrival;
-- production responsive screenshots.
+- production responsive screenshots and safe external dashboard screenshots.
 
 ## Security And Performance Review
 
@@ -220,7 +220,7 @@ Human review controlled final scope, secret handling, production validation and 
 ## Recommendations
 
 - Run a final production browser QA pass after each Netlify redeploy.
-- Refresh `docs/screenshots/` after the final production pass.
+- Keep refreshed app screenshots in `docs/screenshots/01`-`09`; refresh external dashboard screenshots manually from safe overview pages.
 - Use `docs/submission_package.md`, `docs/defense_script.md` and `final_release_checklist.md` as the final reviewer handoff.
 - Keep demo credentials outside the repository.
 - Keep Supabase local lint/reset in the release checklist when local services are available.

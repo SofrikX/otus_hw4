@@ -136,15 +136,15 @@ Use this flow for a reviewer demonstration:
 
 See [docs/screenshots/README.md](screenshots/README.md). The final screenshot set should include:
 
+- refreshed app screenshots after the final dark visual redesign;
 - landing/auth screen;
 - Google OAuth button;
 - feed with posts;
 - create post form;
 - pets list;
-- pet image upload;
+- pet image upload UI;
 - walks list;
 - filters/search;
-- final dark visual redesign;
 - mobile layout;
 - GitHub Actions green run;
 - Netlify production deploy;
@@ -188,6 +188,7 @@ Production verification:
 - Google OAuth redirect settings live in Supabase Dashboard and Google Cloud Console, so they must be manually verified.
 - Supabase dashboard screenshots must avoid row-level private data and secrets.
 - Yandex Metrica screenshots must use aggregate overview only.
+- App screenshots in `docs/screenshots/01`-`09` use demo/mock-safe UI data and do not show production credentials.
 - Post image upload, avatar upload and full chat message sending are future enhancements.
 - No penetration test was performed; the project includes code/configuration security audit and manual QA.
 
